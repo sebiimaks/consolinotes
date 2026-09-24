@@ -162,7 +162,11 @@ public class UserDefaultsManagement {
             if let returnFontName = shared?.object(forKey: Constants.CodeFontNameKey) as? String {
                 return returnFontName
             } else {
+            #if os(OSX)
+                return "JetBrains Mono"
+            #else
                 return "Source Code Pro"
+            #endif
             }
         }
         set {
@@ -1761,7 +1765,11 @@ public class UserDefaultsManagement {
                 let raw = UserDefaults.standard.string(forKey: Constants.codeTheme),
                 let theme = EditorTheme(rawValue: raw)
             else {
+            #if os(OSX)
+                return .consolinotes
+            #else
                 return .atomOne
+            #endif
             }
                 
             return theme

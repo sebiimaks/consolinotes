@@ -2,7 +2,7 @@
 
 What are containers? A 'container' is a holder for your files. A container holds text and other assets used in one note. Of course, you can choose to store notes without containers at all. Open Preferences -> General -> Containers and select "None". Notes will be stored in plain text, Markdown or RTF.
 
-I recommend to use Text Bundle and Encrypted Text Bundles for sensitive data. Read on.
+Text Bundle groups a note with its attachments. Encrypted Text Bundle adds password protection. Read on.
 
 ## Text Bundle container
 
@@ -26,5 +26,5 @@ Random IV
 Encrypt-then-hash HMAC
 Open and cross platform
 
-You can decrypt any FSNotes note with Python or Ruby, JS, etc. (full list you can find here)
+Encrypted Text Bundles retain the original FSNotes format. Compatible RNCryptor implementations can decrypt them.
 Unzip and have fun with usual Text Bundle.

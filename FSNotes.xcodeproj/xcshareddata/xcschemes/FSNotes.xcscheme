@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D7793C6E1F211C6000CA39B7"
-               BuildableName = "FSNotes.app"
+               BuildableName = "consolinotes.app"
                BlueprintName = "FSNotes"
                ReferencedContainer = "container:FSNotes.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D7793C6E1F211C6000CA39B7"
-            BuildableName = "FSNotes.app"
+            BuildableName = "consolinotes.app"
             BlueprintName = "FSNotes"
             ReferencedContainer = "container:FSNotes.xcodeproj">
          </BuildableReference>
@@ -54,7 +54,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D7793C6E1F211C6000CA39B7"
-            BuildableName = "FSNotes.app"
+            BuildableName = "consolinotes.app"
             BlueprintName = "FSNotes"
             ReferencedContainer = "container:FSNotes.xcodeproj">
          </BuildableReference>
@@ -78,7 +78,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D7793C6E1F211C6000CA39B7"
-            BuildableName = "FSNotes.app"
+            BuildableName = "consolinotes.app"
             BlueprintName = "FSNotes"
             ReferencedContainer = "container:FSNotes.xcodeproj">
          </BuildableReference>

@@ -10,19 +10,21 @@ import UIKit
 
 class ThanksViewController: UITableViewController {
     private var rows = [
+        "FSNotes — original project",
         "Radio-T",
         "Matt Septhon",
         "Dylan Seeger (Icon design)"
     ]
 
     private var urls = [
+        "https://github.com/glushchenko/fsnotes",
         "https://radio-t.com",
         "https://www.gingerbeardman.com",
         "https://lovably.com"
     ]
 
     override func viewDidLoad() {
-        self.title = NSLocalizedString("Thanks", comment: "Settings")
+        self.title = NSLocalizedString("Acknowledgements", comment: "Settings")
 
         super.viewDidLoad()
     }
@@ -39,6 +41,14 @@ class ThanksViewController: UITableViewController {
         return rows.count
     }
 
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return NSLocalizedString("Original FSNotes project", comment: "Upstream acknowledgements")
+    }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        return NSLocalizedString("FSNotes was originally developed by Oleksandr Glushchenko and contributors. These acknowledgements credit the original project and do not imply involvement in or endorsement of consolinotes.", comment: "Upstream acknowledgements")
+    }
+
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 50
     }
@@ -53,5 +63,4 @@ class ThanksViewController: UITableViewController {
         navigationController?.popViewController(animated: true)
     }
 }
-
 

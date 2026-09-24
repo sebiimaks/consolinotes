@@ -16,7 +16,7 @@ class SettingsViewController: UITableViewController, UIDocumentPickerDelegate {
     var sections = [
         NSLocalizedString("General", comment: "Settings"),
         NSLocalizedString("Library", comment: "Settings"),
-        NSLocalizedString("FSNotes", comment: "Settings")
+        "consolinotes"
     ]
 
     var rows = [
@@ -36,8 +36,8 @@ class SettingsViewController: UITableViewController, UIDocumentPickerDelegate {
         ], [
             NSLocalizedString("Support", comment: "Settings"),
             NSLocalizedString("Website", comment: "Settings"),
-            "X",
-            NSLocalizedString("Thanks", comment: "Settings")
+            NSLocalizedString("Documentation", comment: "Settings"),
+            NSLocalizedString("Acknowledgements", comment: "Settings")
         ]
     ]
 
@@ -58,7 +58,7 @@ class SettingsViewController: UITableViewController, UIDocumentPickerDelegate {
         ], [
             "graduationcap.fill",
             "house.fill",
-            "x.circle.fill",
+            "book.closed.fill",
             "heart.fill"
         ]
     ]
@@ -129,6 +129,11 @@ class SettingsViewController: UITableViewController, UIDocumentPickerDelegate {
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return sections[section]
+    }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        guard section == 2 else { return nil }
+        return NSLocalizedString("consolinotes is an independent fork of FSNotes. Use this project's issue tracker for support with this fork.", comment: "Fork attribution in Settings")
     }
     
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -257,13 +262,13 @@ class SettingsViewController: UITableViewController, UIDocumentPickerDelegate {
 
             switch indexPath.row {
             case 0x00:
-                url = URL(string: "https://github.com/glushchenko/fsnotes/issues")
+                url = URL(string: "https://github.com/sebiimaks/consolinotes/issues")
                 break
             case 0x01:
-                url = URL(string: "https://fsnot.es")
+                url = URL(string: "https://github.com/sebiimaks/consolinotes")
                 break
             case 0x02:
-                url = URL(string: "https://twitter.com/fsnotesapp")
+                url = URL(string: "https://github.com/sebiimaks/consolinotes#readme")
                 break
             case 0x03:
                 lvc = ThanksViewController()

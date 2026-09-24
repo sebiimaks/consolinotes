@@ -9,8 +9,16 @@
 import Cocoa
 
 class MainWindow: NSWindow {
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        let result = super.makeFirstResponder(responder)
+        NotificationCenter.default.post(name: .tuiFirstResponderDidChange, object: self)
+        return result
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
+
+        backgroundColor = TUITheme.background
 
         guard UserDefaults.standard.object(forKey: "NSWindow Frame myMainWindow") == nil else { return }
 

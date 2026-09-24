@@ -70,7 +70,7 @@ extension Project {
         try? FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
 
         // Init
-        let signature = Signature(name: "FSNotes App", email: "support@fsnot.es")
+        let signature = getSign()
         let repository = try repositoryManager.initRepository(at: tempURL, signature: signature)
 
         if isUseWorkTree() {
@@ -189,7 +189,7 @@ extension Project {
     }
 
     public func getSign() -> Signature {
-        return Signature(name: "FSNotes App", email: "support@fsnot.es")
+        return Signature(name: "consolinotes", email: "consolinotes@localhost")
     }
 
     public func commit(message: String? = nil, progress: GitProgress? = nil) throws {
@@ -213,7 +213,7 @@ extension Project {
 
                 let sign = getSign()
                 if lastCommit == nil {
-                    let commitMessage = message ?? "FSNotes Init"
+                    let commitMessage = message ?? "consolinotes Init"
                     _ = try head.createInitialCommit(msg: commitMessage, signature: sign)
                 } else {
                     let commitMessage = message ?? "Usual commit"

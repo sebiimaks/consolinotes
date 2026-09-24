@@ -502,6 +502,18 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             appearance = "darkmode"
         }
 #endif
+
+        // The in-app preview on macOS matches the consolinotes window; published pages and prints keep the stock look.
+        var theme = String()
+#if os(OSX)
+        if !isWeb && archivePath == nil && print == false {
+            theme = "consolinotes"
+        }
+#endif
+        let themeCss = theme.isEmpty ? "" : "<link charset=\"utf-8\" href=\"{WEB_PATH}\(theme).css\" rel=\"stylesheet\">"
+
+        // Footer credit on published pages.
+        let poweredBy = "Published with <a href=\"https://github.com/sebiimaks/consolinotes\" target=\"_blank\">consolinotes</a>, an independent fork of <a href=\"https://github.com/glushchenko/fsnotes\" target=\"_blank\">FSNotes</a>"
         
         if webPath.count > 0 {
              htmlString = """
@@ -609,7 +621,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 <article>\(htmlString)</article>
                 
                 <footer>
-                    <span class="footer__span">Powered by <a href="https://fsnot.es" target="_blank">FSNotes App</a> <img class="logo" src="https://fsnot.es/img/icon.webp" style="margin: 0 0 -10px 0;"></span>
+                    <span class="footer__span">\(poweredBy)</span>
                     <a class="share-button" href="\(archivePath!)" style="float: right; text-decoration: none;">
                         <span class="label" style="vertical-align: middle;">Download</span>
                         <span style="display: inline-block; height: 22px; width: 22px; vertical-align: middle;">
@@ -630,6 +642,8 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         template = template
             .replacingOccurrences(of: "{TITLE}", with: title)
             .replacingOccurrences(of: "{INLINE_CSS}", with: inlineCss)
+            .replacingOccurrences(of: "{THEME_CSS}", with: themeCss)
+            .replacingOccurrences(of: "{FSNOTES_THEME}", with: theme)
             .replacingOccurrences(of: "{MATH_JAX_JS}", with: MPreviewView.getMathJaxJS())
             .replacingOccurrences(of: "{FSNOTES_APPEARANCE}", with: appearance)
             .replacingOccurrences(of: "{FSNOTES_PLATFORM}", with: platform)

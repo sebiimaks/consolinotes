@@ -6,8 +6,8 @@ Shortcut: `cmd + 1-6`
 
 ## Links
 
-[Test](/Users/oleksandr/Downloads/) 
-[Test](</Users/oleksandr/Downloads/test test.jpg>) 
+[consolinotes documentation](https://github.com/sebiimaks/consolinotes#readme)
+[Local attachment](assets/802AA00C-DF96-4EE3-B884-E0929BD066EC.png)
 
 ## Images
 

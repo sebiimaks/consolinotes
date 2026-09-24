@@ -74,6 +74,8 @@ struct SFTPUploader {
 
                 let sftp = try ssh.openSftp()
 
+                try WebPublishingLicenses.upload(using: sftp, to: sftpPath)
+
                 // Upload index.html
                 let remoteIndex = remoteDir + "index.html"
                 _ = try? ssh.execute("rm -f \(remoteIndex)")

@@ -32,6 +32,8 @@ class PreferencesWebViewController: NSViewController, NSTextFieldDelegate {
         }
         
         publishFSNotes.state = UserDefaultsManagement.customWebServer ? .off : .on
+        publishFSNotes.title = NSLocalizedString("FSNotes (third party)", comment: "External publishing service, not operated by consolinotes")
+        publishFSNotes.toolTip = NSLocalizedString("This external FSNotes service is not operated by consolinotes. Availability is controlled by its operator.", comment: "External publishing service")
         publishCustom.state = UserDefaultsManagement.customWebServer ? .on : .off
         
         if !UserDefaultsManagement.customWebServer {
@@ -164,7 +166,6 @@ class PreferencesWebViewController: NSViewController, NSTextFieldDelegate {
         let localJsDir = bundleResourceURL.appendingPathComponent("js", isDirectory: true)
         let localFontsDir = bundleResourceURL.appendingPathComponent("fonts", isDirectory: true)
         let localCssFile = bundleResourceURL.appendingPathComponent("main.css")
-        
         let alert = NSAlert()
 
         do {
@@ -191,6 +192,10 @@ class PreferencesWebViewController: NSViewController, NSTextFieldDelegate {
             let filePerm = FilePermissions(owner: permissions, group: permissions, others: permissions)
             
             let sftp = try ssh.openSftp()
+
+            // Publish the licence texts before the assets they accompany. A
+            // failed notice upload must stop publication rather than be ignored.
+            try WebPublishingLicenses.upload(using: sftp, to: remoteDir, permissions: filePerm)
             
             for file in files {
                 let localURL = localJsDir.appendingPathComponent(file)

@@ -254,7 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(lock)
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: NSLocalizedString("Quit FSNotes", comment: ""), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: NSLocalizedString("Quit consolinotes", comment: ""), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         menu.delegate = self
         statusItem?.menu = menu
@@ -302,15 +302,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     @IBAction func openHelp(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/glushchenko/fsnotes/wiki")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/sebiimaks/consolinotes#readme")!)
     }
 
     @IBAction func openBugReports(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/glushchenko/fsnotes/issues/new?template=bug_report.yml")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/sebiimaks/consolinotes/issues/new")!)
     }
 
     @IBAction func openSite(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://fsnot.es")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/sebiimaks/consolinotes")!)
     }
     
     @IBAction func openPreferences(_ sender: Any?) {
@@ -397,7 +397,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let local = UserDefaultsManagement.localDocumentsContainer,
             let iCloudDrive = UserDefaultsManagement.iCloudDocumentsContainer
         {
-            let message = NSLocalizedString("We are detect that you are install FSNotes from Mac App Store with default storage in iCloud Drive, do you want to move old database in iCloud Drive?", comment: "")
+            let message = NSLocalizedString("We are detect that you are install consolinotes from Mac App Store with default storage in iCloud Drive, do you want to move old database in iCloud Drive?", comment: "")
 
             promptToMoveDatabase(from: local, to: iCloudDrive, messageText: message)
         }

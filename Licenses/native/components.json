@@ -1,0 +1,42 @@
+[
+  {
+    "name": "cmark-gfm",
+    "version": "0.29.0.gfm.4",
+    "license": "BSD-2-Clause; incorporated MIT components",
+    "source": "https://github.com/github/cmark-gfm/blob/master/COPYING",
+    "file": "Licenses/native/cmark-gfm.txt",
+    "notes": "Includes the upstream COPYING notices for Houdini, GitHub buffer/chunk code and utf8proc incorporated into the bundled C source. Notices for upstream tests and specification apply only to those files; the specification is not part of the app library."
+  },
+  {
+    "name": "libssh2",
+    "version": "1.11.0",
+    "license": "BSD-3-Clause",
+    "source": "https://raw.githubusercontent.com/libssh2/libssh2/libssh2-1.11.0/COPYING",
+    "file": "Licenses/native/libssh2.txt",
+    "notes": "Full COPYING copyright-holder block for 1.11.0. The earlier header-only block was incomplete."
+  },
+  {
+    "name": "ImageScrollView",
+    "version": "bundled 2016-derived source",
+    "license": "MIT",
+    "source": "https://github.com/huynguyencong/ImageScrollView/blob/master/LICENSE",
+    "file": "Licenses/native/ImageScrollView.txt",
+    "used_for": "iOS image viewer"
+  },
+  {
+    "name": "Apple GenericKeychain",
+    "version": "4.0 (2016)",
+    "license": "Apple sample-code licence",
+    "source": "https://developer.apple.com/library/archive/samplecode/GenericKeychain/Listings/LICENSE_txt.html",
+    "file": "Licenses/native/Apple-GenericKeychain.txt",
+    "notes": "KeychainConfiguration.swift and KeychainPasswordItem.swift are adapted from this sample. The original Apple licence is reproduced below; these files are not relicensed by the fork under MIT."
+  },
+  {
+    "name": "Git2Swift",
+    "version": "bundled 2016-derived source",
+    "license": "Apache-2.0",
+    "source": "https://github.com/damicreabox/Git2Swift",
+    "file": "Licenses/native/Git2Swift.txt",
+    "notes": "The source files under FSNotesCore/Git retain their Creabox/Damien Giron copyright and authorship headers. They were adapted for FSNotes and are carried by consolinotes. This component is distinct from the separately listed swift-git package."
+  }
+]

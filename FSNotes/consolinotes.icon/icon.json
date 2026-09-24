@@ -1,0 +1,136 @@
+{
+  "fill": {
+    "automatic-gradient": "srgb:0.10980,0.11765,0.15686,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "fill": {
+            "solid": "srgb:0.61961,0.80784,0.41569,1.00000"
+          },
+          "image-name": "cursor5.svg",
+          "name": "cursor5",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "glass": true
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.59216,0.61961,0.71765,1.00000"
+          },
+          "image-name": "bar4.svg",
+          "name": "bar4",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.59216,0.61961,0.71765,1.00000"
+          },
+          "image-name": "bar3.svg",
+          "name": "bar3",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.49020,0.81176,1.00000,1.00000"
+          },
+          "image-name": "bar2.svg",
+          "name": "bar2",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.78824,0.80784,0.86275,1.00000"
+          },
+          "image-name": "bar1.svg",
+          "name": "bar1",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.47843,0.63529,0.96863,1.00000"
+          },
+          "image-name": "chevron0.svg",
+          "name": "chevron0",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "glass": true
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.47843,0.63529,0.96863,1.00000"
+          },
+          "image-name": "notch.svg",
+          "name": "notch",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill": {
+            "solid": "srgb:0.27843,0.30196,0.40000,1.00000"
+          },
+          "image-name": "frame.svg",
+          "name": "frame",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

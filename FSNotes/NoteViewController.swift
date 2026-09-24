@@ -40,7 +40,10 @@ class NoteViewController: EditorViewController, NSWindowDelegate {
         vcEditorScrollView = editorScrollView
         
         editor.updateTextContainerInset()
-        
+
+        ViewController.styleTUIChips(preview: previewButton, lock: lockUnlockButton, share: shareButton)
+        titleLabel.font = TUITheme.font(ofSize: 13, weight: .semibold)
+
         super.initView()
     }
     

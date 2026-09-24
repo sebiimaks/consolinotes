@@ -10,7 +10,15 @@
 [[8. Containers]]
 [[9. GFM Markdown]]
 
-Official site: https://fsnot.es
-Issues: https://github.com/glushchenko/fsnotes/issues
-Wiki: https://github.com/glushchenko/fsnotes/wiki
-Announces: https://twitter.com/fsnotesapp
+## consolinotes
+
+[Project and source code](https://github.com/sebiimaks/consolinotes)
+[Documentation](https://github.com/sebiimaks/consolinotes#readme)
+[Support and issue reports](https://github.com/sebiimaks/consolinotes/issues)
+
+## Original FSNotes references
+
+[Original FSNotes project](https://github.com/glushchenko/fsnotes)
+[Original FSNotes wiki](https://github.com/glushchenko/fsnotes/wiki)
+
+The upstream wiki documents features inherited from FSNotes. It may describe the original interface; use the consolinotes issue tracker for this fork's support.

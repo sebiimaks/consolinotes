@@ -156,7 +156,12 @@ extension UserDefaultsManagement {
 
     static var noteFont: NSFont {
         get {
+            // System fonts have private names (".AppleSystemUIFont…") that NSFont(name:) can't load.
             if let name = fontName, name.starts(with: ".") {
+                if name.contains("Monospaced") {
+                    return TUITheme.font(ofSize: CGFloat(self.fontSize))
+                }
+
                 return NSFont.systemFont(ofSize: CGFloat(self.fontSize))
             }
 
@@ -164,7 +169,7 @@ extension UserDefaultsManagement {
                 return font
             }
 
-            return NSFont.systemFont(ofSize: CGFloat(self.fontSize))
+            return TUITheme.font(ofSize: CGFloat(self.fontSize))
         }
         set {
             self.fontName = newValue.fontName
@@ -178,7 +183,7 @@ extension UserDefaultsManagement {
                 return font
             }
 
-            return NSFont.systemFont(ofSize: CGFloat(self.codeFontSize))
+            return TUITheme.font(ofSize: CGFloat(self.codeFontSize))
         }
         set {
             self.codeFontName = newValue.familyName ?? "Source Code Pro"

@@ -1,6 +1,6 @@
 # 5. Tags and subtags
 
-FSNotes version 4 brings an amazing inline tags system. Tag notes simply by prepending a word with a hash (#). Like this: #hello. Or, subtag them like this: #hello/world. How deep can you sub-tag your notes? Well, #unlimited/sub/tags. Tags auto-complete, too. Type a hash and the first character for your tag and:
+Tag notes by prepending a word with a hash (#). Like this: #hello. Or, subtag them like this: #hello/world. How deep can you sub-tag your notes? Well, #unlimited/sub/tags. Tags auto-complete, too. Type a hash and the first character for your tag and:
 
 ![](assets/1E0E8278-8C5B-469E-B773-E6773BAEBD39.png)
 

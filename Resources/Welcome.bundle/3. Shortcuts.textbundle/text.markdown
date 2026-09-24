@@ -1,6 +1,6 @@
 # 3. Shortcuts
 
-FSNotes respects mouseless usage, it is shortcuts friendly app. 
+consolinotes supports keyboard shortcuts throughout the app.
 
 The most important combination you must learn:
 

@@ -481,7 +481,7 @@ public class Project: NSObject {
             return "Trash"
         }
         
-        return "FSNotes › \(label)"
+        return "consolinotes › \(label)"
     }
 
     public func getRelativePath() -> String? {

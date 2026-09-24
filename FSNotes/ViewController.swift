@@ -118,11 +118,7 @@ class ViewController: EditorViewController,
                     guard self?.titleLabel.isEnabled == false || self?.titleLabel.isEditable == false else { return }
                     
                     if let note = self?.editor.note {
-                        if note.isEncryptedAndLocked() {
-                            self?.lockUnlock.image = NSImage(named: NSImage.lockLockedTemplateName)
-                        } else {
-                            self?.lockUnlock.image = NSImage(named: NSImage.lockUnlockedTemplateName)
-                        }
+                        self?.lockUnlock.image = TUITheme.lockChip(encrypted: note.isEncrypted(), locked: note.isEncryptedAndLocked())
                     }
 
                     self?.lockUnlock.isHidden = (self?.editor.note == nil)
@@ -146,7 +142,14 @@ class ViewController: EditorViewController,
     @IBOutlet weak var counter: NSTextField!
     @IBOutlet weak var notesCounterViewHeight: NSLayoutConstraint!
     @IBOutlet weak var notesCounter: NSTextField!
-    
+
+    // Modern TUI chrome, created in configureTUI()
+    var tuiSidebarPane: TUIPaneFrameView?
+    var tuiNotesPane: TUIPaneFrameView?
+    var tuiEditorPane: TUIPaneFrameView?
+    var tuiTitleStrip: TUITitleStrip?
+    var tuiStatusBar: TUIStatusBar?
+
     // MARK: - Overrides
     
     override func viewDidLoad() {
@@ -321,7 +324,6 @@ class ViewController: EditorViewController,
         self.sidebarOutlineView.reloadData()
 
         sidebarOutlineView.selectionHighlightStyle = .regular
-        sidebarOutlineView.backgroundColor = .windowBackgroundColor
 
         self.sidebarSplitView.autosaveName = "SidebarSplitView"
         self.splitView.autosaveName = "EditorSplitView"
@@ -371,6 +373,7 @@ class ViewController: EditorViewController,
             object: nil
         )
 
+        configureTUI()
     }
 
     public func restoreSidebar() {
@@ -435,10 +438,6 @@ class ViewController: EditorViewController,
     }
 
     private func configureEditor() {
-        self.editor?.linkTextAttributes = [
-            .foregroundColor:  NSColor.init(named: "link")!
-        ]
-
         self.editor.usesFindBar = true
         self.editor.isIncrementalSearchingEnabled = true
 
@@ -1309,6 +1308,7 @@ class ViewController: EditorViewController,
 
         guard let note = note else {
             self.counter.stringValue = String()
+            updateTUIEditorPane(note: nil, counts: nil)
             return
         }
 
@@ -1336,6 +1336,7 @@ class ViewController: EditorViewController,
             
             DispatchQueue.main.async {
                 self?.counter.stringValue = title
+                self?.updateTUIEditorPane(note: note, counts: title)
             }
         }
             
@@ -1353,6 +1354,7 @@ class ViewController: EditorViewController,
         }
         
         notesCounter.stringValue = "N: \(i)"
+        updateTUIStatus()
     }
     
     func getSidebarType() -> SidebarItemType? {
@@ -1803,18 +1805,9 @@ class ViewController: EditorViewController,
     }
     
     func checkSidebarConstraint() {
-        if sidebarSplitView.subviews[0].frame.width > 50 {
-            searchTopConstraint.constant = 8
-            return
-        }
-        
-        if UserDefaultsManagement.hideSidebarTable || sidebarSplitView.subviews[0].frame.width < 50 {
-            
-            searchTopConstraint.constant = CGFloat(25)
-            return
-        }
-        
-        searchTopConstraint.constant = 8
+        // The traffic lights sit on the TUI title strip, so the search field no longer
+        // needs to move down when the sidebar is hidden.
+        searchTopConstraint.constant = tuiContentTop
     }
             
     @IBAction func sidebarItemVisibility(_ sender: NSMenuItem) {

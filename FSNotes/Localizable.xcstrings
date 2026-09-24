@@ -10794,114 +10794,114 @@
         }
       }
     },
-    "Quit FSNotes" : {
+    "Quit consolinotes" : {
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اغلاق FSNotes"
+            "value" : "اغلاق consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ukončit FSNotes"
+            "value" : "Ukončit consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes beenden"
+            "value" : "consolinotes beenden"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Salir de FSNotes"
+            "value" : "Salir de consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quitter FSNotes"
+            "value" : "Quitter consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "סיים את FSNotes"
+            "value" : "סיים את consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes बंद करें"
+            "value" : "consolinotes बंद करें"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esci da FSNotes"
+            "value" : "Esci da consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesを終了"
+            "value" : "consolinotesを終了"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes 종료"
+            "value" : "consolinotes 종료"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stop FSNotes"
+            "value" : "Stop consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sair do FSNotes"
+            "value" : "Sair do consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sair do FSNotes"
+            "value" : "Sair do consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выйти из FSNotes"
+            "value" : "Выйти из consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes'tan çıkın"
+            "value" : "consolinotes'tan çıkın"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Завершити роботу FSNotes"
+            "value" : "Завершити роботу consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退出FSNotes"
+            "value" : "退出consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結束 FSNotes"
+            "value" : "結束 consolinotes"
           }
         }
       }
@@ -15139,120 +15139,120 @@
         }
       }
     },
-    "We are detect that you are install FSNotes from Mac App Store with default storage in iCloud Drive, do you want to move old database in iCloud Drive?" : {
+    "We are detect that you are install consolinotes from Mac App Store with default storage in iCloud Drive, do you want to move old database in iCloud Drive?" : {
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اكتشفنا أنك تقوم بتثبيت FSNotes من Mac App Store مع التخزين الافتراضي في iCloud Drive ، هل تريد نقل قاعدة البيانات القديمة في iCloud Drive؟"
+            "value" : "اكتشفنا أنك تقوم بتثبيت consolinotes من Mac App Store مع التخزين الافتراضي في iCloud Drive ، هل تريد نقل قاعدة البيانات القديمة في iCloud Drive؟"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detekovali jsme, že jste nainstalovali FSNotes z Mac App Storu s výchozím úložištěm na iCloud Drive, chcete přesunout starou databázi na iCloud Drive?"
+            "value" : "Detekovali jsme, že jste nainstalovali consolinotes z Mac App Storu s výchozím úložištěm na iCloud Drive, chcete přesunout starou databázi na iCloud Drive?"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir stellen fest, dass Sie FSNotes aus dem Mac App Store mit Standardspeicher in iCloud Drive installiert haben. Möchten Sie die alte Datenbank in iCloud Drive verschieben?"
+            "value" : "Wir stellen fest, dass Sie consolinotes aus dem Mac App Store mit Standardspeicher in iCloud Drive installiert haben. Möchten Sie die alte Datenbank in iCloud Drive verschieben?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We have detected that you have installed FSNotes from Mac App Store with default storage in iCloud Drive, do you want to move old database into iCloud Drive"
+            "value" : "We have detected that you have installed consolinotes from Mac App Store with default storage in iCloud Drive, do you want to move old database into iCloud Drive"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se ha detectado que la versión de FSNotes instalada es del Mac App Store, con almacenamiento por defecto en iCloud Drive. ¿Quieres mover la base de datos antigua a iCloud Drive?"
+            "value" : "Se ha detectado que la versión de consolinotes instalada es del Mac App Store, con almacenamiento por defecto en iCloud Drive. ¿Quieres mover la base de datos antigua a iCloud Drive?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nous détectons que vous installez FSNotes depuis le Mac App Store avec le stockage par défaut dans iCloud Drive, voulez-vous déplacer l'ancienne base de données dans iCloud Drive ?"
+            "value" : "Nous détectons que vous installez consolinotes depuis le Mac App Store avec le stockage par défaut dans iCloud Drive, voulez-vous déplacer l'ancienne base de données dans iCloud Drive ?"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "שמנו לב שהתקנת FSNotes מה-App Store עם אחסון ב-iCloud Drive. האם ברצונך להעביר את המאגר הקודם ל-iCloud Drive?"
+            "value" : "שמנו לב שהתקנת consolinotes מה-App Store עם אחסון ב-iCloud Drive. האם ברצונך להעביר את המאגר הקודם ל-iCloud Drive?"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "हमने पाया है कि आपने iCloud ड्राइव में डिफ़ॉल्ट स्टोरेज के साथ Mac App Store से FSNotes इंस्टॉल किया है, क्या आप पुराने डेटाबेस को iCloud ड्राइव में ले जाना चाहते हैं?"
+            "value" : "हमने पाया है कि आपने iCloud ड्राइव में डिफ़ॉल्ट स्टोरेज के साथ Mac App Store से consolinotes इंस्टॉल किया है, क्या आप पुराने डेटाबेस को iCloud ड्राइव में ले जाना चाहते हैं?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abbiamo rilevato che stai installando FSNotes dal Mac App Store con l'archiviazione predefinita in iCloud Drive, vuoi spostare il vecchio database in iCloud Drive?"
+            "value" : "Abbiamo rilevato che stai installando consolinotes dal Mac App Store con l'archiviazione predefinita in iCloud Drive, vuoi spostare il vecchio database in iCloud Drive?"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesをMac App Storeからインストールし、iCloud Driveにデフォルトで保存していることがわかりますが、iCloud Driveにある古いデータベースを移動しますか？"
+            "value" : "consolinotesをMac App Storeからインストールし、iCloud Driveにデフォルトで保存していることがわかりますが、iCloud Driveにある古いデータベースを移動しますか？"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud Drive에 기본 저장 공간이 있는 Mac App Store에서 FSNotes를 설치한 것으로 감지되었습니다. iCloud Drive에서 이전 데이터베이스를 옮기시겠습니까?"
+            "value" : "iCloud Drive에 기본 저장 공간이 있는 Mac App Store에서 consolinotes를 설치한 것으로 감지되었습니다. iCloud Drive에서 이전 데이터베이스를 옮기시겠습니까?"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We hebben gedetecteerd dat je FSNotes hebt geïnstalleerd vanuit Mac App Store met standaard opslag in iCloud Drive. Wil je oude database verplaatsen naar iCloud Drive?"
+            "value" : "We hebben gedetecteerd dat je consolinotes hebt geïnstalleerd vanuit Mac App Store met standaard opslag in iCloud Drive. Wil je oude database verplaatsen naar iCloud Drive?"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detectamos que está instalando o FSNotes da Mac App Store com armazenamento padrão no iCloud Drive, deseja mover o banco de dados antigo no iCloud Drive?"
+            "value" : "Detectamos que está instalando o consolinotes da Mac App Store com armazenamento padrão no iCloud Drive, deseja mover o banco de dados antigo no iCloud Drive?"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detectamos que está a instalar o FSNotes  através da Mac App Store com o armazenamento por defeito no iCloud Drive, deseja mover a base de dados antiga para o iCloud Drive?"
+            "value" : "Detectamos que está a instalar o consolinotes  através da Mac App Store com o armazenamento por defeito no iCloud Drive, deseja mover a base de dados antiga para o iCloud Drive?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Мы обнаружили, что вы установили FSNotes из Mac App Store с хранилищем по умолчанию в iCloud Drive. Хотите ли вы перенести старую базу данных в iCloud  Drive?"
+            "value" : "Мы обнаружили, что вы установили consolinotes из Mac App Store с хранилищем по умолчанию в iCloud Drive. Хотите ли вы перенести старую базу данных в iCloud  Drive?"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes'u Mac App Store'dan iCloud Drive'daki varsayılan depolama alanıyla yüklediğinizi tespit ettik, eski veritabanını iCloud Drive'a taşımak ister misiniz?"
+            "value" : "consolinotes'u Mac App Store'dan iCloud Drive'daki varsayılan depolama alanıyla yüklediğinizi tespit ettik, eski veritabanını iCloud Drive'a taşımak ister misiniz?"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ми виявили, що ви встановили FSNotes з Mac App Store із зберіганням за замовчуванням в iCloud Drive, хочете перенести стару базу даних в iCloud Drive?"
+            "value" : "Ми виявили, що ви встановили consolinotes з Mac App Store із зберіганням за замовчуванням в iCloud Drive, хочете перенести стару базу даних в iCloud Drive?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "我们检测到您是从 Mac App Store 安装的 FSNotes，数据默认存储在 iCloud 云盘，您想移动 iCloud 云盘中的旧数据库吗？"
+            "value" : "我们检测到您是从 Mac App Store 安装的 consolinotes，数据默认存储在 iCloud 云盘，您想移动 iCloud 云盘中的旧数据库吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "我們偵測到您從 Mac App Store 安裝了 FSNotes，且預設儲存空間為 iCloud 雲碟 。您是否要將舊的資料庫移動至iCloud 雲碟 ?"
+            "value" : "我們偵測到您從 Mac App Store 安裝了 consolinotes，且預設儲存空間為 iCloud 雲碟 。您是否要將舊的資料庫移動至iCloud 雲碟 ?"
           }
         }
       }

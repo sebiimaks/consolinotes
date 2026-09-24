@@ -44,7 +44,23 @@ public class NotesTextProcessor {
      Color used to highlight markdown syntax. Default value is light grey.
      */
     public static var syntaxColor = Color.lightGray
-    
+
+    // MARK: Theme hooks
+    // The macOS app sets these for its terminal look. nil keeps the default colours.
+
+    public static var headerColor: PlatformColor? = nil
+    public static var subheaderColor: PlatformColor? = nil
+    public static var listMarkerColor: PlatformColor? = nil
+    public static var boldColor: PlatformColor? = nil
+    public static var strikeColor: PlatformColor? = nil
+    public static var codeSpanColor: PlatformColor? = nil
+    public static var linkColor: PlatformColor? = nil
+    public static var wikiLinkColor: PlatformColor? = nil
+    public static var tagColor: PlatformColor? = nil
+
+    /// Keep headers at the body size (bold and coloured only), so text stays on one grid.
+    public static var uniformHeaderSize = false
+
     public static var yamlOpenerColor = Color.systemRed
     
     public static var codeBackground: PlatformColor {
@@ -348,7 +364,12 @@ public class NotesTextProcessor {
         defer {
             attributedString.endEditing()
         }
-        
+
+        // Runs before endEditing (defers run in reverse order), after every link is known.
+        defer {
+            colorLinks(in: attributedString, range: paragraphRange)
+        }
+
         let string = attributedString.string
         let pointSize = UserDefaultsManagement.noteFont.pointSize
         let codeFont = UserDefaultsManagement.codeFont
@@ -465,7 +486,11 @@ public class NotesTextProcessor {
                 let headerFont = NotesTextProcessor.getHeaderFont(level: 1, baseFont: font, baseFontSize: pointSize)
                 attributedString.addAttribute(.font, value: headerFont, range: subrange)
             }
-            
+
+            if let color = NotesTextProcessor.headerColor {
+                attributedString.addAttribute(.foregroundColor, value: color, range: range)
+            }
+
             NotesTextProcessor.headersSetextUnderlineRegex.matches(string, range: range) { (innerResult) -> Void in
                 guard let innerRange = innerResult?.range else { return }
                 attributedString.addAttribute(.foregroundColor, value: NotesTextProcessor.syntaxColor, range: innerRange)
@@ -483,8 +508,16 @@ public class NotesTextProcessor {
                 guard let font = value as? PlatformFont else { return }
 
                 let headerFont = NotesTextProcessor.getHeaderFont(level: headerLevel, baseFont: font, baseFontSize: pointSize)
-                
+
                 attributedString.addAttribute(.font, value: headerFont, range: subrange)
+            }
+
+            let headerColor = headerLevel == 1
+                ? NotesTextProcessor.headerColor
+                : NotesTextProcessor.subheaderColor ?? NotesTextProcessor.headerColor
+
+            if let color = headerColor {
+                attributedString.addAttribute(.foregroundColor, value: color, range: range)
             }
 
             NotesTextProcessor.headersAtxOpeningRegex.matches(string, range: range) { (innerResult) -> Void in
@@ -512,7 +545,8 @@ public class NotesTextProcessor {
             guard let range = result?.range else { return }
             NotesTextProcessor.listOpeningRegex.matches(string, range: range) { (innerResult) -> Void in
                 guard let innerRange = innerResult?.range else { return }
-                attributedString.addAttribute(.foregroundColor, value: NotesTextProcessor.syntaxColor, range: innerRange)
+                let color = NotesTextProcessor.listMarkerColor ?? NotesTextProcessor.syntaxColor
+                attributedString.addAttribute(.foregroundColor, value: color, range: innerRange)
             }
         }
 
@@ -717,7 +751,11 @@ public class NotesTextProcessor {
             if let font = boldString.attribute(.font, at: 0, effectiveRange: nil) as? Font, font.isItalic {
             } else {
                 addFontTraits([.bold], range: range, attributedString: attributedString)
-                
+
+                if let color = NotesTextProcessor.boldColor {
+                    attributedString.addAttribute(.foregroundColor, value: color, range: range)
+                }
+
                 NotesTextProcessor.strictItalicRegex.matches(string, range: range) { (result) -> Void in
                     guard let range = result?.range else { return }
                     addFontTraits([.italic], range: range, attributedString: attributedString)
@@ -759,7 +797,12 @@ public class NotesTextProcessor {
         NotesTextProcessor.strikeRegex.matches(string, range: paragraphRange) { (result) -> Void in
             guard let range = result?.range else { return }
 
-            attributedString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: range.location + 2, length: range.length - 4))
+            let struckRange = NSRange(location: range.location + 2, length: range.length - 4)
+            attributedString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: struckRange)
+
+            if let color = NotesTextProcessor.strikeColor {
+                attributedString.addAttribute(.foregroundColor, value: color, range: struckRange)
+            }
 
             //attributedString.fixAttributes(in: range)
 
@@ -865,6 +908,10 @@ public class NotesTextProcessor {
 
             attributedString.addAttribute(.backgroundColor, value: NotesTextProcessor.codeSpanBackground, range: range)
 
+            if let color = NotesTextProcessor.codeSpanColor {
+                attributedString.addAttribute(.foregroundColor, value: color, range: range)
+            }
+
             NotesTextProcessor.codeSpanOpeningRegex.matches(string, range: range) { (innerResult) -> Void in
                 guard let innerRange = innerResult?.range else { return }
                 attributedString.addAttribute(.foregroundColor, value: NotesTextProcessor.syntaxColor, range: innerRange)
@@ -878,6 +925,31 @@ public class NotesTextProcessor {
 
     public static func isLink(attributedString: NSAttributedString, range: NSRange) -> Bool {
         return attributedString.attributedSubstring(from: range).attribute(.link, at: 0, effectiveRange: nil) != nil
+    }
+
+    /// Colours web links, [[wikilinks]] and #tags separately when the theme sets their colours.
+    private static func colorLinks(in attributedString: NSMutableAttributedString, range: NSRange) {
+        guard linkColor != nil || wikiLinkColor != nil || tagColor != nil else { return }
+
+        attributedString.enumerateAttribute(.link, in: range) { value, linkRange, _ in
+            guard let value = value,
+                  attributedString.attribute(.attachment, at: linkRange.location, effectiveRange: nil) == nil else { return }
+
+            let target = (value as? URL)?.absoluteString ?? (value as? String) ?? ""
+            let color: PlatformColor?
+
+            if target.hasPrefix("fsnotes://find") {
+                color = wikiLinkColor
+            } else if target.hasPrefix("fsnotes://open/?tag=") {
+                color = tagColor
+            } else {
+                color = linkColor
+            }
+
+            if let color = color {
+                attributedString.addAttribute(.foregroundColor, value: color, range: linkRange)
+            }
+        }
     }
     
     /// Tabs are automatically converted to spaces as part of the transform
@@ -1304,8 +1376,8 @@ public class NotesTextProcessor {
     }
 
     fileprivate static func getHeaderFont(level: Int, baseFont: PlatformFont, baseFontSize: CGFloat) -> PlatformFont {
-        let headerSize: CGFloat
-        
+        var headerSize: CGFloat
+
         switch level {
         case 1: headerSize = baseFontSize * 2.0    // #
         case 2: headerSize = baseFontSize * 1.7    // ##
@@ -1315,7 +1387,11 @@ public class NotesTextProcessor {
         case 6: headerSize = baseFontSize * 1.05   // ######
         default: headerSize = baseFontSize
         }
-        
+
+        if uniformHeaderSize {
+            headerSize = baseFontSize
+        }
+
         let boldTraits: FontTraits = [.bold]
         var fontDescriptor = baseFont.fontDescriptor
             .withSymbolicTraits(boldTraits)

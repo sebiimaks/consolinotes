@@ -145,7 +145,7 @@ class LayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         context.saveGState()
         
         let backgroundColor = NotesTextProcessor.getHighlighter().options.style.backgroundColor.cgColor
-        let borderColor = NSColor.lightGray.cgColor
+        let borderColor = TUITheme.border.cgColor
         
         for codeBlockRange in relevantCodeBlocks {  // ← теперь только релевантные блоки!
             let safeCharRange = codeBlockRange.clamped(to: storageFullRange)
@@ -163,9 +163,8 @@ class LayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
                 .insetBy(dx: -horizontalPadding, dy: 0)
                 .offsetBy(dx: origin.x, dy: origin.y)
             
-            // Round borders
-            let radius: CGFloat = 5.0
-            let path = CGPath(roundedRect: paddedRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            // Square, box-drawn borders
+            let path = CGPath(rect: paddedRect, transform: nil)
             
             context.setFillColor(backgroundColor)
             context.addPath(path)

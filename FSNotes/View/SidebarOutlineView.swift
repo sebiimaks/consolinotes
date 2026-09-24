@@ -455,48 +455,29 @@ class SidebarOutlineView: NSOutlineView,
 
         let cell = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "DataCell"), owner: self) as! SidebarCellView
 
-        cell.icon.contentTintColor = NSColor.controlAccentColor
+        cell.textField?.font = TUITheme.font()
+        cell.textField?.textColor = TUITheme.text
+        cell.icon.isHidden = false
+        cell.label.frame.origin.x = 25
 
         if let tag = item as? FSTag {
             cell.type = .Tag
-
-            let image = NSImage(named: "sidebar_tag")
-            image?.isTemplate = true
-
-            cell.icon.image = image
-            cell.icon.isHidden = false
-            cell.label.frame.origin.x = 25
+            cell.icon.image = TUITheme.glyph("#", color: TUITheme.green)
             cell.textField?.stringValue = tag.getName()
 
         } else if let project = item as? Project {
 
             if project.isEncrypted {
-                if project.isLocked() {
-                    cell.type = .ProjectEncryptedLocked
-
-                    let image = NSImage(named: "sidebar_project_encrypted_locked")
-                    image?.isTemplate = true
-
-                    cell.icon.image = image
-                } else {
-                    cell.type = .ProjectEncryptedUnlocked
-
-                    let image = NSImage(named: "sidebar_project_encrypted_unlocked")
-                    image?.isTemplate = true
-
-                    cell.icon.image = image
-                }
+                cell.type = project.isLocked() ? .ProjectEncryptedLocked : .ProjectEncryptedUnlocked
+                cell.icon.image = TUITheme.glyph(project.isLocked() ? "◆" : "◇", color: TUITheme.magenta)
             } else {
+                // Folders show only the ▸/▾ disclosure glyph, like a terminal file tree.
                 cell.type = .Project
-
-                let image = NSImage(named: "sidebar_project")
-                image?.isTemplate = true
-
-                cell.icon.image = image
+                cell.icon.image = nil
+                cell.icon.isHidden = true
+                cell.label.frame.origin.x = 4
             }
-            
-            cell.icon.isHidden = false
-            cell.label.frame.origin.x = 25
+
             cell.textField?.stringValue = project.label
 
         } else if let si = item as? SidebarItem {
@@ -504,27 +485,47 @@ class SidebarOutlineView: NSOutlineView,
             
             cell.textField?.stringValue = name
             cell.type = si.type
-
-            if let name = si.type.icon, let image = si.getIcon(name: name) {
-                cell.icon.image = image
-            } else {
-                cell.icon.image = nil
-            }
-
-            cell.icon.isHidden = false
-            cell.label.frame.origin.x = 25
+            cell.icon.image = SidebarOutlineView.tuiGlyph(for: si.type)
 
             if si.type == .Header {
                 let cell = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "HeaderCell"), owner: self) as! SidebarHeaderCellView
 
                 cell.label.frame.origin.x = 2
-                cell.label.stringValue = name
+                cell.label.stringValue = name.uppercased()
+                cell.label.font = TUITheme.font(ofSize: 11, weight: .semibold)
+                cell.label.textColor = TUITheme.dim
 
                 return cell
             }
         }
 
         return cell
+    }
+
+    /// Terminal glyphs for the built-in sidebar lists.
+    private static func tuiGlyph(for type: SidebarItemType) -> NSImage? {
+        switch type {
+        case .All: return TUITheme.glyph("≡", color: TUITheme.accent)
+        case .Inbox: return TUITheme.glyph("↓", color: TUITheme.accent)
+        case .Todo: return TUITheme.glyph("☐", color: TUITheme.accent)
+        case .Untagged: return TUITheme.glyph("∅", color: TUITheme.accent)
+        case .Trash: return TUITheme.glyph("×", color: TUITheme.accent)
+        default: return nil
+        }
+    }
+
+    // Disclosure triangles become ▸ / ▾ text glyphs.
+    override func makeView(withIdentifier identifier: NSUserInterfaceItemIdentifier, owner: Any?) -> NSView? {
+        let view = super.makeView(withIdentifier: identifier, owner: owner)
+
+        if identifier == NSOutlineView.disclosureButtonIdentifier, let button = view as? NSButton {
+            button.image = TUITheme.glyph("▸", color: TUITheme.dim, size: 14, fontSize: 16)
+            button.alternateImage = TUITheme.glyph("▾", color: TUITheme.dim, size: 14, fontSize: 16)
+            button.imageScaling = .scaleNone
+            button.isBordered = false
+        }
+
+        return view
     }
     
     func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
@@ -1501,7 +1502,7 @@ class SidebarOutlineView: NSOutlineView,
             guard i > -1 else { continue }
 
             if let row = self.rowView(atRow: i, makeIfNecessary: false), let cell = row.view(atColumn: 0) as? SidebarCellView {
-                cell.icon.image = NSImage(named: "sidebar_tag")
+                cell.icon.image = TUITheme.glyph("#", color: TUITheme.green)
             }
         }
     }

@@ -1,4 +1,8 @@
-# FSNotes
+# consolinotes
+
+> **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的獨立分支，與 FSNotes 專案及其作者無關，也未獲其認可。它將 macOS 應用程式改為終端機風格，其餘功能與 FSNotes 相同。完整說明、授權條款與第三方聲明請見 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文為 FSNotes 原始說明。
+
+## FSNotes
 
 [English](README.md)
 [简体中文](README_zh_CN.md)

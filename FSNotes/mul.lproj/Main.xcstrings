@@ -2,121 +2,12 @@
   "sourceLanguage" : "en",
   "strings" : {
     "0f7-Za-V0B.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Copyright © 2017-2024 Oleksandr Hlushchenko.\\nAll rights reserved.\"; ObjectID = \"0f7-Za-V0B\"; Note = \"#bc-ignore!\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nVšechna práva vyhrazena."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "कॉपीराइट © 2017-2024 ऑलेक्ज़ेंडर ह्लुशेंको।\nसभी अधिकार सुरक्षित।"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2023 Oleksandr Hlushchenko.\nВсе права защищены."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Telif hakkı © 2017-2024 Oleksandr Hlushchenko.\nHer hakkı saklıdır."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright © 2017-2024 Oleksandr Hlushchenko.\nAll rights reserved."
+      "comment": "Class = \"NSTextFieldCell\"; title = \"Independent fork of FSNotes.\nNot affiliated with or endorsed by the FSNotes project.\nOriginal FSNotes by Oleksandr Hlushchenko and contributors.\"; ObjectID = \"0f7-Za-V0B\"; Independent fork attribution.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Independent fork of FSNotes.\nNot affiliated with or endorsed by the FSNotes project.\nOriginal FSNotes by Oleksandr Hlushchenko and contributors."
           }
         }
       }
@@ -1106,121 +997,121 @@
       }
     },
     "1Xt-HY-uBw.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"FSNotes\"; ObjectID = \"1Xt-HY-uBw\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"consolinotes\"; ObjectID = \"1Xt-HY-uBw\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         }
       }
@@ -3458,121 +3349,121 @@
       }
     },
     "4sb-4s-VLi.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Quit FSNotes\"; ObjectID = \"4sb-4s-VLi\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Quit consolinotes\"; ObjectID = \"4sb-4s-VLi\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "الخروج من FSNotes"
+            "value" : "الخروج من consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ukončit FSNotes"
+            "value" : "Ukončit consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes beenden"
+            "value" : "consolinotes beenden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Quit FSNotes"
+            "value" : "Quit consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Salir de FSNotes"
+            "value" : "Salir de consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quitter FSNotes"
+            "value" : "Quitter consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "סיים FSNotes"
+            "value" : "סיים consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes बंद करें"
+            "value" : "consolinotes बंद करें"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esci da FSNotes"
+            "value" : "Esci da consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesを終了"
+            "value" : "consolinotesを終了"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes 종료"
+            "value" : "consolinotes 종료"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stop FSNotes"
+            "value" : "Stop consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sair do FSNotes"
+            "value" : "Sair do consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sair do FSNotes"
+            "value" : "Sair do consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выход из FSNotes"
+            "value" : "Выход из consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes'tan Çık"
+            "value" : "consolinotes'tan Çık"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Завершити роботу FSNotes"
+            "value" : "Завершити роботу consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退出 FSNotes"
+            "value" : "退出 consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結束 FSNotes"
+            "value" : "結束 consolinotes"
           }
         }
       }
@@ -3584,7 +3475,7 @@
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "cs" : {
@@ -3596,7 +3487,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "en" : {
@@ -3608,19 +3499,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "hi" : {
@@ -3632,25 +3523,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "pt-BR" : {
@@ -3662,7 +3553,7 @@
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ru" : {
@@ -3680,13 +3571,13 @@
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "https://github.com/glushchenko/fsnotes.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "zh-Hant" : {
@@ -3818,121 +3709,121 @@
       }
     },
     "5kV-Vb-QxS.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"About FSNotes\"; ObjectID = \"5kV-Vb-QxS\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"About consolinotes\"; ObjectID = \"5kV-Vb-QxS\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حول FSNotes"
+            "value" : "حول consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O aplikaci FSNotes"
+            "value" : "O aplikaci consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Über FSNotes"
+            "value" : "Über consolinotes"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "About FSNotes"
+            "value" : "About consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acerca de FSNotes"
+            "value" : "Acerca de consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A propos de FSNotes"
+            "value" : "A propos de consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "אודות FSNotes"
+            "value" : "אודות consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes के बारे में"
+            "value" : "consolinotes के बारे में"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Informazioni su FSNotes"
+            "value" : "Informazioni su consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesについて"
+            "value" : "consolinotesについて"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes에 관하여"
+            "value" : "consolinotes에 관하여"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Over FSNotes"
+            "value" : "Over consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sobre o FSNotes"
+            "value" : "Sobre o consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acerca de FSNotes"
+            "value" : "Acerca de consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Про FSNotes"
+            "value" : "Про consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes Hakkında"
+            "value" : "consolinotes Hakkında"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Про FSNotes"
+            "value" : "Про consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 FSNotes"
+            "value" : "关于 consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關於 FSNotes"
+            "value" : "關於 consolinotes"
           }
         }
       }
@@ -6333,121 +6224,12 @@
       }
     },
     "13t-eQ-kOr.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Translators:\"; ObjectID = \"13t-eQ-kOr\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "مترجمين:"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Překladatelé"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Translators:"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Translators:"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traductores:"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traducteurs :"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "מתרגמים‫:"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "अनुवादक:"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traduttori:"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "翻訳者:"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "번역자:"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vertalers:"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tradutores:"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tradutores:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переводчики:"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tercümanlar:"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перекладачі:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "翻译:"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "翻譯貢獻者："
+      "comment": "Class = \"NSTextFieldCell\"; title = \"Original FSNotes translations:\"; ObjectID = \"13t-eQ-kOr\"; Independent fork attribution.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original FSNotes translations:"
           }
         }
       }
@@ -10107,7 +9889,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sitio web de FSNotes"
+            "value" : "Sitio web de consolinotes"
           }
         },
         "fr" : {
@@ -12945,7 +12727,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "语言 (需要重启FSNotes):"
+            "value" : "语言 (需要重启consolinotes):"
           }
         },
         "zh-Hant" : {
@@ -15083,241 +14865,132 @@
       }
     },
     "FKE-Sm-Kum.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"FSNotes Help\"; ObjectID = \"FKE-Sm-Kum\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"consolinotes Help\"; ObjectID = \"FKE-Sm-Kum\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes مساعدة"
+            "value" : "consolinotes مساعدة"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nápověda pro FSNotes"
+            "value" : "Nápověda pro consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes Hilfe"
+            "value" : "consolinotes Hilfe"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FSNotes Help"
+            "value" : "consolinotes Help"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ayuda de FSNotes"
+            "value" : "Ayuda de consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aide de FSNotes"
+            "value" : "Aide de consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "עזרה בנושא FSNotes"
+            "value" : "עזרה בנושא consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes सहायता"
+            "value" : "consolinotes सहायता"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guida di FSNotes"
+            "value" : "Guida di consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesヘルプ"
+            "value" : "consolinotesヘルプ"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes 도움말"
+            "value" : "consolinotes 도움말"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes-hulp"
+            "value" : "consolinotes-hulp"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajuda do FSNotes"
+            "value" : "Ajuda do consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajuda do FSNotes"
+            "value" : "Ajuda do consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Помощь FSNotes"
+            "value" : "Помощь consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes Yardım"
+            "value" : "consolinotes Yardım"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Допомога FSNotes "
+            "value" : "Допомога consolinotes "
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes帮助"
+            "value" : "consolinotes帮助"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes 輔助說明"
+            "value" : "consolinotes 輔助說明"
           }
         }
       }
     },
     "FKf-Ph-LiA.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Icons design:\"; ObjectID = \"FKf-Ph-LiA\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تصميم الأيقونات:"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design ikon:"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Icons design:"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Icons design:"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Icons design:"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design des icônes :"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "עיצוב צלמיות:"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "चिह्न डिजाइन:"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design icone:"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アイコンデザイン:"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "아이콘 디자인:"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pictogrammen ontwerp:"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design dos ícones:"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design dos ícones:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дизайн иконки:"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simge tasarımı:"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дизайн іконок:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图标设计:"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖示設計："
+      "comment": "Class = \"NSTextFieldCell\"; title = \"Original FSNotes icon design:\"; ObjectID = \"FKf-Ph-LiA\"; Independent fork attribution.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original FSNotes icon design:"
           }
         }
       }
@@ -17963,121 +17636,121 @@
       }
     },
     "gWb-su-EdI.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"FSNotes\"; ObjectID = \"gWb-su-EdI\"; Note = \"#bc-ignore!\";",
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"consolinotes\"; ObjectID = \"gWb-su-EdI\"; Note = \"#bc-ignore!\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         }
       }
@@ -21083,121 +20756,121 @@
       }
     },
     "IQv-IB-iLA.title" : {
-      "comment" : "Class = \"NSWindow\"; title = \"FSNotes\"; ObjectID = \"IQv-IB-iLA\";",
+      "comment" : "Class = \"NSWindow\"; title = \"consolinotes\"; ObjectID = \"IQv-IB-iLA\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         }
       }
@@ -21803,121 +21476,12 @@
       }
     },
     "jQ1-6K-9ar.title" : {
-      "comment" : "Class = \"NSButtonCell\"; title = \"🔗fsnotes/contributors\"; ObjectID = \"jQ1-6K-9ar\"; Note = \"#bc-ignore!\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/katkıda bulunanlar"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔗fsnotes/contributors"
+      "comment": "Class = \"NSButtonCell\"; title = \"consolinotes on GitHub\"; ObjectID = \"jQ1-6K-9ar\"; Independent fork attribution.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "consolinotes on GitHub"
           }
         }
       }
@@ -24774,91 +24338,91 @@
       }
     },
     "M29-fW-FJa.title" : {
-      "comment" : "Class = \"NSButtonCell\"; title = \"Hide FSNotes when activating another application\"; ObjectID = \"M29-fW-FJa\";",
+      "comment" : "Class = \"NSButtonCell\"; title = \"Hide consolinotes when activating another application\"; ObjectID = \"M29-fW-FJa\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "إخفاء FSNotes عند تفعيل تطبيق آخر"
+            "value" : "إخفاء consolinotes عند تفعيل تطبيق آخر"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skrýt FSNotes při aktivaci jiné aplikace"
+            "value" : "Skrýt consolinotes při aktivaci jiné aplikace"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes ausblenden, wenn andere Anwendung aktiv"
+            "value" : "consolinotes ausblenden, wenn andere Anwendung aktiv"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hide FSNotes when activating another application"
+            "value" : "Hide consolinotes when activating another application"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar FSNotes cuando no sea la aplicación activa"
+            "value" : "Ocultar consolinotes cuando no sea la aplicación activa"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masquer FSNotes à l'activation d'une autre app"
+            "value" : "Masquer consolinotes à l'activation d'une autre app"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "הסתר את FSNotes כשמפעילים אפליקציה אחרת"
+            "value" : "הסתר את consolinotes כשמפעילים אפליקציה אחרת"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "किसी अन्य एप्लिकेशन को सक्रिय करते समय FSNotes छिपाएँ"
+            "value" : "किसी अन्य एप्लिकेशन को सक्रिय करते समय consolinotes छिपाएँ"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nascondi FSNotes quando usi altre app"
+            "value" : "Nascondi consolinotes quando usi altre app"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "他のアプリケーションがアクティブ時にFSNotesを非表示にする"
+            "value" : "他のアプリケーションがアクティブ時にconsolinotesを非表示にする"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "다른 애플리케이션 활성화 시 FSNotes 숨기기"
+            "value" : "다른 애플리케이션 활성화 시 consolinotes 숨기기"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verberg FSNotes bij het activeren van een andere applicatie"
+            "value" : "Verberg consolinotes bij het activeren van een andere applicatie"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar o FSNotes ao ativar outro aplicativo"
+            "value" : "Ocultar o consolinotes ao ativar outro aplicativo"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar FSNotes quando há outra aplicação activa"
+            "value" : "Ocultar consolinotes quando há outra aplicação activa"
           }
         },
         "ru" : {
@@ -24870,7 +24434,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Başka bir uygulamayı etkinleştirirken FSNotes'u gizle"
+            "value" : "Başka bir uygulamayı etkinleştirirken consolinotes'u gizle"
           }
         },
         "uk" : {
@@ -24882,13 +24446,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "激活其他应用时自动隐藏 FSNotes"
+            "value" : "激活其他应用时自动隐藏 consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "啟動其他應用程式時隱藏 FSNotes"
+            "value" : "啟動其他應用程式時隱藏 consolinotes"
           }
         }
       }
@@ -28159,121 +27723,121 @@
       }
     },
     "Olw-nP-bQN.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Hide FSNotes\"; ObjectID = \"Olw-nP-bQN\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Hide consolinotes\"; ObjectID = \"Olw-nP-bQN\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اخفاء FSNotes"
+            "value" : "اخفاء consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skrýt FSNotes"
+            "value" : "Skrýt consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes ausblenden"
+            "value" : "consolinotes ausblenden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hide FSNotes"
+            "value" : "Hide consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar FSNotes"
+            "value" : "Ocultar consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masquer FSNotes"
+            "value" : "Masquer consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "הסתר את FSNotes"
+            "value" : "הסתר את consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes छिपाएं"
+            "value" : "consolinotes छिपाएं"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nascondi FSNotes"
+            "value" : "Nascondi consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotesを非表示"
+            "value" : "consolinotesを非表示"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes 숨기기"
+            "value" : "consolinotes 숨기기"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbergen FSNotes"
+            "value" : "Verbergen consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar o FSNotes"
+            "value" : "Ocultar o consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar FSNotes"
+            "value" : "Ocultar consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Спрятать FSNotes"
+            "value" : "Спрятать consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes'u gizle"
+            "value" : "consolinotes'u gizle"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сховати FSNotes"
+            "value" : "Сховати consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隐藏 FSNotes"
+            "value" : "隐藏 consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隱藏 FSNotes"
+            "value" : "隱藏 consolinotes"
           }
         }
       }
@@ -29479,121 +29043,121 @@
       }
     },
     "PJ2-3m-IGm.placeholderString" : {
-      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"git@github.com:glushchenko/example.git\"; ObjectID = \"PJ2-3m-IGm\";",
+      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"git@github.com:username/repo.git\"; ObjectID = \"PJ2-3m-IGm\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/priklad.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/ornek.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "git@github.com:glushchenko/example.git"
+            "value" : "git@github.com:username/repo.git"
           }
         }
       }
@@ -34934,121 +34498,121 @@
       }
     },
     "sWS-bo-99f.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Dylan Seeger — https://www.lovably.com\\nOlena Hlushcneko\"; ObjectID = \"sWS-bo-99f\"; Note = \"#bc-ignore!\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+      "comment": "Class = \"NSTextFieldCell\"; title = \"Dylan Seeger — https://www.lovably.com\\nOlena Hlushchenko\"; ObjectID = \"sWS-bo-99f\"; Note = \"#bc-ignore!\";",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "ar-IQ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "nl-NL": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dylan Seeger — https://www.lovably.com\nOlena Hlushcneko"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dylan Seeger — https://www.lovably.com\nOlena Hlushchenko"
           }
         }
       }
@@ -35529,126 +35093,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外觀："
-          }
-        }
-      }
-    },
-    "TKE-yB-wPs.ibShadowedToolTip" : {
-      "comment" : "Class = \"NSImageView\"; ibShadowedToolTip = \"In memory of Mars. ? - 25.08.2022\"; ObjectID = \"TKE-yB-wPs\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Věnování: Mars. ?–25.08.2022"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मंगल की याद में. ? - 25.08.2022"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Em memória de Mars. ? - 25.08.2022"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В память о Марсе. ? - 25.08.2022"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mars'ın anısına. ? - 25.08.2022"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In memory of Mars. ? - 25.08.2022"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "紀念 Mars。? - 2022.08.25"
           }
         }
       }
@@ -37166,121 +36610,121 @@
       }
     },
     "uQy-DD-JDr.title" : {
-      "comment" : "Class = \"NSMenu\"; title = \"FSNotes\"; ObjectID = \"uQy-DD-JDr\";",
+      "comment" : "Class = \"NSMenu\"; title = \"consolinotes\"; ObjectID = \"uQy-DD-JDr\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FSNotes"
+            "value" : "consolinotes"
           }
         }
       }

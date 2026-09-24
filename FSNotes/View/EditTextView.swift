@@ -17,7 +17,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     public var viewDelegate: ViewController?
     
     let storage = Storage.shared()
-    let caretWidth: CGFloat = 2
+    // Invalidation margin for the block caret, which is one character cell wide.
+    let caretWidth: CGFloat = 12
     var downView: MPreviewView?
     
     public var timer: Timer?
@@ -62,86 +63,6 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
 
     //MARK: caret width
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        guard UserDefaultsManagement.inlineTags else { return }
-
-        if #available(OSX 10.16, *) {
-            guard let textStorage = self.textStorage,
-                  let layoutManager = self.layoutManager
-            else { return }
-
-            let fullRange = NSRange(location: 0, length: textStorage.length)
-
-            attributedString().enumerateAttributes(in: fullRange, options: .reverse) { attributes, range, _ in
-                guard range.location >= 0,
-                      range.location + range.length <= textStorage.length else { return }
-                
-                guard attributes.index(forKey: .tag) != nil,
-                      let font = attributes[.font] as? NSFont
-                else { return }
-
-                let tag = attributedString().attributedSubstring(from: range).string
-                let tagAttributes = attributedString().attributes(at: range.location, effectiveRange: nil)
-
-                let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-                
-                let ascent = font.ascender
-                let descent = abs(font.descender)
-                let fontHeight = ascent + descent
-
-                layoutManager.enumerateLineFragments(forGlyphRange: glyphRange) { rect, usedRect, textContainer, lineGlyphRange, stop in
-
-                    let intersectionRange = NSIntersectionRange(glyphRange, lineGlyphRange)
-                    guard intersectionRange.length > 0 else { return }
-                    
-                    var fragmentRect = layoutManager.boundingRect(forGlyphRange: intersectionRange, in: textContainer)
-                    
-                    fragmentRect.origin.x += self.textContainerOrigin.x
-                    fragmentRect.origin.y += self.textContainerOrigin.y
-                    fragmentRect = self.convertToLayer(fragmentRect)
-                    fragmentRect = fragmentRect.integral
-
-                    let verticalInset = max(0, (fragmentRect.height - fontHeight) / 2)
-                    var tagRect = NSRect(
-                        x: fragmentRect.minX,
-                        y: fragmentRect.minY + verticalInset,
-                        width: fragmentRect.width - 3,
-                        height: fontHeight
-                    )
-
-                    let oneCharSize = ("A" as NSString).size(withAttributes: tagAttributes)
-                    tagRect.size.width += oneCharSize.width * 0.25
-                    tagRect = tagRect.integral
-
-                    NSGraphicsContext.saveGraphicsState()
-                    let path = NSBezierPath(roundedRect: tagRect, xRadius: 3, yRadius: 3)
-                    NSColor.tagColor.setFill()
-                    path.fill()
-
-                    let fragmentCharRange = layoutManager.characterRange(forGlyphRange: intersectionRange, actualGlyphRange: nil)
-                    let fragmentText = (tag as NSString).substring(with: NSRange(
-                        location: fragmentCharRange.location - range.location,
-                        length: fragmentCharRange.length
-                    ))
-
-                    var drawAttrs = tagAttributes
-                    drawAttrs[.font] = font
-                    drawAttrs[.foregroundColor] = NSColor.white
-                    drawAttrs.removeValue(forKey: .link)
-                    drawAttrs.removeValue(forKey: .baselineOffset)
-
-                    let baselineOrigin = NSPoint(x: tagRect.minX, y: tagRect.minY + descent - 3)
-
-                    (fragmentText as NSString).draw(at: baselineOrigin, withAttributes: drawAttrs)
-
-                    NSGraphicsContext.restoreGraphicsState()
-                }
-            }
-        }
-    }
-
     public func initTextStorage() {
         let processor = TextStorageProcessor()
         processor.editor = self
@@ -181,7 +102,10 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
                 : UserDefaultsManagement.nonContiguousLayout
 
         layoutManager?.defaultAttachmentScaling = .scaleProportionallyDown
-        
+
+        // Link colours come from the text itself (links, wikilinks and tags differ), so only set the cursor.
+        linkTextAttributes = [.cursor: NSCursor.pointingHand]
+
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = CGFloat(UserDefaultsManagement.editorLineSpacing)
         defaultParagraphStyle = paragraphStyle
@@ -203,7 +127,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
 
     override func drawInsertionPoint(in rect: NSRect, color: NSColor, turnedOn flag: Bool) {
         var newRect = rect
-        newRect.size.width = caretWidth
+        var caretFont = UserDefaultsManagement.noteFont
         
         // Fixes last line height
         
@@ -227,12 +151,14 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
                     fontToUse = UserDefaultsManagement.noteFont
                 }
                 
+                caretFont = fontToUse
                 newRect.size.height = layoutManager.lineHeight(for: fontToUse)
             }
         }
-        
-        let clr = NSColor(red: 0.47, green: 0.53, blue: 0.69, alpha: 1.0)
-        super.drawInsertionPoint(in: newRect, color: clr, turnedOn: flag)
+
+        // Terminal-style block cursor: one character cell, translucent so the character stays readable.
+        newRect.size.width = TUITheme.cellWidth(for: caretFont)
+        super.drawInsertionPoint(in: newRect, color: TUITheme.accent.withAlphaComponent(0.55), turnedOn: flag)
     }
 
     override func updateInsertionPointStateAndRestartTimer(_ restartFlag: Bool) {

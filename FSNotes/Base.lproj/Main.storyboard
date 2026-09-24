@@ -13,11 +13,11 @@
                 <application id="hnw-xV-0zn" sceneMemberID="viewController">
                     <menu key="mainMenu" title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
                         <items>
-                            <menuItem title="FSNotes" id="1Xt-HY-uBw">
+                            <menuItem title="consolinotes" id="1Xt-HY-uBw">
                                 <modifierMask key="keyEquivalentModifierMask"/>
-                                <menu key="submenu" title="FSNotes" systemMenu="apple" identifier="fsnotesMenu" id="uQy-DD-JDr">
+                                <menu key="submenu" title="consolinotes" systemMenu="apple" identifier="fsnotesMenu" id="uQy-DD-JDr">
                                     <items>
-                                        <menuItem title="About FSNotes" image="info.circle" catalog="system" id="5kV-Vb-QxS">
+                                        <menuItem title="About consolinotes" image="info.circle" catalog="system" id="5kV-Vb-QxS">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="showAboutWindow:" target="Ady-hI-5gd" id="N5Z-Au-8xg"/>
@@ -50,7 +50,7 @@ CA
                                             <menu key="submenu" title="Services" systemMenu="services" id="hz9-B4-Xy5"/>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="4je-JR-u6R"/>
-                                        <menuItem title="Hide FSNotes" keyEquivalent="h" id="Olw-nP-bQN">
+                                        <menuItem title="Hide consolinotes" keyEquivalent="h" id="Olw-nP-bQN">
                                             <connections>
                                                 <action selector="hide:" target="Ady-hI-5gd" id="PnN-Uc-m68"/>
                                             </connections>
@@ -68,7 +68,7 @@ CA
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                                        <menuItem title="Quit FSNotes" keyEquivalent="q" id="4sb-4s-VLi">
+                                        <menuItem title="Quit consolinotes" keyEquivalent="q" id="4sb-4s-VLi">
                                             <connections>
                                                 <action selector="terminate:" target="Ady-hI-5gd" id="Te7-pn-YzF"/>
                                             </connections>
@@ -791,7 +791,7 @@ CA
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                                     <items>
-                                        <menuItem title="FSNotes Help" image="questionmark.circle" catalog="system" keyEquivalent="?" id="FKE-Sm-Kum">
+                                        <menuItem title="consolinotes Help" image="questionmark.circle" catalog="system" keyEquivalent="?" id="FKE-Sm-Kum">
                                             <connections>
                                                 <action selector="openHelp:" target="Voe-Tx-rLC" id="CHO-se-CJA"/>
                                             </connections>
@@ -1134,7 +1134,7 @@ CA
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="qW8-n9-YAx">
                                 <rect key="frame" x="35" y="282" width="324" height="16"/>
-                                <buttonCell key="cell" type="check" title="Hide FSNotes when activating another application" bezelStyle="regularSquare" imagePosition="left" inset="2" id="M29-fW-FJa">
+                                <buttonCell key="cell" type="check" title="Hide consolinotes when activating another application" bezelStyle="regularSquare" imagePosition="left" inset="2" id="M29-fW-FJa">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -1456,7 +1456,7 @@ CA
         <scene sceneID="R2V-B0-nI4">
             <objects>
                 <windowController storyboardIdentifier="MainWindowController" id="B8D-0N-5wS" customClass="MainWindowController" customModule="FSNotes" customModuleProvider="target" sceneMemberID="viewController">
-                    <window key="window" title="FSNotes" allowsToolTipsWhenApplicationIsInactive="NO" restorable="NO" releasedWhenClosed="NO" frameAutosaveName="MainWindow" animationBehavior="default" tabbingMode="disallowed" titlebarAppearsTransparent="YES" id="IQv-IB-iLA" customClass="MainWindow" customModule="FSNotes" customModuleProvider="target">
+                    <window key="window" title="consolinotes" allowsToolTipsWhenApplicationIsInactive="NO" restorable="NO" releasedWhenClosed="NO" frameAutosaveName="MainWindow" animationBehavior="default" tabbingMode="disallowed" titlebarAppearsTransparent="YES" id="IQv-IB-iLA" customClass="MainWindow" customModule="FSNotes" customModuleProvider="target">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
                         <rect key="contentRect" x="196" y="240" width="900" height="600"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
@@ -2434,10 +2434,10 @@ Gw
         <scene sceneID="jsp-rc-Q9r">
             <objects>
                 <windowController storyboardIdentifier="About" id="fsj-A7-rSt" customClass="AboutWindowController" customModule="FSNotes" customModuleProvider="target" sceneMemberID="viewController">
-                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="qod-hp-9wd">
+                    <window key="window" title="About consolinotes" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="qod-hp-9wd">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-                        <rect key="contentRect" x="196" y="240" width="480" height="270"/>
+                        <rect key="contentRect" x="196" y="240" width="580" height="620"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="1792" height="1097"/>
                         <attributedString key="userComments">
                             <fragment content="#bc-ignore!"/>
@@ -2458,12 +2458,12 @@ Gw
         <scene sceneID="bm4-A4-SJq">
             <objects>
                 <viewController id="6OZ-zZ-7EL" customClass="AboutViewController" customModule="FSNotes" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" misplaced="YES" id="stc-Pf-K3l">
-                        <rect key="frame" x="0.0" y="0.0" width="481" height="544"/>
+                    <view key="view" id="stc-Pf-K3l">
+                        <rect key="frame" x="0.0" y="0.0" width="580" height="620"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <imageView toolTip="In memory of Mars. ? - 25.08.2022" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-yB-wPs" customClass="AboutImageView" customModule="FSNotes" customModuleProvider="target">
-                                <rect key="frame" x="254" y="461" width="67" height="70"/>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-yB-wPs">
+                                <rect key="frame" x="256.5" y="537" width="67" height="70"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="70" id="TuC-Fg-xJn"/>
                                     <constraint firstAttribute="width" constant="67" id="VIF-nP-g4S"/>
@@ -2471,8 +2471,8 @@ Gw
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="AppIconModern" id="FCd-Ar-efh"/>
                             </imageView>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uwq-Wq-Zsn">
-                                <rect key="frame" x="254" y="400" width="67" height="17"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="FSNotes" id="gWb-su-EdI">
+                                <rect key="frame" x="242" y="508" width="96.5" height="17"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="consolinotes" id="gWb-su-EdI">
                                     <font key="font" metaFont="systemBold" size="14"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2482,11 +2482,12 @@ Gw
                                 </attributedString>
                             </textField>
                             <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="3f9-vz-qWm">
-                                <rect key="frame" x="135" y="300" width="304" height="32"/>
-                                <textFieldCell key="cell" selectable="YES" alignment="center" id="0f7-Za-V0B">
+                                <rect key="frame" x="18" y="368" width="544" height="48"/>
+                                <textFieldCell key="cell" lineBreakMode="wordWrapping" selectable="YES" alignment="center" id="0f7-Za-V0B">
                                     <font key="font" metaFont="system"/>
-                                    <string key="title">Copyright © 2017-2024 Oleksandr Hlushchenko.
-All rights reserved.</string>
+                                    <string key="title">Independent fork of FSNotes.
+Not affiliated with or endorsed by the FSNotes project.
+Original FSNotes by Oleksandr Hlushchenko and contributors.</string>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     <attributedString key="userComments">
@@ -2495,8 +2496,8 @@ All rights reserved.</string>
                                 </textFieldCell>
                             </textField>
                             <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="FPM-RD-i0c">
-                                <rect key="frame" x="214" y="425" width="146" height="16"/>
-                                <buttonCell key="cell" type="bevel" title="🔗fsnotes/contributors" bezelStyle="regularSquare" alignment="center" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="jQ1-6K-9ar">
+                                <rect key="frame" x="200" y="484" width="180" height="16"/>
+                                <buttonCell key="cell" type="bevel" title="consolinotes on GitHub" bezelStyle="regularSquare" alignment="center" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="jQ1-6K-9ar">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -2504,15 +2505,40 @@ All rights reserved.</string>
                                     <fragment content="#bc-ignore!"/>
                                 </attributedString>
                                 <connections>
-                                    <action selector="openContributorsPage:" target="6OZ-zZ-7EL" id="lH1-Ed-dtl"/>
+                                    <action selector="openProjectPage:" target="6OZ-zZ-7EL" id="lH1-Ed-dtl"/>
                                 </connections>
                             </button>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="lcs-01-r0w">
+                                <rect key="frame" x="119" y="324" width="342" height="32"/>
+                                <subviews>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="org-01-btn">
+                                        <rect key="frame" x="0" y="0" width="220" height="32"/>
+                                        <buttonCell key="cell" type="push" title="Original FSNotes contributors" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="org-01-cel">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="openContributorsPage:" target="6OZ-zZ-7EL" id="org-01-act"/>
+                                        </connections>
+                                    </button>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lic-01-btn">
+                                        <rect key="frame" x="232" y="0" width="110" height="32"/>
+                                        <buttonCell key="cell" type="push" title="Licences…" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="lic-01-cel">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="showLicenses:" target="6OZ-zZ-7EL" id="lic-01-act"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JMy-4k-NeF">
-                                <rect key="frame" x="18" y="20" width="539" height="32"/>
+                                <rect key="frame" x="18" y="20" width="544" height="32"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" id="sWS-bo-99f">
                                     <font key="font" metaFont="system"/>
                                     <string key="title">Dylan Seeger — https://www.lovably.com
-Olena Hlushcneko</string>
+Olena Hlushchenko</string>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
@@ -2521,26 +2547,26 @@ Olena Hlushcneko</string>
                                 </attributedString>
                             </textField>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Jxd-6e-5CJ">
-                                <rect key="frame" x="245" y="60" width="85" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Icons design:" id="FKf-Ph-LiA">
+                                <rect key="frame" x="198.5" y="60" width="183" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Original FSNotes icon design:" id="FKf-Ph-LiA">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Md6-vL-c1a">
-                                <rect key="frame" x="249" y="264" width="76" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Translators:" id="13t-eQ-kOr">
+                                <rect key="frame" x="198" y="296" width="184" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Original FSNotes translations:" id="13t-eQ-kOr">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
                             <box horizontalHuggingPriority="249" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="2QL-BH-sCT">
-                                <rect key="frame" x="20" y="381" width="535" height="5"/>
+                                <rect key="frame" x="20" y="467" width="540" height="1"/>
                             </box>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gR1-Um-ivy">
-                                <rect key="frame" x="260" y="347" width="54" height="16"/>
+                                <rect key="frame" x="229" y="431" width="122" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="Version" id="ELw-Y4-DV0">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2548,7 +2574,7 @@ Olena Hlushcneko</string>
                                 </textFieldCell>
                             </textField>
                             <scrollView autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2Mi-Tc-usi">
-                                <rect key="frame" x="20" y="96" width="535" height="160"/>
+                                <rect key="frame" x="20" y="96" width="540" height="192"/>
                                 <clipView key="contentView" drawsBackground="NO" id="ncf-mP-Txi">
                                     <rect key="frame" x="1" y="1" width="533" height="158"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2648,13 +2674,18 @@ Olena Hlushcneko</string>
                             </scrollView>
                         </subviews>
                         <constraints>
+                            <constraint firstItem="FPM-RD-i0c" firstAttribute="width" relation="greaterThanOrEqual" constant="180" id="prj-01-wdt"/>
+                            <constraint firstItem="lcs-01-r0w" firstAttribute="top" secondItem="3f9-vz-qWm" secondAttribute="bottom" constant="12" id="lcs-01-top"/>
+                            <constraint firstItem="lcs-01-r0w" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="lcs-01-ctr"/>
+                            <constraint firstItem="3f9-vz-qWm" firstAttribute="leading" secondItem="stc-Pf-K3l" secondAttribute="leading" constant="20" id="ind-01-ldg"/>
+                            <constraint firstAttribute="trailing" secondItem="3f9-vz-qWm" secondAttribute="trailing" constant="20" id="ind-01-trl"/>
                             <constraint firstItem="FPM-RD-i0c" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="2f9-id-fUU"/>
                             <constraint firstAttribute="trailing" secondItem="2Mi-Tc-usi" secondAttribute="trailing" constant="20" symbolic="YES" id="2xy-BZ-wHs"/>
                             <constraint firstItem="2QL-BH-sCT" firstAttribute="leading" secondItem="stc-Pf-K3l" secondAttribute="leading" constant="20" symbolic="YES" id="4cG-VB-eCh"/>
                             <constraint firstItem="TKE-yB-wPs" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="5VI-48-ioW"/>
                             <constraint firstItem="Jxd-6e-5CJ" firstAttribute="top" secondItem="2Mi-Tc-usi" secondAttribute="bottom" constant="20" id="BQX-KU-ZHG"/>
-                            <constraint firstItem="2QL-BH-sCT" firstAttribute="top" secondItem="uwq-Wq-Zsn" secondAttribute="bottom" constant="16" id="BaW-em-oH4"/>
-                            <constraint firstItem="Md6-vL-c1a" firstAttribute="top" secondItem="3f9-vz-qWm" secondAttribute="bottom" constant="20" id="CfJ-hC-AS8"/>
+                            <constraint firstItem="2QL-BH-sCT" firstAttribute="top" secondItem="FPM-RD-i0c" secondAttribute="bottom" constant="16" id="BaW-em-oH4"/>
+                            <constraint firstItem="Md6-vL-c1a" firstAttribute="top" secondItem="lcs-01-r0w" secondAttribute="bottom" constant="20" id="CfJ-hC-AS8"/>
                             <constraint firstItem="gR1-Um-ivy" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="GKq-fB-gWs"/>
                             <constraint firstItem="TKE-yB-wPs" firstAttribute="top" secondItem="stc-Pf-K3l" secondAttribute="top" constant="13" id="Hg0-Sa-0ZB"/>
                             <constraint firstItem="2Mi-Tc-usi" firstAttribute="leading" secondItem="stc-Pf-K3l" secondAttribute="leading" constant="20" symbolic="YES" id="KCs-on-Wsr"/>
@@ -2663,13 +2694,13 @@ Olena Hlushcneko</string>
                             <constraint firstAttribute="trailing" secondItem="2QL-BH-sCT" secondAttribute="trailing" constant="20" symbolic="YES" id="YU7-iw-CCn"/>
                             <constraint firstItem="3f9-vz-qWm" firstAttribute="top" secondItem="gR1-Um-ivy" secondAttribute="bottom" constant="15" id="YVZ-SO-JSu"/>
                             <constraint firstAttribute="bottom" secondItem="JMy-4k-NeF" secondAttribute="bottom" constant="20" id="bA6-PZ-PS9"/>
-                            <constraint firstItem="uwq-Wq-Zsn" firstAttribute="top" secondItem="FPM-RD-i0c" secondAttribute="bottom" constant="8" symbolic="YES" id="c0f-hZ-9K2"/>
+                            <constraint firstItem="uwq-Wq-Zsn" firstAttribute="top" secondItem="TKE-yB-wPs" secondAttribute="bottom" constant="12" id="c0f-hZ-9K2"/>
                             <constraint firstItem="Md6-vL-c1a" firstAttribute="centerX" secondItem="3f9-vz-qWm" secondAttribute="centerX" id="c3V-lL-Gvd"/>
                             <constraint firstItem="3f9-vz-qWm" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="dWl-91-q3h"/>
                             <constraint firstItem="gR1-Um-ivy" firstAttribute="top" secondItem="2QL-BH-sCT" secondAttribute="bottom" constant="20" id="qZv-RJ-GSL"/>
                             <constraint firstItem="JMy-4k-NeF" firstAttribute="leading" secondItem="stc-Pf-K3l" secondAttribute="leading" constant="20" symbolic="YES" id="rTe-iY-kPv"/>
                             <constraint firstItem="2Mi-Tc-usi" firstAttribute="top" secondItem="Md6-vL-c1a" secondAttribute="bottom" constant="8" symbolic="YES" id="suL-uP-a3x"/>
-                            <constraint firstItem="FPM-RD-i0c" firstAttribute="top" secondItem="TKE-yB-wPs" secondAttribute="bottom" constant="20" id="y5J-pG-TNV"/>
+                            <constraint firstItem="FPM-RD-i0c" firstAttribute="top" secondItem="uwq-Wq-Zsn" secondAttribute="bottom" constant="8" id="y5J-pG-TNV"/>
                             <constraint firstAttribute="trailing" secondItem="JMy-4k-NeF" secondAttribute="trailing" constant="20" symbolic="YES" id="yvA-TW-nuT"/>
                             <constraint firstItem="2QL-BH-sCT" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="ywb-tv-FeH"/>
                             <constraint firstItem="uwq-Wq-Zsn" firstAttribute="centerX" secondItem="stc-Pf-K3l" secondAttribute="centerX" id="zvB-hO-Jq4"/>
@@ -2891,7 +2922,7 @@ Olena Hlushcneko</string>
                                     </textField>
                                     <textField identifier="gitOrigin" focusRingType="none" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qPm-BY-8GE">
                                         <rect key="frame" x="144" y="36" width="311" height="21"/>
-                                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="git@github.com:glushchenko/example.git" drawsBackground="YES" id="PJ2-3m-IGm">
+                                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="git@github.com:username/repo.git" drawsBackground="YES" id="PJ2-3m-IGm">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -3525,7 +3556,10 @@ Olena Hlushcneko</string>
                                             <menuItem title="solarized" localization="NO" mirroring="NO" id="SpX-N8-9td">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
-                                            <menuItem title="atom-one" state="on" localization="NO" mirroring="NO" id="ME1-My-h4q">
+                                            <menuItem title="atom-one" localization="NO" mirroring="NO" id="ME1-My-h4q">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="consolinotes" state="on" localization="NO" mirroring="NO" id="cN7-tU-i0x">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
                                         </items>

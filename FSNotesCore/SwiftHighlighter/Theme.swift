@@ -10,7 +10,10 @@ enum EditorTheme: String, CaseIterable, Codable {
     case github
     case atomOne
     case solarized
-    
+#if os(OSX)
+    case consolinotes
+#endif
+
     init?(themeName: String) {
         switch themeName.lowercased() {
         case "github":
@@ -19,6 +22,10 @@ enum EditorTheme: String, CaseIterable, Codable {
             self = .atomOne
         case "solarized":
             self = .solarized
+    #if os(OSX)
+        case "consolinotes":
+            self = .consolinotes
+    #endif
         default:
             return nil
         }
@@ -40,9 +47,16 @@ enum EditorTheme: String, CaseIterable, Codable {
             return SolarizedLightTheme.make()
         case (.solarized, true):
             return SolarizedDarkTheme.make()
+
+    #if os(OSX)
+        case (.consolinotes, false):
+            return ConsolinotesLightTheme.make()
+        case (.consolinotes, true):
+            return ConsolinotesDarkTheme.make()
+    #endif
         }
     }
-    
+
     func getName() -> String {
         switch self {
         case .github:
@@ -51,17 +65,14 @@ enum EditorTheme: String, CaseIterable, Codable {
             return "atom-one"
         case .solarized:
             return "solarized"
+    #if os(OSX)
+        case .consolinotes:
+            return "consolinotes"
+    #endif
         }
     }
-    
+
     func getCssName(isDark: Bool) -> String {
-        switch self {
-        case .github:
-            return "github-" + (isDark ? "dark" : "light")
-        case .atomOne:
-            return "atom-one-" + (isDark ? "dark" : "light")
-        case .solarized:
-            return "solarized-" + (isDark ? "dark" : "light")
-        }
+        return getName() + "-" + (isDark ? "dark" : "light")
     }
 }

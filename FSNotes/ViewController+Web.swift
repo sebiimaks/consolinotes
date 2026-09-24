@@ -93,6 +93,9 @@ extension EditorViewController {
                     .appendingPathExtension("zip")
 
                 let sftp = try ssh.openSftp()
+
+                // Refresh notices for servers configured before they were bundled.
+                try WebPublishingLicenses.upload(using: sftp, to: sftpPath)
                 
                 // Upload index.html
                 let remoteIndex = remoteDir + "index.html"

@@ -1,0 +1,259 @@
+/*
+  consolinotes preview theme (macOS in-app preview only).
+  Loaded after main.css when the page is rendered with {FSNOTES_THEME} = consolinotes.
+  Colours mirror FSNotes/Images.xcassets/TUI; keep both in sync.
+*/
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/JetBrainsMono-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/JetBrainsMono-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/JetBrainsMono-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/JetBrainsMono-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+body.consolinotes {
+    --cn-bg: #f6f5f0;
+    --cn-bar: #e9e7e0;
+    --cn-fg: #2b2d36;
+    --cn-bright: #101118;
+    --cn-dim: #555a69;
+    --cn-faint: #8d909c;
+    --cn-border: #c9c5b9;
+    --cn-accent: #2d5bd0;
+    --cn-selection: #e3eafb;
+    --cn-code: #eeece5;
+    --cn-match: #ffe28a;
+    --cn-green: #316612;
+    --cn-yellow: #754c00;
+    --cn-magenta: #7a47c2;
+    --cn-cyan: #0b6a8a;
+    --cn-orange: #944200;
+
+    background: var(--cn-bg);
+    color: var(--cn-fg);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
+body.consolinotes.darkmode {
+    --cn-bg: #14151b;
+    --cn-bar: #1c1e28;
+    --cn-fg: #c9cedc;
+    --cn-bright: #eef1f8;
+    --cn-dim: #979eb7;
+    --cn-faint: #666d88;
+    --cn-border: #474d66;
+    --cn-accent: #7aa2f7;
+    --cn-selection: #263150;
+    --cn-code: #1a1c25;
+    --cn-match: #5c4a17;
+    --cn-green: #9ece6a;
+    --cn-yellow: #e0af68;
+    --cn-magenta: #bb9af7;
+    --cn-cyan: #7dcfff;
+    --cn-orange: #ff9e64;
+}
+
+body.consolinotes ::selection {
+    background: var(--cn-selection);
+}
+
+/* Text */
+
+body.consolinotes p,
+body.consolinotes li,
+body.consolinotes dd,
+body.consolinotes dt,
+body.consolinotes td,
+body.consolinotes th {
+    color: var(--cn-fg);
+}
+
+body.consolinotes strong,
+body.consolinotes b {
+    color: var(--cn-bright);
+}
+
+body.consolinotes del,
+body.consolinotes s {
+    color: var(--cn-dim);
+}
+
+body.consolinotes mark {
+    background: var(--cn-match);
+    color: var(--cn-bright);
+}
+
+/* Headings: body-size weight changes, coloured like the editor */
+
+body.consolinotes h1,
+body.consolinotes h2,
+body.consolinotes h3,
+body.consolinotes h4,
+body.consolinotes h5,
+body.consolinotes h6 {
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 1em;
+    font-weight: bold;
+    letter-spacing: 0;
+    margin: 1.4em 0 0.6em;
+}
+
+body.consolinotes h1 {
+    color: var(--cn-accent);
+    border-bottom: 3px solid var(--cn-accent);
+    padding-bottom: 0.2em;
+}
+
+body.consolinotes h2 {
+    color: var(--cn-cyan);
+    border-bottom: 1px solid var(--cn-border);
+    padding-bottom: 0.2em;
+}
+
+body.consolinotes h3,
+body.consolinotes h4,
+body.consolinotes h5,
+body.consolinotes h6 {
+    color: var(--cn-bright);
+}
+
+/* Links, wikilinks and tags */
+
+body.consolinotes a,
+body.consolinotes a:visited {
+    color: var(--cn-cyan);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--cn-cyan) 45%, transparent);
+    text-underline-offset: 3px;
+}
+
+body.consolinotes a[href^="fsnotes://find"] {
+    color: var(--cn-magenta);
+    text-decoration-color: color-mix(in srgb, var(--cn-magenta) 45%, transparent);
+}
+
+body.consolinotes a[href^="fsnotes://open/?tag="] {
+    background: var(--cn-selection);
+    color: var(--cn-green);
+    border-radius: 0;
+    padding: 1px 6px;
+    text-decoration: none;
+}
+
+/* Lists and todos */
+
+body.consolinotes li::marker {
+    color: var(--cn-accent);
+}
+
+body.consolinotes.macos input[type='checkbox'] {
+    background: transparent;
+    border: 2px solid var(--cn-dim);
+    border-radius: 0;
+}
+
+body.consolinotes.macos input[type='checkbox']:checked {
+    border-color: var(--cn-green);
+}
+
+body.consolinotes.macos input[type='checkbox']:checked::after,
+body.consolinotes.macos input[type='checkbox'][disabled][checked]::after {
+    border-left: 2px solid var(--cn-green);
+    border-bottom: 2px solid var(--cn-green);
+}
+
+body.consolinotes .cb > .strike,
+body.consolinotes .cb > .strike * {
+    color: var(--cn-dim);
+}
+
+/* Quotes and rules */
+
+body.consolinotes blockquote {
+    border-left: 3px solid var(--cn-accent);
+    color: var(--cn-dim);
+    font-style: italic;
+}
+
+body.consolinotes blockquote * {
+    color: var(--cn-dim);
+}
+
+body.consolinotes hr {
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--cn-border);
+    height: 0;
+}
+
+/* Code: inline spans and box-drawn blocks */
+
+body.consolinotes code {
+    color: var(--cn-orange);
+    background: var(--cn-code);
+    border-radius: 0;
+}
+
+body.consolinotes pre {
+    background: var(--cn-code);
+    border: 1px solid var(--cn-border);
+    border-radius: 0;
+}
+
+body.consolinotes pre code,
+body.consolinotes pre code.hljs {
+    color: var(--cn-fg);
+    background: transparent;
+}
+
+body.consolinotes code.language-mermaid {
+    background: transparent;
+}
+
+/* Tables */
+
+body.consolinotes table,
+body.consolinotes table th,
+body.consolinotes table td {
+    border-color: var(--cn-border);
+}
+
+body.consolinotes table th,
+body.consolinotes table td,
+body.consolinotes table tr,
+body.consolinotes table tr:nth-child(2n) {
+    background: transparent;
+}
+
+body.consolinotes table th {
+    background: var(--cn-bar);
+    color: var(--cn-bright);
+}
+
+/* Images */
+
+body.consolinotes img:not(.attachment) {
+    border: 1px solid var(--cn-border);
+    border-radius: 0;
+}

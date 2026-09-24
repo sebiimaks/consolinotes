@@ -991,10 +991,10 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         viewController.editor.fill(note: note)
         
         if note.isEncryptedAndLocked() {
-            viewController.lockUnlockButton.image = NSImage(named: NSImage.lockLockedTemplateName)
+            viewController.lockUnlockButton.image = TUITheme.lockChip(encrypted: true, locked: true)
             viewController.toggleNotesLock(self)
         } else {
-            viewController.lockUnlockButton.image = NSImage(named: NSImage.lockUnlockedTemplateName)
+            viewController.lockUnlockButton.image = TUITheme.lockChip(encrypted: note.isEncrypted(), locked: false)
         }
         
         AppDelegate.noteWindows.insert(windowController, at: 0)
@@ -1114,12 +1114,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             if editor.note == note {
                 editor.editorViewController?.refillEditArea(force: true)
                 
-                let lockIcon = note.isEncryptedAndLocked()
-                    ? NSImage.lockLockedTemplateName
-                    : NSImage.lockUnlockedTemplateName
-                    
-                let lockImage = NSImage(named: lockIcon)
-                
+                let lockImage = TUITheme.lockChip(encrypted: note.isEncrypted(), locked: note.isEncryptedAndLocked())
+
                 if let noteVC = editor.editorViewController as? NoteViewController {
                     noteVC.lockUnlockButton.image = lockImage
                 }
@@ -1375,7 +1371,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
     
     public func dropTitle() {
-        let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "FSNotes"
+        let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "consolinotes"
 
         vcTitleLabel?.stringValue = appName
         view.window?.title = appName

@@ -5,3 +5,9 @@ Podfile.lock
 FSNotes.xcworkspace/xcshareddata/*
 FSNotes.xcworkspace/xcuserdata/*
 FSNotes.xcodeproj/xcuserdata/*
+
+# Local build products and macOS/Python metadata
+/build/
+.DS_Store
+__pycache__/
+*.py[cod]

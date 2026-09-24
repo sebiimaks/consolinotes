@@ -1,6 +1,7 @@
 /*
  Copyright (C) 2016 Apple Inc. All Rights Reserved.
- See LICENSE.txt for this sample’s licensing information
+ See Licenses/native/Apple-GenericKeychain.txt and THIRD_PARTY_NOTICES.md
+ for the original GenericKeychain sample's licensing information.
  
  Abstract:
  A simple struct that defines the service and access group to be used by the sample apps.

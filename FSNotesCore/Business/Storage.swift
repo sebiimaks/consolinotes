@@ -1098,7 +1098,7 @@ class Storage {
             guard UserDefaultsManagement.showWelcome else { return }
             guard noteList.isEmpty else { return }
 
-            let welcomeFileName = "Meet FSNotes 7.textbundle"
+            let welcomeFileName = "Meet consolinotes.textbundle"
 
             guard let src = Bundle.main.resourceURL?.appendingPathComponent(welcomeFileName) else { return }
             guard let dst = getDefault()?.url.appendingPathComponent(welcomeFileName) else { return }
@@ -1142,7 +1142,7 @@ class Storage {
     }
 
     public func getNews() -> URL? {
-        return Bundle.main.resourceURL?.appendingPathComponent("Meet FSNotes 7.textbundle")
+        return Bundle.main.resourceURL?.appendingPathComponent("Meet consolinotes.textbundle")
     }
 
     public func loadNonSystemProject() {

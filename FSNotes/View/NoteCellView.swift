@@ -69,10 +69,11 @@ class NoteCellView: NSTableCellView {
 
         renderPin()
         name.layer?.zPosition = 1000
+        name.font = TUITheme.font(ofSize: 13, weight: .semibold)
+        name.textColor = TUITheme.text
 
-        if let descriptor = date.font?.fontDescriptor {
-            date.font = NSFont.init(descriptor: descriptor, size: 11)
-        }
+        date.font = TUITheme.font(ofSize: 11)
+        date.textColor = TUITheme.dim
 
         date.layer?.cornerRadius = 5
         date.layer?.zPosition = 1001
@@ -111,9 +112,7 @@ class NoteCellView: NSTableCellView {
             return
         }
 
-        let fontName = UserDefaultsManagement.noteFont.fontName
-        let previewFontSzie = CGFloat(UserDefaultsManagement.previewFontSize)
-        guard let font = NSFont(name: fontName, size: previewFontSzie) else { return }
+        let font = TUITheme.font(ofSize: CGFloat(UserDefaultsManagement.previewFontSize))
         self.previewMaximumLineHeight = font.lineHeightCustom
 
         // vertically align
@@ -164,18 +163,16 @@ class NoteCellView: NSTableCellView {
     
     func applyPreviewAttributes(_ maximumNumberOfLines: Int = 1) {
         let string = preview.stringValue
-        let fontName = UserDefaultsManagement.noteFont.fontName
+        let font = TUITheme.font(ofSize: CGFloat(UserDefaultsManagement.previewFontSize))
 
-        let previewFontSize = CGFloat(UserDefaultsManagement.previewFontSize)
-        guard let font = NSFont(name: fontName, size: previewFontSize) else { return }
-        
         let textParagraph = NSMutableParagraphStyle()
         textParagraph.lineSpacing = previewLineSpacing
         textParagraph.maximumLineHeight = previewMaximumLineHeight
 
-        let attribs = [
-            NSAttributedString.Key.font: font,
-            NSAttributedString.Key.paragraphStyle: textParagraph
+        let attribs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: TUITheme.dim,
+            .paragraphStyle: textParagraph
         ]
 
         if maximumNumberOfLines > 0 {
@@ -209,39 +206,15 @@ class NoteCellView: NSTableCellView {
 
     func renderPin() {
         if let value = objectValue, let note = value as? Note  {
+            // Terminal glyphs instead of icons: ↗ published, ◆/◇ encrypted, ★ pinned.
             if note.isPublished() {
-                if #available(macOS 12.0, *), let image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil) {
-                    pin.image = image
-                    pin.image?.isTemplate = true
-                    pin.contentTintColor = .controlAccentColor
-                } else {
-                    pin.image = NSImage(named: "web")
-                    pin.image?.isTemplate = true
-                    pin.contentTintColor = .controlAccentColor
-                    pin.image?.size = NSSize(width: 14, height: 14)
-                }
-
+                pin.image = TUITheme.glyph("↗", color: TUITheme.cyan, size: 14)
                 pin.isHidden = false
             } else if note.isEncrypted() {
-                let systemName = note.isUnlocked() ? "lock.open" : "lock"
-                if let image = NSImage(systemSymbolName: systemName, accessibilityDescription: nil) {
-                    pin.image = image
-                    pin.image?.isTemplate = true
-                    pin.contentTintColor = .controlAccentColor
-                }
+                pin.image = TUITheme.glyph(note.isUnlocked() ? "◇" : "◆", color: TUITheme.magenta, size: 14)
                 pin.isHidden = false
             } else {
-                if #available(macOS 12.0, *), let image = NSImage(systemSymbolName: "pin", accessibilityDescription: nil) {
-                    pin.image = image
-                    pin.image?.isTemplate = true
-                    pin.contentTintColor = .controlAccentColor
-                } else {
-                    pin.image = NSImage(named: "pin")
-                    pin.image?.isTemplate = true
-                    pin.contentTintColor = .controlAccentColor
-                    pin.image?.size = NSSize(width: 20, height: 20)
-                }
-
+                pin.image = TUITheme.glyph("★", color: TUITheme.yellow, size: 14)
                 pin.isHidden = !note.isPinned
             }
         }
@@ -250,8 +223,8 @@ class NoteCellView: NSTableCellView {
     public func styleImageView(imageView: ImageView) {
         imageView.isHidden = false
         imageView.layer?.borderWidth = 1
-        imageView.layer?.borderColor = Color.darkGray.cgColor
-        imageView.layer?.cornerRadius = 4
+        imageView.layer?.borderColor = TUITheme.border.cgColor
+        imageView.layer?.cornerRadius = 0
     }
 
     public func getPreviewImage(imageUrl: URL, note: Note) -> Image? {

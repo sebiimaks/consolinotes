@@ -1,0 +1,78 @@
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em
+}
+code.hljs {
+  padding: 3px 5px
+}
+/*
+
+consolinotes light: code colours matching the Modern TUI palette.
+Keep in sync with FSNotesCore/SwiftHighlighter/Themes/Consolinotes.swift.
+
+*/
+.hljs {
+  color: #2b2d36;
+  background: #eeece5
+}
+.hljs-comment,
+.hljs-quote {
+  color: #555a69;
+  font-style: italic
+}
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: #7a47c2
+}
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+  color: #a82340
+}
+.hljs-literal {
+  color: #136257
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string {
+  color: #316612
+}
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+  color: #944200
+}
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-section,
+.hljs-selector-id,
+.hljs-title {
+  color: #2d5bd0
+}
+.hljs-type,
+.hljs-built_in,
+.hljs-title.class_,
+.hljs-class .hljs-title {
+  color: #0b6a8a
+}
+.hljs-emphasis {
+  font-style: italic
+}
+.hljs-strong {
+  color: #101118;
+  font-weight: bold
+}
+.hljs-link {
+  text-decoration: underline
+}
