@@ -8,11 +8,7 @@
 
 import Foundation
 
-#if os(iOS)
-    import MobileCoreServices
-#else
-    import CoreServices
-#endif
+import CoreServices
 
 public extension URL {
     /// Get extended attribute.

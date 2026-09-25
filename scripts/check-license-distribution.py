@@ -22,9 +22,10 @@ def check_project():
         "plutil", "-convert", "json", "-o", "-", str(ROOT / "FSNotes.xcodeproj/project.pbxproj")
     ]))
     objects = project["objects"]
-    for target in objects.values():
-        if target.get("isa") != "PBXNativeTarget":
-            continue
+    targets = [obj for obj in objects.values() if obj.get("isa") == "PBXNativeTarget"]
+    if {target["name"] for target in targets} != {"FSNotes", "FSNotes (iCloud)"}:
+        raise ValueError("Expected only the two macOS application targets")
+    for target in targets:
         resources = []
         for phase_id in target.get("buildPhases", []):
             phase = objects[phase_id]
@@ -48,7 +49,9 @@ def check_project():
 
 
 def check_app(app):
-    resources = app / "Contents/Resources" if (app / "Contents").is_dir() else app
+    resources = app / "Contents/Resources"
+    if not resources.is_dir():
+        raise ValueError(f"{app}: expected a macOS application bundle")
     expected = dict(NOTICES)
     expected.update(SOURCES)
     for name, original in NOTICES.items():

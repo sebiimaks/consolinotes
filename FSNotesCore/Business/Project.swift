@@ -68,12 +68,6 @@ public class Project: NSObject {
         self.loadLabel(label)
         self.isCloudDrive = isCloudDriveFolder(url: url)
 
-        if isDefault {
-            #if os(iOS)
-            settings.showInSidebar = false
-            #endif
-        }
-
         if let settings = getSettings() {
             self.settings = settings
         }
@@ -631,12 +625,6 @@ public class Project: NSObject {
             })
     }
 
-    public func getHistoryURL() -> URL? {
-        let url = storage.getRevisionsHistoryDocumentsSupport()
-
-        return url.appendingPathComponent(getMd5CheckSum())
-    }
-    
     public func getNotes() -> [Note] {
         return storage.noteList.filter({ $0.project.url.path == self.url.path })
     }

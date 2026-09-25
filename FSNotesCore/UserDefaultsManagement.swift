@@ -8,11 +8,7 @@
 
 import Foundation
 
-#if os(OSX)
-    import Cocoa
-#else
-    import UIKit
-#endif
+import Cocoa
 
 public class UserDefaultsManagement {
     
@@ -21,21 +17,12 @@ public class UserDefaultsManagement {
 
     public static var global = NSUbiquitousKeyValueStore.default
     
-#if os(OSX)
     typealias Color = NSColor
     typealias Image = NSImage
     typealias Font = NSFont
 
     public static var shared: UserDefaults? = UserDefaults.standard
     public static var DefaultFontSize = 14
-#else
-    typealias Color = UIColor
-    typealias Image = UIImage
-    typealias Font = UIFont
-
-    public static var shared: UserDefaults? = UserDefaults(suiteName: "group.es.fsnot.user.defaults")
-    static var DefaultFontSize = 17
-#endif
 
     static var DefaultSnapshotsInterval = 1
     static var DefaultSnapshotsIntervalMinutes = 5
@@ -122,7 +109,6 @@ public class UserDefaultsManagement {
         static let Preview = "preview"
         static let PreviewFontSize = "previewFontSize"
         static let ProjectsKey = "projects"
-        static let ProjectsKeyNew = "ProjectsKeyNew"
         static let RecentSearches = "recentSearches"
         static let PullInterval = "pullInterval"
         static let SaveInKeychain = "saveInKeychain"
@@ -138,7 +124,6 @@ public class UserDefaultsManagement {
         static let SftpKeysAccessData = "sftpKeysAccessData"
         static let SftpPublicKeyData = "sftpPublicKeyData"
         static let SftpUploadBookmarksData = "sftpUploadBookmarksData"
-        static let SharedContainerKey = "sharedContainer"
         static let ShowDockIcon = "showDockIcon"
         static let shouldFocusSearchOnESCKeyDown = "shouldFocusSearchOnESCKeyDown"
         static let ShowInMenuBar = "showInMenuBar"
@@ -162,11 +147,7 @@ public class UserDefaultsManagement {
             if let returnFontName = shared?.object(forKey: Constants.CodeFontNameKey) as? String {
                 return returnFontName
             } else {
-            #if os(OSX)
                 return "JetBrains Mono"
-            #else
-                return "Source Code Pro"
-            #endif
             }
         }
         set {
@@ -273,14 +254,7 @@ public class UserDefaultsManagement {
     
     static var localDocumentsContainer: URL? {
         get {
-            if var path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
-
-#if os(iOS)
-                if path.starts(with: "/var") {
-                    path = "/private\(path)"
-                }
-#endif
-
+            if let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
                 return URL(fileURLWithPath: path, isDirectory: true)
             }
  
@@ -476,11 +450,7 @@ public class UserDefaultsManagement {
                 return CGFloat(value)
             }
 
-            #if os(iOS)
-                return 0
-            #else
-                return 300
-            #endif
+            return 300
         }
         set {
             shared?.set(Int(newValue), forKey: "sidebarSize")
@@ -633,11 +603,7 @@ public class UserDefaultsManagement {
             if let result = shared?.object(forKey: Constants.LineSpacingEditorKey) as? Float {
                 return Float(Int(result))
             } else {
-                #if os(iOS)
-                    return 6
-                #else
-                    return 4
-                #endif
+                return 4
             }
         }
         set {
@@ -866,23 +832,12 @@ public class UserDefaultsManagement {
     
     static var fileContainer: NoteContainer {
         get {
-            #if SHARE_EXT
-                let defaults = UserDefaults.init(suiteName: "group.es.fsnot.user.defaults")
-                if let result = defaults?.object(forKey: Constants.SharedContainerKey) as? Int, let container = NoteContainer(rawValue: result) {
-                    return container
-                }
-            #endif
-
             if let result = shared?.object(forKey: Constants.NoteContainer) as? Int, let container = NoteContainer(rawValue: result) {
                 return container
             }
             return .none
         }
         set {
-            #if os(iOS)
-            UserDefaults.init(suiteName: "group.es.fsnot.user.defaults")?.set(newValue.rawValue, forKey: Constants.SharedContainerKey)
-            #endif
-
             shared?.set(newValue.rawValue, forKey: Constants.NoteContainer)
         }
     }
@@ -984,7 +939,7 @@ public class UserDefaultsManagement {
     static var allowTouchID: Bool {
         get {
             if NSClassFromString("NSTouchBar") == nil {
-                return false
+            return false
             }
 
             if let result = shared?.object(forKey: Constants.AllowTouchID) as? Bool {
@@ -1645,11 +1600,7 @@ public class UserDefaultsManagement {
                 return highlight
             }
             
-            #if os(iOS)
-                return true
-            #else
                 return false
-            #endif
         }
         set {
             shared?.set(newValue, forKey: Constants.ClickableLinks)
@@ -1720,25 +1671,6 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var projects: [URL] {
-        get {
-            guard let defaults = UserDefaults.init(suiteName: "group.es.fsnot.user.defaults") else { return [] }
-
-            if let data = defaults.data(forKey: Constants.ProjectsKeyNew), let urls = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, NSURL.self], from: data) as? [URL] {
-                return urls
-            }
-
-            return []
-        }
-        set {
-            guard let defaults = UserDefaults.init(suiteName: "group.es.fsnot.user.defaults") else { return }
-
-            if let data = try? NSKeyedArchiver.archivedData(withRootObject: newValue, requiringSecureCoding: true) {
-                defaults.set(data, forKey: Constants.ProjectsKeyNew)
-            }
-        }
-    }
-
     static var maxChildDirs: Int {
         get {
             if let maxChildDirs = shared?.object(forKey: Constants.MaxChildDirs),
@@ -1758,18 +1690,13 @@ public class UserDefaultsManagement {
         }
     }
 
-#if !SHARE_EXT
     static var codeTheme: EditorTheme {
         get {
             guard
                 let raw = UserDefaults.standard.string(forKey: Constants.codeTheme),
                 let theme = EditorTheme(rawValue: raw)
             else {
-            #if os(OSX)
                 return .consolinotes
-            #else
-                return .atomOne
-            #endif
             }
                 
             return theme
@@ -1778,7 +1705,6 @@ public class UserDefaultsManagement {
             UserDefaults.standard.set(newValue.rawValue, forKey: Constants.codeTheme)
         }
     }
-#endif
     
     static var isFirstLaunch: Bool {
         get {

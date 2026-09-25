@@ -32,12 +32,12 @@ body:
 
   - type: input
     attributes:
-      label: FSNotes version
+      label: consolinotes version
     validations:
       required: true
   - type: input
     attributes:
-      label: macOS/iOS version
+      label: macOS version
     validations:
       required: true
       

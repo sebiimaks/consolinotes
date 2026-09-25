@@ -185,13 +185,7 @@ CONSOLINOTES-LICENSE-END -->
         }
 
         if ('{FSNOTES_APPEARANCE}' == 'darkmode') {
-            let background = '#2a2b2e';
-
-            if ('{FSNOTES_PLATFORM}' == 'ios') {
-                background = '#000000';
-            }
-
-            switchToDarkMode(background);
+            switchToDarkMode('#2a2b2e');
         }
         
         document.onmouseup = getSelectionAndSendMessage;

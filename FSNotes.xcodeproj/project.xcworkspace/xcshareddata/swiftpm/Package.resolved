@@ -11,14 +11,6 @@
       }
     },
     {
-      "identity" : "dropdown",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/AssistoLab/DropDown.git",
-      "state" : {
-        "revision" : "2ab6f6ce19f0117d1a76ea043ef8f57722c65d16"
-      }
-    },
-    {
       "identity" : "libcmark_gfm",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/glushchenko/libcmark_gfm",
@@ -78,23 +70,6 @@
       "state" : {
         "revision" : "39774ef16a6d91dee6f666b940e00ea202710cf7",
         "version" : "0.0.3"
-      }
-    },
-    {
-      "identity" : "swipecellkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/glushchenko/SwipeCellKit.git",
-      "state" : {
-        "revision" : "b1e40f5f49503b64872b9d374e811598ecb2c51a"
-      }
-    },
-    {
-      "identity" : "tocropviewcontroller",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/TimOliver/TOCropViewController.git",
-      "state" : {
-        "revision" : "a634cb7cdfd580006e79a6e74e64417fe9e9783b",
-        "version" : "2.7.4"
       }
     },
     {

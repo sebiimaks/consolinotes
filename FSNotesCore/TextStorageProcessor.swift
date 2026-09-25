@@ -6,29 +6,13 @@
 //  Copyright © 2022 Oleksandr Hlushchenko. All rights reserved.
 //
 
-#if os(OSX)
 import Cocoa
 import AVKit
-#else
-import UIKit
-import AVKit
-#endif
 
 class TextStorageProcessor: NSObject, NSTextStorageDelegate {
     public var editor: EditTextView?
     public var detector = CodeBlockDetector()
 
-#if os(iOS)
-    public func textStorage(
-        _ textStorage: NSTextStorage,
-        didProcessEditing editedMask: NSTextStorage.EditActions,
-        range editedRange: NSRange,
-        changeInLength delta: Int) {
-
-        guard editedMask != .editedAttributes else { return }
-        process(textStorage: textStorage, range: editedRange, changeInLength: delta)
-    }
-#else
     public func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
@@ -46,7 +30,6 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
             }
         }
     }
-#endif
 
     private func process(textStorage: NSTextStorage, range editedRange: NSRange, changeInLength delta: Int) {
         guard let note = editor?.note, textStorage.length > 0 else { return }
@@ -167,17 +150,6 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
             DispatchQueue.main.async {
                 guard let manager = self.editor?.layoutManager as? NSLayoutManager else { return }
 
-            #if os(iOS)
-                attachment.image = image
-                if let size = size {
-                    attachment.bounds = CGRect(x: 0, y: 0, width: size.width, height: size.height)
-                }
-
-                // iOS only unknown behaviour
-                let paragraphStyle = NSMutableParagraphStyle()
-                paragraphStyle.alignment = url.isMedia ? .center : .left
-                textStorage.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
-            #elseif os(OSX)
                 guard let container = self.editor?.textContainer,
                       let attachmentImage = image,
                       let size = size else { return }
@@ -187,7 +159,6 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
                 attachment.image = nil
                 attachment.attachmentCell = cell
                 attachment.bounds = NSRect(x: 0, y: 0, width: size.width, height: size.height)
-            #endif
 
                 let safe = self.safeRange(range, in: textStorage)
 
@@ -198,11 +169,7 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
     }
 
     private func getImageMaxWidth() -> CGFloat {
-        #if os(iOS)
-            return UIApplication.getVC().view.frame.width - 35
-        #else
             return CGFloat(UserDefaultsManagement.imagesWidth)
-        #endif
     }
 
     private func safeRange(_ range: NSRange, in textStorage: NSTextStorage) -> NSRange {

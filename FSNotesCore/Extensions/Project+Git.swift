@@ -17,7 +17,6 @@ extension Project {
         return nil
     }
 
-#if os(OSX)
     public func getRepositoryUrl() -> URL {
         if UserDefaultsManagement.separateRepo && !isCloudProject() {
             return url.appendingPathComponent(".git", isDirectory: true)
@@ -28,18 +27,6 @@ extension Project {
 
         return repoURL
     }
-#else
-    public func getRepositoryUrl() -> URL {
-        if !UserDefaultsManagement.iCloudDrive {
-            return url.appendingPathComponent(".git")
-        }
-
-        let key = settingsKey.md5.prefix(6)
-        let repoURL = UserDefaultsManagement.gitStorage!.appendingPathComponent(key + " - " + label + ".git")
-
-        return repoURL
-    }
-#endif
 
     public func hasRepository() -> Bool {
         let url = getRepositoryUrl()
@@ -294,11 +281,7 @@ extension Project {
     }
 
     public func isUseWorkTree() -> Bool {
-    #if os(iOS)
-        return UserDefaultsManagement.iCloudDrive
-    #else
         return !UserDefaultsManagement.separateRepo || isCloudProject()
-    #endif
     }
 
     public func isGitOriginExist() -> Bool {

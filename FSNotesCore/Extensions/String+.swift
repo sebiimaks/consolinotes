@@ -9,18 +9,10 @@
 import Foundation
 import CommonCrypto
 
-#if os(OSX)
 import Cocoa
-#else
-import UIKit
-#endif
 
 public extension String {
-    #if os(OSX)
     typealias Font = NSFont
-    #else
-    typealias Font = UIFont
-    #endif
 
     func condenseWhitespace() -> String {
         let components = self.components(separatedBy: NSCharacterSet.whitespacesAndNewlines)

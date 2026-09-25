@@ -8,18 +8,11 @@
 
 import Foundation
 
-#if os(OSX)
-    import Cocoa
-    import Carbon.HIToolbox
-    typealias Font = NSFont
-    typealias TextView = EditTextView
-    typealias Color = NSColor
-#else
-    import UIKit
-    typealias Font = UIFont
-    typealias TextView = EditTextView
-    typealias Color = UIColor
-#endif
+import Cocoa
+import Carbon.HIToolbox
+typealias Font = NSFont
+typealias TextView = EditTextView
+typealias Color = NSColor
 
 public class TextFormatter {
     private var attributedString: NSMutableAttributedString
@@ -42,16 +35,11 @@ public class TextFormatter {
     init(textView: TextView, note: Note) {
         range = textView.selectedRange
         
-        #if os(OSX)
             storage = textView.textStorage!
             attributedSelected = textView.attributedString()
             if textView.typingAttributes[.font] == nil {
                 textView.typingAttributes[.font] = UserDefaultsManagement.noteFont
             }
-        #else
-            storage = textView.textStorage
-            attributedSelected = textView.attributedText
-        #endif
         
         self.attributedString = NSMutableAttributedString(attributedString: attributedSelected.attributedSubstring(from: range))
         self.selectedRange = NSRange(0..<attributedString.length)
@@ -63,13 +51,11 @@ public class TextFormatter {
         prevSelectedRange = range
         prevSelectedString = storage.attributedSubstring(from: prevSelectedRange)
         
-        #if os(OSX)
             self.isAutomaticQuoteSubstitutionEnabled = textView.isAutomaticQuoteSubstitutionEnabled
             self.isAutomaticDashSubstitutionEnabled = textView.isAutomaticDashSubstitutionEnabled
         
             textView.isAutomaticQuoteSubstitutionEnabled = false
             textView.isAutomaticDashSubstitutionEnabled = false
-        #endif
     }
     
     func getString() -> NSMutableAttributedString {
@@ -272,17 +258,7 @@ public class TextFormatter {
         let mutableResult = NSMutableAttributedString(string: result)
         mutableResult.loadTasks()
 
-        #if os(OSX)
             textView.textStorage?.removeAttribute(.todo, range: pRange)
-        #else
-            textView.textStorage.removeAttribute(.todo, range: pRange)
-
-            // Fixes font size issue #1271
-            let parFont = NotesTextProcessor.font
-            let parRange = NSRange(location: 0, length:   mutableResult.length)
-            mutableResult.addAttribute(.font, value: parFont, range: parRange)
-            mutableResult.fixAttributes(in: parRange)
-        #endif
 
         insertText(mutableResult, replacementRange: pRange, selectRange: selectRange)
     }
@@ -364,17 +340,7 @@ public class TextFormatter {
         let mutableResult = NSMutableAttributedString(string: result)
         mutableResult.loadTasks()
 
-        #if os(OSX)
             textView.textStorage?.removeAttribute(.todo, range: pRange)
-        #else
-            textView.textStorage.removeAttribute(.todo, range: pRange)
-
-            // Fixes font size issue #1271
-            let parFont = NotesTextProcessor.font
-            let parRange = NSRange(location: 0, length:   mutableResult.length)
-            mutableResult.addAttribute(.font, value: parFont, range: parRange)
-            mutableResult.fixAttributes(in: parRange)
-        #endif
 
         insertText(mutableResult, replacementRange: pRange, selectRange: selectRange)
     }
@@ -383,24 +349,6 @@ public class TextFormatter {
         let fullSelection = selectedRange.length > 0
         guard let pRange = getParagraphRange() else { return }
 
-#if os(iOS)
-        var prefix = String()
-        var paragraph = storage.mutableString.substring(with: pRange)
-
-        if paragraph.starts(with: "######") {
-            paragraph = paragraph
-                .replacingOccurrences(of: "#", with: "")
-                .trimSpaces()
-        } else if paragraph.starts(with: "#") {
-            prefix = string
-        } else {
-            prefix = string + " "
-        }
-
-        let diff = paragraph.contains("\n") ? 1 : 0
-        let selectRange = NSRange(location: pRange.location + (prefix + paragraph).count - diff, length: 0)
-        insertText(prefix + paragraph, replacementRange: pRange, selectRange: selectRange)
-#else
         let prefix = string + " "
         var paragraph = storage.mutableString
             .substring(with: pRange)
@@ -421,7 +369,6 @@ public class TextFormatter {
         }
 
         insertText(paragraph, replacementRange: pRange, selectRange: selectRange)
-#endif
     }
     
     public func link() {
@@ -448,9 +395,7 @@ public class TextFormatter {
         if (text.count == 4) {
             setSelectedRange(NSMakeRange(range.location + 2, 0))
 
-            #if os(OSX)
             textView.complete(nil)
-            #endif
         } else {
             setSelectedRange(NSMakeRange(range.location + 2, text.count - 4))
         }
@@ -575,11 +520,7 @@ public class TextFormatter {
     private func updateCurrentParagraph() {
         let parRange = getParagraphRange(for: textView.selectedRange.location)
 
-        #if os(iOS)
-            textView.textStorage.updateParagraphStyle(range: parRange)
-        #else
             textView.textStorage?.updateParagraphStyle(range: parRange)
-        #endif
     }
 
     public func newLine() {
@@ -600,13 +541,8 @@ public class TextFormatter {
 
                     insertText("", replacementRange: currentParagraphRange, selectRange: selectRange)
 
-                    #if os(OSX)
                         textView.insertNewline(nil)
                         textView.setSelectedRange(selectRange)
-                    #else
-                        textView.insertText("\n")
-                        textView.selectedRange = selectRange
-                    #endif
 
                     return
                 }
@@ -628,21 +564,9 @@ public class TextFormatter {
                     prefix = currentParagraph.attributedSubstring(from: NSRange(0..<todoLocation)).string
                 }
 
-            #if os(OSX)
                 let string = NSMutableAttributedString(string: "\n" + prefix)
                 string.append(unchecked!)
                 self.insertText(string)
-            #else
-                let selectedRange = textView.selectedRange
-                let selectedTextRange = textView.selectedTextRange!
-                let checkbox = NSMutableAttributedString(string: "\n" + prefix)
-                checkbox.append(unchecked!)
-
-                textView.undoManager?.beginUndoGrouping()
-                textView.replace(selectedTextRange, withText: checkbox.string)
-                textView.textStorage.replaceCharacters(in: NSRange(location: selectedRange.location, length: checkbox.length), with: checkbox)
-                textView.undoManager?.endUndoGrouping()
-            #endif
                 return
             }
         }
@@ -682,11 +606,7 @@ public class TextFormatter {
             return
         }
 
-        #if os(iOS)
-            self.textView.insertText("\n")
-        #else
             self.textView.insertNewline(nil)
-        #endif
     }
 
     public func todo() {
@@ -782,11 +702,7 @@ public class TextFormatter {
 
         let mutableResult = NSMutableAttributedString(string: result)
         
-        #if os(iOS)
-            let textColor: UIColor = UIColor.blackWhite
-        #else
             let textColor: NSColor = NotesTextProcessor.fontColor
-        #endif
         
         mutableResult.addAttribute(.foregroundColor, value: textColor, range: NSRange(location: 0, length: mutableResult.length))
         mutableResult.addAttribute(.font, value: NotesTextProcessor.font, range: NSRange(location: 0, length: mutableResult.length))
@@ -806,11 +722,9 @@ public class TextFormatter {
 
     public func toggleTodo(_ location: Int? = nil) {
         if let location = location, let todoAttr = storage.attribute(.todo, at: location, effectiveRange: nil) as? Int {
-            #if os(OSX)
                 if textView.window?.firstResponder != textView {
                     textView.window?.makeFirstResponder(textView)
                 }
-            #endif
             
             guard let paragraph = getParagraphRange(for: location) else { return }
             let paragraphTextNonMutable = storage.attributedSubstring(from: paragraph)
@@ -965,60 +879,34 @@ public class TextFormatter {
 
         var color = Color.black
 
-        #if os(OSX)
             color = NSColor(named: "mainText")!
-        #endif
 
         string.addAttribute(.foregroundColor, value: color, range: NSRange(1..<string.length))
         return string
     }
     
     private func replaceWith(string: String, range: NSRange? = nil) {
-        #if os(iOS)
-            var selectedRange: UITextRange
-        
-            if let range = range,
-                let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
-                let end = textView.position(from: start, offset: range.length),
-                let sRange = textView.textRange(from: start, to: end) {
-                selectedRange = sRange
-            } else {
-                selectedRange = textView.selectedTextRange!
-            }
-
-            textView.replace(selectedRange, withText: string)
-        #else
             var r = textView.selectedRange
             if let range = range {
                 r = range
             }
         
             textView.insertText(string, replacementRange: r)
-        #endif
     }
     
     deinit {
-        #if os(OSX)
             textView.isAutomaticQuoteSubstitutionEnabled = self.isAutomaticQuoteSubstitutionEnabled
             textView.isAutomaticDashSubstitutionEnabled = self.isAutomaticDashSubstitutionEnabled
-        #endif
 
         setTypingAttributes(font: UserDefaultsManagement.noteFont)
         var text: NSAttributedString?
 
-        #if os(OSX)
             text = textView.attributedString()
-        #else
-            text = textView.attributedText
-        #endif
 
         if let attributed = text {
             note.save(attributed: attributed)
         }
 
-        #if os(iOS)
-            textView.initUndoRedoButons()
-        #endif
     }
     
     func getParagraphRange() -> NSRange? {
@@ -1040,101 +928,33 @@ public class TextFormatter {
     }
             
     func getTypingAttributes() -> Font {
-        #if os(OSX)
             return textView.typingAttributes[.font] as! Font
-        #else
-            if let typingFont = textView.typingFont {
-                textView.typingFont = nil
-                return typingFont
-            }
-
-            guard textView.textStorage.length > 0, textView.selectedRange.location > 0 else { return UserDefaultsManagement.noteFont }
-
-            let i = textView.selectedRange.location - 1
-            let upper = textView.selectedRange.upperBound
-            let substring = textView.attributedText.attributedSubstring(from: NSRange(i..<upper))
-
-            if let prevFont = substring.attribute(.font, at: 0, effectiveRange: nil) as? UIFont {
-                return prevFont
-            }
-
-            return UserDefaultsManagement.noteFont
-        #endif
     }
 
-    #if os(OSX)
     private func getDefaultColor() -> NSColor {
         var color = NSColor(named: "mainText")!
         
         return color
     }
-    #endif
     
     func setTypingAttributes(font: Font) {
-        #if os(OSX)
             textView.typingAttributes[.font] = font
-        #else
-            textView.typingFont = font
-            textView.typingAttributes[.font] = font
-        #endif
     }
         
     public func setSelectedRange(_ range: NSRange) {
-        #if os(OSX)
             if range.upperBound <= storage.length {
                 textView.setSelectedRange(range)
             }
-        #else
-            textView.selectedRange = range
-        #endif
     }
     
     func getAttributedString() -> NSAttributedString {
-        #if os(OSX)
             return textView.attributedString()
-        #else
-            return textView.attributedText
-        #endif
     }
     
     private func insertText(_ string: Any, replacementRange: NSRange? = nil, selectRange: NSRange? = nil) {
         let range = replacementRange ?? self.textView.selectedRange
         
-    #if os(iOS)
-        guard
-            let start = textView.position(from: self.textView.beginningOfDocument, offset: range.location),
-            let end = textView.position(from: start, offset: range.length),
-            let selectedRange = textView.textRange(from: start, to: end)
-        else { return }
-    
-        var replaceString = String()
-        if let attributedString = string as? NSAttributedString {
-            replaceString = attributedString.string
-        }
-
-        if let plainString = string as? String {
-            replaceString = plainString
-        }
-
-        self.textView.undoManager?.beginUndoGrouping()
-        self.textView.replace(selectedRange, withText: replaceString)
-
-        if let string = string as? NSAttributedString {
-            let editedRange = NSRange(location: range.location, length: replaceString.count)
-            storage.replaceCharacters(in: editedRange, with: string)
-            storage.delegate?.textStorage!(storage, didProcessEditing: NSTextStorage.EditActions.editedCharacters, range: editedRange, changeInLength: 1)
-        } else {
-            let parRange = NSRange(location: range.location, length: replaceString.count)
-            let parStyle = NSMutableParagraphStyle()
-            parStyle.alignment = .left
-            parStyle.lineSpacing = CGFloat(UserDefaultsManagement.editorLineSpacing)
-            self.textView.textStorage.addAttribute(.paragraphStyle, value: parStyle, range: parRange)
-        }
-
-        self.textView.undoManager?.endUndoGrouping()
-    #else
         textView.insertText(string, replacementRange: range)
-    #endif
         
         if let select = selectRange {
             setSelectedRange(select)
@@ -1258,7 +1078,6 @@ public class TextFormatter {
                         }
                     }
                 }
-
 
                 result += empty + "\n"
                 i += 1

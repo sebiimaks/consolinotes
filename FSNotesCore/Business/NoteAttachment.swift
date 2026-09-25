@@ -9,13 +9,8 @@
 import Foundation
 import AVKit
 
-#if os(OSX)
-    import Cocoa
-    typealias PlatformImage = NSImage
-#else
-    import UIKit
-    typealias PlatformImage = UIImage
-#endif
+import Cocoa
+typealias PlatformImage = NSImage
 
 // MARK: - NoteAttachment
 
@@ -30,19 +25,11 @@ class NoteAttachment {
 
     private enum Constants {
         static let previewPrefix = "Preview"
-        static let thumbnailPrefixMacOS = "ThumbnailsBig"
-        static let thumbnailPrefixIOS = "ThumbnailsBigInline"
+        static let thumbnailPrefix = "ThumbnailsBig"
         static let fontFamily = "Avenir Next"
-        static let fontNameIOS = "AvenirNext-BoldItalic"
         static let defaultFontSize: CGFloat = 14.0
         static let fileSizeThreshold = 10000
         static let bytesInMB: Double = 1_000_000
-
-        #if os(iOS)
-        static let thumbnailPrefix = thumbnailPrefixIOS
-        #else
-        static let thumbnailPrefix = thumbnailPrefixMacOS
-        #endif
     }
 
     // MARK: - Initialization
@@ -84,7 +71,6 @@ class NoteAttachment {
     }
 
     private func getAttachmentFont() -> PlatformFont {
-        #if os(OSX)
         let traits = NSFontTraitMask(rawValue: NSFontTraitMask.RawValue(
             NSFontBoldTrait | NSFontItalicTrait
         ))
@@ -95,10 +81,6 @@ class NoteAttachment {
             weight: 1,
             size: CGFloat(UserDefaultsManagement.fontSize)
         ) ?? PlatformFont.systemFont(ofSize: Constants.defaultFontSize)
-        #else
-        return PlatformFont(name: Constants.fontNameIOS, size: CGFloat(UserDefaultsManagement.fontSize))
-            ?? PlatformFont.systemFont(ofSize: Constants.defaultFontSize)
-        #endif
     }
 
     public func imageFromText(text: String, imageSize: CGSize) -> PlatformImage? {
@@ -106,26 +88,17 @@ class NoteAttachment {
         let attributes = createTextAttributes(font: font)
         let textSize = text.size(withAttributes: attributes)
 
-        #if os(OSX)
         return createImageMacOS(text: text, imageSize: imageSize, attributes: attributes, textSize: textSize)
-        #else
-        return createImageIOS(text: text, imageSize: imageSize, attributes: attributes, textSize: textSize)
-        #endif
     }
 
     private func createTextAttributes(font: PlatformFont) -> [NSAttributedString.Key: Any] {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
 
-        #if os(OSX)
         let isDark = UserDataService.instance.isDark
         let textColor: PlatformColor = isDark ? .white : .black
         let backgroundColor: PlatformColor = isDark ?
             NSColor(red: 0.16, green: 0.17, blue: 0.18, alpha: 1.00) : .white
-        #else
-        let textColor = NotesTextProcessor.fontColor
-        let backgroundColor = UIColor.dropDownColor
-        #endif
 
         return [
             .font: font,
@@ -197,11 +170,7 @@ extension NoteAttachment {
             return nil
         }
 
-        #if os(OSX)
         return NSImage(data: imageData)
-        #else
-        return UIImage(data: imageData)
-        #endif
     }
 
     private static func generateVideoThumbnail(from url: URL, size: CGSize) -> PlatformImage? {
@@ -215,11 +184,7 @@ extension NoteAttachment {
             return nil
         }
 
-        #if os(OSX)
         return NSImage(cgImage: cgImage, size: size)
-        #else
-        return UIImage(cgImage: cgImage)
-        #endif
     }
 
     private static func getCachedOrResizedImage(
@@ -231,15 +196,9 @@ extension NoteAttachment {
 
         if let cacheURL = cacheURL,
            FileManager.default.fileExists(atPath: cacheURL.path) {
-            #if os(OSX)
             if let cached = NSImage(contentsOfFile: cacheURL.path) {
                 return cached
             }
-            #else
-            if let cached = UIImage(contentsOfFile: cacheURL.path) {
-                return cached
-            }
-            #endif
         }
 
         guard let resized = original.resized(to: size) else {
@@ -257,7 +216,6 @@ extension NoteAttachment {
 
 // MARK: - macOS Specific Methods
 
-#if os(OSX)
 extension NoteAttachment {
     private func createImageMacOS(
         text: String,
@@ -282,36 +240,3 @@ extension NoteAttachment {
         return image
     }
 }
-#endif
-
-// MARK: - iOS Specific Methods
-
-#if os(iOS)
-extension NoteAttachment {
-    private func createImageIOS(
-        text: String,
-        imageSize: CGSize,
-        attributes: [NSAttributedString.Key: Any],
-        textSize: CGSize
-    ) -> UIImage? {
-        let imageRect = CGRect(origin: .zero, size: imageSize)
-
-        UIGraphicsBeginImageContextWithOptions(imageRect.size, false, 0.0)
-        defer { UIGraphicsEndImageContext() }
-
-        guard let context = UIGraphicsGetCurrentContext() else {
-            return nil
-        }
-
-        // Fill background
-        (attributes[.backgroundColor] as? UIColor)?.setFill()
-        context.fill(imageRect)
-
-        // Draw centered text
-        let textRect = calculateCenteredRect(textSize: textSize, containerSize: imageSize)
-        text.draw(in: textRect, withAttributes: attributes)
-
-        return UIGraphicsGetImageFromCurrentImageContext()
-    }
-}
-#endif

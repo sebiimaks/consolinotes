@@ -1,6 +1,6 @@
 //
 //  Date+.swift
-//  FSNotes iOS
+//  FSNotesCore
 //
 //  Created by Oleksandr Glushchenko on 9/25/18.
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.

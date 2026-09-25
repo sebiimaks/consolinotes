@@ -6,11 +6,7 @@
 //  Copyright © 2023 Oleksandr Hlushchenko. All rights reserved.
 //
 
-#if os(OSX)
 import Cocoa
-#else
-import UIKit
-#endif
 
 extension ViewController {
     public func deleteAPI(note: Note, completion: (() -> Void)? = nil) {

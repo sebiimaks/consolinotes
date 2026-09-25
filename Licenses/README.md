@@ -8,7 +8,7 @@ the actual bundled Mermaid file and its dependency versions.
 
 Run `python3 scripts/generate-license-notices.py` from the repository to produce:
 
-- `THIRD_PARTY_NOTICES.md` for native applications;
+- `THIRD_PARTY_NOTICES.md` for the macOS applications;
 - `Resources/MPreview.bundle/THIRD_PARTY_NOTICES.md` for bundled and published web assets;
 - `Resources/MPreview.bundle/LICENSE`, a copy of the root FSNotes/fork MIT licence.
 
@@ -19,15 +19,14 @@ publishing sends only a standalone HTML page. Other template edits remain intact
 Commit both the input files and the generated copies. Do not edit a generated
 copy directly. `--check` verifies all outputs without rewriting them.
 
-All four Xcode targets carry the root licence and third-party notices. The three
-application targets also carry `SOURCE_CODE.md` and `libgit2-source.tar.gz`; the
-iOS extension's native source is supplied by its containing application. The
-preview bundle carries font OFLs as well as the aggregate notices. Published web
+Both macOS application targets carry the root licence, third-party notices,
+`SOURCE_CODE.md` and `libgit2-source.tar.gz`. The preview bundle carries font OFLs
+as well as the aggregate notices. Published web
 pages use only the relevant web components, not the native libraries also listed
 in the aggregate document.
 
 Custom-server setup uploads notices before copying JavaScript and CSS. Subsequent
-macOS and iOS note uploads refresh the notices at the configured asset root,
+note uploads refresh the notices at the configured asset root,
 including on servers configured before licence delivery was added. Missing or
 failed notice transfers stop that upload. No server credentials are needed to
 generate or validate the licence files locally.
@@ -40,8 +39,7 @@ After resolving the pinned Swift packages and building the intended configuratio
 python3 scripts/check-license-distribution.py --app /path/to/consolinotes.app --require-tracked
 ```
 
-For an iOS archive, supply the app under `Products/Applications`. Repeat `--app`
-to check multiple artifacts. The check validates generated copies, the libgit2
+Repeat `--app` to check multiple macOS artifacts. The check validates generated copies, the libgit2
 source archive, Xcode resource membership, font notices, and exact licence/source
 bytes in the built app. `--require-tracked` also rejects untracked release inputs.
 It does not publish a release or certify trademark rights.

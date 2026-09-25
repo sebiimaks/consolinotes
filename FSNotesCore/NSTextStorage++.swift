@@ -6,26 +6,14 @@
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(OSX)
 import AppKit
-#else
-import UIKit
-#endif
 
 extension NSTextStorage {
-#if os(OSX)
     public var highlightColor: NSColor {
         get {
             return NSColor(named: "highlight")!
         }
     }
-#else
-    public var highlightColor: UIColor {
-        get {
-            return UIColor.highlightColor
-        }
-    }
-#endif
 
     public func getImageRange(url: URL) -> NSRange? {
         let affectedRange = NSRange(0..<length)
@@ -234,19 +222,11 @@ extension NSTextStorage {
         ) { value, subRange, _ in
             guard value != nil else { return }
 
-            #if os(macOS)
             if let originalColor = value as? NSColor {
                 self.addAttribute(.backgroundColor, value: originalColor, range: subRange)
             } else {
                 self.removeAttribute(.backgroundColor, range: subRange)
             }
-            #else
-            if let originalColor = value as? UIColor {
-                self.addAttribute(.backgroundColor, value: originalColor, range: subRange)
-            } else {
-                self.removeAttribute(.backgroundColor, range: subRange)
-            }
-            #endif
 
             self.removeAttribute(.highlight, range: subRange)
         }

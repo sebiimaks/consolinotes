@@ -1,13 +1,15 @@
 # consolinotes
 
-> **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的独立分支，与 FSNotes 项目及其作者无关，也未获其认可。它将 macOS 应用改为终端风格，其余功能与 FSNotes 相同。完整说明、许可证与第三方声明请见 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文为 FSNotes 原始说明。
+> **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的独立分支，与 FSNotes 项目及其作者无关，也未获其认可。此分支专注于 macOS，将应用界面改为终端风格。完整说明、许可证与第三方声明请见 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文为 FSNotes 原始 macOS 功能参考。
+
+当前分支仅包含 macOS 应用。此前的 iOS 应用及分享扩展保存在[移除前的备份分支](https://github.com/sebiimaks/consolinotes/tree/codex/pre-ios-removal)。
 
 ## FSNotes
 
 [English](README.md)
 [繁體中文](README_zh_TW.md)
 
-FSNotes是适用于 macOS 和 iOS 的现代笔记管理器。
+FSNotes 是本项目所基于的笔记管理器。
 
 ## macOS 应用
 
@@ -36,30 +38,6 @@ FSNotes是适用于 macOS 和 iOS 的现代笔记管理器。
 - AES-256 **加密**。
 - **Mermaid 和 MathJax** 支持。
 - 可选的**Git 版本控制**和**备份**。
-
----
-
-## iOS 应用
-
-<a href="https://itunes.apple.com/app/fsnotes-manager/id1346501102">
-	<img src="https://fsnot.es/img/badge-download-on-the-app-store.svg" alt="">
-</a>
-
-<img width="300" alt="FSNotes for iOS" src="https://fsnot.es/img/fsnotes6-ios/s1x.webp?v=1.0"> <img width="300" alt="FSNotes for iOS" src="https://fsnot.es/img/fsnotes6-ios/s2x.webp?v=1.0">
-
-### 主要功能
-
-- 通过 iCloud Drive 进行**同步**。
-- **3D Touch** 和**可配置键盘**。
-- **TextBundle** 和 **EncryptedTextBundle** 容器。
-- 保持与桌面应用同步的**置顶**笔记。
-- **动态字体**。
-- **暗黑模式**。
-- **分享**扩展。
-- **加密笔记**支持。
-- **加密文件夹**支持。
-- **Git** 集成。
-- **网页**创建。
 
 ## 许可证
 

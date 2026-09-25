@@ -520,57 +520,11 @@ body > ul, body > ol {
         margin-left: 25px;
     }
 
-    .ios ul.cb  {
-        list-style-type: none;
-        margin-left: 0;
-    }
 
-body.ios > ul, body.ios > ol { margin-left: 25px; }
-.ios ul.cb li { margin: 0 0 7px 27px; }
-.ios ul.cb li input[type=checkbox] { margin: 0 0 0 -28px; }
 
 .macos.darkmode input[type='checkbox'] { border: 1px solid white;}
-.ios.darkmode input[type=checkbox] { background-color: white; }
-.ios.darkmode input[type=checkbox]:checked:after { border-bottom: 1px solid black; border-right: 1px solid black; }
 
-.ios input[type=checkbox] {
-    width: 20px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    height: 20px;
-    border: 1px solid black;
-    border-radius: 3px;
-    vertical-align: -4px;
-    position: relative;
-}
-    .ios input[type=checkbox]:after {
-        position: absolute;
-        left: 6px;
-        top: 2px;
-        transform: rotate(45deg);
-        height: 9px;
-        width: 5px;
-        border-bottom: 2px solid transparent;
-        border-right: 2px solid transparent;
-        content: "";
-        display: inline-block;
-    }
 
-.ios input[type=checkbox]:checked {
-    background-color: white;
-}
-    .ios input[type=checkbox]:checked:after {
-        position: absolute;
-        left: 6px;
-        top: 2px;
-        transform: rotate(45deg);
-        height: 9px;
-        width: 5px;
-        border-bottom: 1px solid black;
-        border-right: 1px solid black;
-        content: "";
-        display: inline-block;
-    }
 
 .macos input[type='checkbox'] {
     -webkit-appearance:none;

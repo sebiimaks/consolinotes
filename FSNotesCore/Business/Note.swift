@@ -277,7 +277,6 @@ public class Note: NSObject  {
         return (title, preview)
     }
 
-
     public func uiLoad() {
         if let size = fileSize(atPath: self.url.path), size > 100000 {
             loadFileName()
@@ -298,9 +297,6 @@ public class Note: NSObject  {
     }
     
     func load(tags: Bool = true) {
-        #if SHARE_EXT
-            return
-        #endif
 
         if let attributedString = getContent() {
             cacheHash = nil
@@ -451,18 +447,16 @@ public class Note: NSObject  {
             try FileManager.default.moveItem(at: url, to: destination)
             removeCacheForPreviewImages()
 
-            #if os(OSX)
-                let restorePin = isPinned
-                if isPinned {
-                    removePin()
-                }
+            let restorePin = isPinned
+            if isPinned {
+                removePin()
+            }
 
-                overwrite(url: destination)
+            overwrite(url: destination)
 
-                if restorePin {
-                    addPin()
-                }
-            #endif
+            if restorePin {
+                addPin()
+            }
 
             print("File moved from \"\(url.deletingPathExtension().lastPathComponent)\" to \"\(destination.deletingPathExtension().lastPathComponent)\"")
         } catch {
@@ -491,9 +485,6 @@ public class Note: NSObject  {
                 self.url = dst
                 parseURL()
 
-                #if IOS_APP
-                    moveHistory(src: src, dst: dst)
-                #endif
             }
         } else {
             _ = removeFile()
@@ -502,9 +493,6 @@ public class Note: NSObject  {
                 removePin()
             }
 
-            #if IOS_APP
-                dropRevisions()
-            #endif
         }
     }
 
@@ -512,65 +500,6 @@ public class Note: NSObject  {
         return content.length == 0 && !isEncrypted()
     }
 
-    #if os(iOS)
-    // Return URL moved in
-    func removeFile(completely: Bool = false) -> Array<URL>? {
-        if FileManager.default.fileExists(atPath: url.path) {
-            if isTrash() || completely || isEmpty() {
-                try? FileManager.default.removeItem(at: url)
-
-                if type == .Markdown && container == .none {
-                    let urls = content.getImagesAndFiles()
-                    for url in urls {
-                        try? FileManager.default.removeItem(at: url.url)
-                    }
-                }
-
-                return nil
-            }
-
-            guard let trashUrl = getDefaultTrashURL() else {
-                print("Trash not found")
-
-                var resultingItemUrl: NSURL?
-                if #available(iOS 11.0, *) {
-                    if let trash = Storage.shared().getDefaultTrash() {
-                        moveImages(to: trash)
-                    }
-
-                    try? FileManager.default.trashItem(at: url, resultingItemURL: &resultingItemUrl)
-
-                    if let result = resultingItemUrl, let path = result.path {
-                        return [URL(fileURLWithPath: path), url]
-                    }
-                }
-
-                return nil
-            }
-
-            var trashUrlTo = trashUrl.appendingPathComponent(name)
-
-            if FileManager.default.fileExists(atPath: trashUrlTo.path) {
-                let reserveName = "\(Int(Date().timeIntervalSince1970)) \(name)"
-                trashUrlTo = trashUrl.appendingPathComponent(reserveName)
-            }
-
-            print("Note moved in custom Trash folder")
-
-            if let trash = Storage.shared().getDefaultTrash() {
-                moveImages(to: trash)
-            }
-            
-            try? FileManager.default.moveItem(at: url, to: trashUrlTo)
-
-            return [trashUrlTo, url]
-        }
-        
-        return nil
-    }
-    #endif
-
-    #if os(OSX)
     func removeFile(completely: Bool = false) -> Array<URL>? {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
 
@@ -622,7 +551,6 @@ public class Note: NSObject  {
 
         return nil
     }
-    #endif
 
     public func getAttachPrefix(url: URL? = nil) -> String {
         if let url = url, !url.isImage {
@@ -891,16 +819,12 @@ public class Note: NSObject  {
     }
     
     func getPrettifiedContent() -> String {
-        #if IOS_APP || os(OSX)
-            let mutable = NotesTextProcessor.convertAppTags(in: self.content.unloadAttachments(), codeBlockRanges: codeBlockRangesCache)
+        let mutable = NotesTextProcessor.convertAppTags(in: self.content.unloadAttachments(), codeBlockRanges: codeBlockRangesCache)
         let content = NotesTextProcessor.convertAppLinks(in: mutable, codeBlockRanges: codeBlockRangesCache)
-            let result = cleanMetaData(content: content.string)
-            let prettifiedContent = replaceHorizontalRulesOutsideCodeBlocks(in: result)
+        let result = cleanMetaData(content: content.string)
+        let prettifiedContent = replaceHorizontalRulesOutsideCodeBlocks(in: result)
 
-            return prettifiedContent
-        #else
-            return cleanMetaData(content: self.content.string)
-        #endif
+        return prettifiedContent
     }
 
     public func overwrite(url: URL) {
@@ -1384,7 +1308,6 @@ public class Note: NSObject  {
         return project.url.appendingPathComponent(name)
     }
 
-    #if os(OSX)
     public func getDupeName() -> String? {
         var url = self.url
         let ext = url.pathExtension
@@ -1409,7 +1332,6 @@ public class Note: NSObject  {
 
         return dstUrl.deletingPathExtension().lastPathComponent
     }
-    #endif
 
     public func loadPreviewInfo() {
         guard !isParsed || title.isEmpty && (imageUrl?.isEmpty ?? true) else { return }
@@ -1964,12 +1886,6 @@ public class Note: NSObject  {
             return getFileName()
         }
 
-        #if os(iOS)
-        if !project.settings.isFirstLineAsTitle() {
-            return getFileName()
-        }
-        #endif
-
         if title.count > 0 {
             if title.isValidUUID && project.settings.isFirstLineAsTitle() {
                 return nil
@@ -2160,7 +2076,6 @@ public class Note: NSObject  {
     public func getRelatedPath() -> String {
         return project.getNestedPath() + "/" + name
     }
-    
 
     func isOlderThan30Seconds(from date: Date? = nil) -> Bool {
         guard let date = date else { return false }
@@ -2174,10 +2089,8 @@ public class Note: NSObject  {
     }
 
     public func cacheCodeBlocks() {
-    #if !SHARE_EXT
         let ranges = CodeBlockDetector.shared.findCodeBlocks(in: content)
         codeBlockRangesCache = ranges
-    #endif
     }
 
     public func isInCodeBlockRange(range: NSRange) -> Bool {
@@ -2253,7 +2166,6 @@ public class Note: NSObject  {
         return write(attributedString: content)
     }
 
-    #if os(macOS)
     public func cache() {
         if cacheLock { return }
 
@@ -2272,5 +2184,4 @@ public class Note: NSObject  {
 
         cacheLock = false
     }
-    #endif
 }

@@ -6,14 +6,9 @@
 //  Copyright © 2017 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(OSX)
-    import Cocoa
-#else
-    import UIKit
-#endif
+import Cocoa
 
 public class NotesTextProcessor {
-#if os(OSX)
     typealias Color = NSColor
     typealias Image = NSImage
     typealias Font = NSFont
@@ -23,21 +18,6 @@ public class NotesTextProcessor {
             return NSColor(named: "mainText")!
         }
     }
-#else
-    typealias Color = UIColor
-    typealias Image = UIImage
-    typealias Font = UIFont
-
-    public static var fontColor: UIColor {
-        get {
-            return UIColor { (traits) -> UIColor in
-                return traits.userInterfaceStyle == .dark ?
-                    UIColor.white :
-                    UIColor.black
-            }
-        }
-    }
-#endif
     // MARK: Syntax highlight customisation
     
     /**
@@ -72,7 +52,6 @@ public class NotesTextProcessor {
         }
     }
     
-#if os(OSX)
     public static var font: NSFont {
         get {
             return UserDefaultsManagement.noteFont
@@ -90,25 +69,6 @@ public class NotesTextProcessor {
             return NSColor(named: "quoteColor")!
         }
     }
-#else
-    public static var font: UIFont {
-        get {
-            return UserDefaultsManagement.noteFont
-        }
-    }
-
-    public static var codeSpanBackground: UIColor {
-        get {
-            return UIColor.codeBackground
-        }
-    }
-    
-    public static var quoteColor: UIColor {
-        get {
-            return UIColor.darkGray
-        }
-    }
-#endif
     
     /**
      Quote indentation in points. Default 20.
@@ -311,12 +271,7 @@ public class NotesTextProcessor {
             let newTraits = currentTraits.subtracting(traitsToRemove)
             let newDesc = font.fontDescriptor.withSymbolicTraits(newTraits)
             
-        #if os(iOS)
-            guard let newDesc = newDesc else { return }
-            let newFont = PlatformFont(descriptor: newDesc, size: pointSize)
-        #else
             guard let newFont = PlatformFont(descriptor: newDesc, size: pointSize) else { return }
-        #endif
             
             attributedString.addAttribute(.font, value: newFont, range: subrange)
         }
@@ -334,12 +289,7 @@ public class NotesTextProcessor {
             let newTraits = currentTraits.union(traitsToAdd)
             let newDesc = font.fontDescriptor.withSymbolicTraits(newTraits)
 
-        #if os(iOS)
-            guard let newDesc = newDesc else { return }
-            let newFont = PlatformFont(descriptor: newDesc, size: font.pointSize)
-        #else
             guard let newFont = PlatformFont(descriptor: newDesc, size: font.pointSize) else { return }
-        #endif
             
             attributedString.addAttribute(.font, value: newFont, range: subrange)
         }
@@ -374,11 +324,7 @@ public class NotesTextProcessor {
         let pointSize = UserDefaultsManagement.noteFont.pointSize
         let codeFont = UserDefaultsManagement.codeFont
         
-    #if os(OSX)
         let hiddenFont = NSFont.systemFont(ofSize: 0.1)
-    #else
-        let hiddenFont = UIFont.systemFont(ofSize: 0.1)
-    #endif
 
         let hiddenColor = Color.clear
         let hiddenAttributes: [NSAttributedString.Key : Any] = [
@@ -410,9 +356,6 @@ public class NotesTextProcessor {
             }
         }
 
-        #if os(iOS)
-            attributedString.addAttribute(.foregroundColor, value: UIColor.blackWhite, range: paragraphRange)
-        #else
             attributedString.addAttribute(.foregroundColor, value: fontColor, range: paragraphRange)
             attributedString.enumerateAttribute(.foregroundColor, in: paragraphRange,  options: []) { (value, range, stop) -> Void in
 
@@ -420,7 +363,6 @@ public class NotesTextProcessor {
                     attributedString.addAttribute(.foregroundColor, value: NotesTextProcessor.fontColor, range: range)
                 }
             }
-        #endif
 
         // We detect and process inline links not formatted
         NotesTextProcessor.autolinkRegex.matches(string, range: paragraphRange) { (result) -> Void in
@@ -550,7 +492,6 @@ public class NotesTextProcessor {
             }
         }
 
-        #if IOS_APP || os(OSX)
         // We detect and process inline anchors (links)
         NotesTextProcessor.anchorInlineRegex.matches(string, range: paragraphRange) { (result) -> Void in
             guard let range = result?.range else { return }
@@ -599,7 +540,6 @@ public class NotesTextProcessor {
                 attributedString.addAttribute(.link, value: destinationLinkString, range: _range)
             }
         }
-        #endif
         
         NotesTextProcessor.anchorInlineGFMRegex.matches(string, range: paragraphRange) { (result) -> Void in
             guard let range = result?.range else { return }
@@ -683,10 +623,6 @@ public class NotesTextProcessor {
             guard !appLink.startsWith(string: "`") else { return }
 
             if let link = appLink.addingPercentEncoding(withAllowedCharacters: .alphanumerics) {
-
-            #if os(iOS)
-                attributedString.addAttribute(.foregroundColor, value: UIColor.wikiColor, range: innerRange)
-            #endif
 
                 attributedString.addAttribute(.link, value: "fsnotes://find?id=" + link, range: _range)
 
@@ -1396,17 +1332,9 @@ public class NotesTextProcessor {
         var fontDescriptor = baseFont.fontDescriptor
             .withSymbolicTraits(boldTraits)
         
-        #if os(OSX)
             fontDescriptor = fontDescriptor.withSize(headerSize)
         
             return PlatformFont(descriptor: fontDescriptor, size: headerSize) ?? baseFont
-        #else
-            fontDescriptor = fontDescriptor?.withSize(headerSize)
-        
-            guard let fontDescriptor = fontDescriptor else { return baseFont }
-        
-            return PlatformFont(descriptor: fontDescriptor, size: headerSize)
-        #endif
     }
 }
 

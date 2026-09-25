@@ -68,7 +68,6 @@ class SandboxBookmark {
     }
     
     func store(url: URL) {
-        #if os(OSX)
         do {
             let data = try url.bookmarkData(options: NSURL.BookmarkCreationOptions.withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
             bookmarks[url] = data
@@ -76,11 +75,9 @@ class SandboxBookmark {
             Swift.print(error)
             Swift.print("Error storing bookmarks")
         }
-        #endif
     }
     
     func restore(_ bookmark: (key: URL, value: Data)) -> Bool {
-        #if os(OSX)
         let restoredUrl: URL?
         var isStale = false
         
@@ -108,7 +105,6 @@ class SandboxBookmark {
         }
 
         Swift.print("Couldn't access: \(url.path)")
-        #endif
 
         return false
     }

@@ -8,11 +8,7 @@
 
 import Foundation
 
-#if os(OSX)
 import AppKit
-#else
-import UIKit
-#endif
 
 extension NSMutableAttributedString {
 
@@ -22,7 +18,7 @@ extension NSMutableAttributedString {
 
         let range = NSRange(location: 0, length: 1)
 
-        // Only one way to store metadata in iOS
+        // Keep attachment metadata alongside the attributed placeholder.
         attributedAttachment.addAttribute(.attachmentUrl, value: url, range: range)
         attributedAttachment.addAttribute(.attachmentPath, value: path, range: range)
         attributedAttachment.addAttribute(.attachmentTitle, value: title, range: range)
@@ -130,13 +126,9 @@ extension NSMutableAttributedString {
             let parRange = mutableString.paragraphRange(for: range)
 
             if length >= range.upperBound, let checked = AttributedBox.getChecked() {
-                #if os(macOS)
                 let color = UserDataService.instance.isDark ? NSColor.white : NSColor.black
                 addAttribute(.strikethroughColor, value: color, range: parRange)
                 addAttribute(.strikethroughStyle, value: 1, range: parRange)
-                #else
-                addAttribute(.strikethroughColor, value: UIColor.blackWhite, range: parRange)
-                #endif
 
                 replaceCharacters(in: range, with: checked)
             }

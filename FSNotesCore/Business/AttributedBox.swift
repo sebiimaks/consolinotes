@@ -6,11 +6,7 @@
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(iOS)
-    import UIKit
-#else
-    import Cocoa
-#endif
+import Cocoa
 
 class AttributedBox {
     public static func getChecked(clean: Bool = false) -> NSMutableAttributedString? {
@@ -47,7 +43,7 @@ class AttributedBox {
 
         checkboxText.addAttribute(.todo, value: 0, range: NSRange(0..<1))
 
-        if #available(OSX 10.13, iOS 10.0, *) {
+        if #available(OSX 10.13, *) {
         } else {
             let offset = (font.capHeight - size) / 2
             checkboxText.addAttribute(.baselineOffset, value: offset, range: NSRange(0..<1))
@@ -72,7 +68,7 @@ class AttributedBox {
 
         checkboxText.addAttribute(.todo, value: 1, range: NSRange(0..<1))
 
-        if #available(OSX 10.13, iOS 10.0, *) {
+        if #available(OSX 10.13, *) {
         } else {
             let offset = (font.capHeight - size) / 2
             checkboxText.addAttribute(.baselineOffset, value: offset, range: NSRange(0..<1))
@@ -88,17 +84,13 @@ class AttributedBox {
     public static func getImage(name: String) -> Image {
         var name = name
 
-        #if os(OSX)
-            if name == "checkbox" {
-                if #available(OSX 10.15, *) {
-                    name = "checkbox_new"
-                } else {
-                    name = "checkbox_flipped"
-                }
+        if name == "checkbox" {
+            if #available(OSX 10.15, *) {
+                name = "checkbox_new"
+            } else {
+                name = "checkbox_flipped"
             }
-            return NSImage(named: name)!
-        #else
-            return UIImage(named: name)!
-        #endif
+        }
+        return NSImage(named: name)!
     }
 }

@@ -6,13 +6,8 @@
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(iOS)
-import UIKit
-typealias ImageView = UIImageView
-#else
 import Cocoa
 typealias ImageView = NSImageView
-#endif
 
 extension NoteCellView {
     public func loadImagesPreview(position: Int? = nil, urls: [URL]? = nil) {
@@ -153,7 +148,6 @@ extension NoteCellView {
             self.imagePreview.isHidden = true
         }
         
-    #if os(macOS)
         self.needsDisplay = true
         self.needsLayout = true
                 
@@ -164,7 +158,6 @@ extension NoteCellView {
         self.layoutSubtreeIfNeeded()
         self.superview?.needsLayout = true
         self.superview?.layoutSubtreeIfNeeded()
-    #endif
     }
 
     public func getResizedPreviewImages(note: Note, images: [URL], timestamp: Int64 = 00) -> [Image] {

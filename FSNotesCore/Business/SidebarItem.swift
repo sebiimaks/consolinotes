@@ -6,11 +6,7 @@
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(OSX)
-    import Cocoa
-#else
-    import UIKit
-#endif
+import Cocoa
 
 class SidebarItem {
     var name: String
@@ -26,27 +22,6 @@ class SidebarItem {
         self.icon = icon
         self.tag = tag
 
-    #if os(iOS)
-        if let icon = type.icon {
-            self.icon = getIcon(name: icon)
-        }
-
-        guard let project = project, type == .Project else { return }
-
-        if project.isEncrypted {
-            if project.isLocked() {
-                self.type = .ProjectEncryptedLocked
-            } else {
-                self.type = .ProjectEncryptedUnlocked
-            }
-        } else {
-            self.type = .Project
-        }
-
-        if let icon = self.type.icon {
-            self.icon = getIcon(name: icon)
-        }
-    #endif
     }
 
     public func setType(type: SidebarItemType) {
@@ -101,7 +76,6 @@ class SidebarItem {
         }
     }
 
-#if os(OSX)
     public func getIcon(name: String, white: Bool = false) -> NSImage? {
         let image = NSImage(named: name)
         image?.isTemplate = true
@@ -114,11 +88,4 @@ class SidebarItem {
             return image?.tint(color: NSColor(red: 0.08, green: 0.60, blue: 0.85, alpha: 1.00))
         }
     }
-#else
-    public func getIcon(name: String) -> UIImage? {
-        guard let image = UIImage(named: name) else { return nil }
-
-        return image.imageWithColor(color1: UIColor.mainTheme)
-    }
-#endif
 }

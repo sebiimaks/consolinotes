@@ -1,6 +1,6 @@
 //
 //  SearchQuery.swift
-//  FSNotes iOS
+//  FSNotesCore
 //
 //  Created by Александр on 23.01.2022.
 //  Copyright © 2022 Oleksandr Glushchenko. All rights reserved.

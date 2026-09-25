@@ -6,24 +6,11 @@
 //  Copyright © 2025 Oleksandr Hlushchenko. All rights reserved.
 //
 
-#if os(OSX)
 import AppKit
 
 public typealias PlatformFont = NSFont
 public typealias PlatformColor = NSColor
 public typealias FontTraits = NSFontDescriptor.SymbolicTraits
-#else
-import UIKit
-
-public typealias PlatformFont = UIFont
-public typealias PlatformColor = UIColor
-public typealias FontTraits = UIFontDescriptor.SymbolicTraits
-
-public extension FontTraits {
-    static let bold: FontTraits = .traitBold
-    static let italic: FontTraits = .traitItalic
-}
-#endif
 
 extension PlatformColor {
     convenience init(hex: String) {
@@ -60,17 +47,12 @@ extension PlatformColor {
     }
 
     public static var label: PlatformColor {
-        #if os(OSX)
         return NSColor.lightGray
-        #else
-        return UIColor.lightGray
-        #endif
     }
 }
 
 extension PlatformFont {
     static func withTraits(font: PlatformFont, traits: FontTraits) -> PlatformFont {
-        #if os(OSX)
         let manager = NSFontManager.shared
         var desiredTraits: NSFontTraitMask = []
 
@@ -83,11 +65,5 @@ extension PlatformFont {
         }
 
         return manager.convert(font, toHaveTrait: desiredTraits)
-        #else
-        if let descriptor = font.fontDescriptor.withSymbolicTraits(traits) {
-            return PlatformFont(descriptor: descriptor, size: font.pointSize)
-        }
-        return font
-        #endif
     }
 }

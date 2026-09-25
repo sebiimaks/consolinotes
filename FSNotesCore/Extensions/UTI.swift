@@ -1,9 +1,5 @@
 import Foundation
-#if os(OSX)
 import CoreServices
-#elseif os(iOS)
-import MobileCoreServices
-#endif
 
 public extension String {
 

@@ -1,8 +1,7 @@
 # libgit2 source delivery
 
-The app includes `libgit2-source.tar.gz` alongside its licence notices. On macOS,
-choose **Show Package Contents** on the app and open `Contents/Resources`; on iOS,
-the archive is in the application bundle. The repository copy is
+The app includes `libgit2-source.tar.gz` alongside its licence notices. Choose
+**Show Package Contents** on the macOS app and open `Contents/Resources`. The repository copy is
 `Resources/libgit2-source.tar.gz`. Extract it with:
 
 ```sh
@@ -14,6 +13,9 @@ dependencies, tests, `COPYING`, CMake files, and the upstream Apple-platform bui
 and archive scripts. It also contains the swift-cgit2 wrapper and its iSSH2 build
 helper. Source and build material are delivered with the app; this document is
 not a promise to supply source on request.
+
+The upstream platform sources and build scripts remain complete in this archive,
+even though consolinotes itself builds only for macOS.
 
 ## Versions and provenance
 

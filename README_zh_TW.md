@@ -1,13 +1,15 @@
 # consolinotes
 
-> **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的獨立分支，與 FSNotes 專案及其作者無關，也未獲其認可。它將 macOS 應用程式改為終端機風格，其餘功能與 FSNotes 相同。完整說明、授權條款與第三方聲明請見 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文為 FSNotes 原始說明。
+> **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的獨立分支，與 FSNotes 專案及其作者無關，也未獲其認可。此分支專注於 macOS，將應用程式介面改為終端機風格。完整說明、授權條款與第三方聲明請見 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文為 FSNotes 原始 macOS 功能參考。
+
+目前分支僅包含 macOS 應用程式。先前的 iOS 應用程式及分享擴充功能保存在[移除前的備份分支](https://github.com/sebiimaks/consolinotes/tree/codex/pre-ios-removal)。
 
 ## FSNotes
 
 [English](README.md)
 [简体中文](README_zh_CN.md)
 
-FSNotes是一款適用於 macOS 和 iOS 的現代筆記管理器。
+FSNotes 是本專案所基於的筆記管理器。
 
 ## macOS 應用程式
 
@@ -36,30 +38,6 @@ FSNotes是一款適用於 macOS 和 iOS 的現代筆記管理器。
 - AES-256 **加密**。
 - **Mermaid 和 MathJax** 支持。
 - 可選的**Git 版本控制**和**備份**。
-
----
-
-## iOS 應用程式
-
-<a href="https://itunes.apple.com/app/fsnotes-manager/id1346501102">
-	<img src="https://fsnot.es/img/badge-download-on-the-app-store.svg" alt="">
-</a>
-
-<img width="300" alt="FSNotes for iOS" src="https://fsnot.es/img/fsnotes6-ios/s1x.webp?v=1.0"> <img width="300" alt="FSNotes for iOS" src="https://fsnot.es/img/fsnotes6-ios/s2x.webp?v=1.0">
-
-### 主要功能
-
-- 通過 iCloud Drive 進行**同步**。
-- **3D Touch** 和**可配置鍵盤**。
-- **TextBundle** 和 **EncryptedTextBundle** 容器。
-- 保持與桌面應用同步的**置頂**筆記。
-- **動態字體**。
-- **暗黑模式**。
-- **分享**擴展。
-- **加密筆記**支持。
-- **加密資料夾**支持。
-- **Git** 集成。
-- **網頁**創建。
 
 ## 許可證
 

@@ -6,7 +6,6 @@
 //  Copyright © 2020 Oleksandr Glushchenko. All rights reserved.
 //
 
-#if os(macOS)
 import Cocoa
 
 extension NSPasteboard {
@@ -22,13 +21,3 @@ extension NSPasteboard {
         .init("es.fsnot.pasteboard.attributed")
     }
 }
-
-#elseif os(iOS)
-import UIKit
-
-extension UIPasteboard {
-    public static var attributed: String {
-        "es.fsnot.pasteboard.attributed"
-    }
-}
-#endif

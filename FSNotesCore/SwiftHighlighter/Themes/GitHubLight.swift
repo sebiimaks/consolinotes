@@ -6,11 +6,7 @@
 //  Copyright © 2025 Oleksandr Hlushchenko. All rights reserved.
 //
 
-#if os(OSX)
 import AppKit
-#else
-import UIKit
-#endif
 
 struct GitHubLightTheme {
     static func make() -> HighlightStyle {

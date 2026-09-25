@@ -1,6 +1,6 @@
 //
 //  Note+History.swift
-//  FSNotes iOS
+//  FSNotesCore
 //
 //  Created by Александр on 14.02.2022.
 //  Copyright © 2022 Oleksandr Glushchenko. All rights reserved.
@@ -60,14 +60,6 @@ extension Note {
         try project.saveRevision(commitMessage: nil)
     }
 
-    public func dropRevisions() {
-        do {
-            if let repository = getRepositoryUrl() {
-                try FileManager.default.removeItem(at: repository)
-            }
-        } catch {/*_*/}
-    }
-
     public func restore(revision: Revision) {
         guard hasGitRepository() else { return }
 
@@ -85,47 +77,6 @@ extension Note {
             result.append(Revision(timestamp: timestamp, commit: commit))
         }
         return result
-    }
-
-    private func getRepositoryUrl() -> URL? {
-        guard let url = project.getHistoryURL() else { return nil }
-
-        return url.appendingPathComponent(name)
-    }
-
-    public func moveHistory(src: URL, dst: URL) {
-        let srcFileName = src.lastPathComponent
-        let dstFileName = dst.lastPathComponent
-
-        var srcProject = project.getHistoryURL()
-        var dstProject = project.getHistoryURL()
-
-        if let dstHistory = project.storage.getProjectBy(url: dst.deletingLastPathComponent())?.getHistoryURL() {
-
-            if !FileManager.default.directoryExists(atUrl: dstHistory) {
-                try? FileManager.default.createDirectory(at: dstHistory, withIntermediateDirectories: true, attributes: nil)
-            }
-
-            dstProject = dstHistory
-        }
-
-        if let srcHistory = project.storage.getProjectBy(url: src.deletingLastPathComponent())?.getHistoryURL(),
-            FileManager.default.directoryExists(atUrl: srcHistory) {
-
-            srcProject = srcHistory
-        }
-
-        guard let srcDir = srcProject?.appendingPathComponent(srcFileName),
-              FileManager.default.fileExists(atPath: srcDir.path),
-              let dstDir = dstProject?.appendingPathComponent(dstFileName),
-              !FileManager.default.directoryExists(atUrl: dstDir)
-        else { return }
-
-        do {
-            try FileManager.default.moveItem(at: srcDir, to: dstDir)
-        } catch {
-            print("History transfer \(error)")
-        }
     }
 
     public func getCommits() -> [Commit] {

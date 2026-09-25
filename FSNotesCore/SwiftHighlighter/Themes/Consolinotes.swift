@@ -6,7 +6,6 @@
 //  Keep these values in sync with the TUI colour sets and MPreview.bundle/styles/consolinotes-*.min.css.
 //
 
-#if os(OSX)
 struct ConsolinotesDarkTheme {
     static func make() -> HighlightStyle {
         return ConsolinotesPalette(
@@ -57,4 +56,3 @@ private struct ConsolinotesPalette {
         return style
     }
 }
-#endif

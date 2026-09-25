@@ -11,31 +11,18 @@
 import Foundation
 import Cgit2
 
-#if os(iOS)
-import UIKit
-#else
 import AppKit
-#endif
 
 /// Define progress protocol
 public class GitProgress {
     public var project: Project
 
-#if os(iOS)
-    public var statusTextField: UITextField
-    
-    init(statusTextField: UITextField, project: Project) {
-        self.statusTextField = statusTextField
-        self.project = project
-    }
-#else
     public var statusTextField: NSTextField
 
     init(statusTextField: NSTextField, project: Project) {
         self.statusTextField = statusTextField
         self.project = project
     }
-#endif
     
     func log(current: Int, total: Int, action: String) {
         let message = "git \(action): chunk \(current) from \(total)"
@@ -51,11 +38,7 @@ public class GitProgress {
         print(message)
 
         DispatchQueue.main.async {
-            #if os(iOS)
-                self.statusTextField.text = message
-            #else
-                self.statusTextField.stringValue = message
-            #endif
+            self.statusTextField.stringValue = message
         }
     }
 }

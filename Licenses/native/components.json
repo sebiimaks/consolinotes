@@ -16,14 +16,6 @@
     "notes": "Full COPYING copyright-holder block for 1.11.0. The earlier header-only block was incomplete."
   },
   {
-    "name": "ImageScrollView",
-    "version": "bundled 2016-derived source",
-    "license": "MIT",
-    "source": "https://github.com/huynguyencong/ImageScrollView/blob/master/LICENSE",
-    "file": "Licenses/native/ImageScrollView.txt",
-    "used_for": "iOS image viewer"
-  },
-  {
     "name": "Apple GenericKeychain",
     "version": "4.0 (2016)",
     "license": "Apple sample-code licence",

@@ -4,7 +4,7 @@
 
 **A terminal-style notes app for macOS, built on FSNotes.**
 
-consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/fsnotes) by Oleksandr Hlushchenko. It keeps every FSNotes feature and restyles the macOS app as a console: box-drawn panes, a monospace grid, key hints and a status line. Notes stay plain Markdown or text files, so you can open them with any editor.
+consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/fsnotes) by Oleksandr Hlushchenko. It builds on FSNotes' macOS note-taking features and restyles the app as a console: box-drawn panes, a monospace grid, key hints and a status line. Notes stay plain Markdown or text files, so you can open them with any editor.
 
 > consolinotes is not affiliated with, or endorsed by, the FSNotes project. If you want the original app, get [FSNotes](https://fsnot.es) and support its author.
 
@@ -17,7 +17,7 @@ consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/
 
 Everything else comes from FSNotes: plain-file storage, folders, tags and `[[wikilinks]]`, AES-256 encrypted notes, Git versioning, web publishing, Mermaid and MathJax.
 
-The iOS app retains the original interface, with updated project information and licence distribution. The terminal-style redesign is specific to macOS.
+This branch contains the macOS app only. The previous iOS app and share extension are preserved in the [backup before iOS removal](https://github.com/sebiimaks/consolinotes/tree/codex/pre-ios-removal).
 
 ## Building
 
@@ -43,7 +43,7 @@ It bundles or links third-party software, including JetBrains Mono and Source Co
 
 On macOS, open **About consolinotes → Licences…** to read the project licence and third-party acknowledgements. About, Help and support links identify this independent fork; original FSNotes credits remain in the acknowledgements.
 
-Native apps also include the pinned libgit2 source and build material as `libgit2-source.tar.gz`; see [SOURCE_CODE.md](SOURCE_CODE.md). Web publishing sends the applicable licence files with the preview assets and refreshes them when publishing notes.
+The app also includes the pinned libgit2 source and build material as `libgit2-source.tar.gz`; see [SOURCE_CODE.md](SOURCE_CODE.md). Web publishing sends the applicable licence files with the preview assets and refreshes them when publishing notes.
 
 ### Maintaining licence files
 
@@ -54,7 +54,7 @@ python3 scripts/generate-license-notices.py
 python3 scripts/check-license-distribution.py --app build/DerivedData/Build/Products/Debug/consolinotes.app
 ```
 
-For a release, pass the actual Release app (or the `.app` inside an iOS archive) and add `--require-tracked` to verify the licence, source and font inputs are included in Git. When the libgit2 dependency changes, regenerate its source archive using `python3 scripts/package-libgit2-source.py` after reviewing the pinned versions and build provenance. The full workflow is in [Licenses/README.md](Licenses/README.md).
+For a release, pass the actual Release app and add `--require-tracked` to verify the licence, source and font inputs are included in Git. When the libgit2 dependency changes, regenerate its source archive using `python3 scripts/package-libgit2-source.py` after reviewing the pinned versions and build provenance. The full workflow is in [Licenses/README.md](Licenses/README.md).
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/), and cryptographic software written by Eric Young (eay@cryptsoft.com).
 

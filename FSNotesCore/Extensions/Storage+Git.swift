@@ -12,11 +12,6 @@ extension Storage {
     public func pullAll(force: Bool = false) {
         guard let projects = getGitProjects() else { return }
         for project in projects {
-        #if os(iOS)
-            if !force && !project.settings.gitAutoPull {
-                continue
-            }
-        #endif
 
             var status: String?
 
@@ -37,16 +32,6 @@ extension Storage {
                 }
             }
 
-            #if os(iOS)
-                if let status = status {
-                    print(status)
-                    project.gitStatus = status
-
-                    if let viewController = AppDelegate.getGitVCOptional(for: project) {
-                        viewController.setProgress(message: status)
-                    }
-                }
-            #endif
         }
     }
 

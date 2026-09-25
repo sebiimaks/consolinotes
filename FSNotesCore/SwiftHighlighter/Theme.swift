@@ -10,9 +10,7 @@ enum EditorTheme: String, CaseIterable, Codable {
     case github
     case atomOne
     case solarized
-#if os(OSX)
     case consolinotes
-#endif
 
     init?(themeName: String) {
         switch themeName.lowercased() {
@@ -22,10 +20,8 @@ enum EditorTheme: String, CaseIterable, Codable {
             self = .atomOne
         case "solarized":
             self = .solarized
-    #if os(OSX)
         case "consolinotes":
             self = .consolinotes
-    #endif
         default:
             return nil
         }
@@ -48,12 +44,10 @@ enum EditorTheme: String, CaseIterable, Codable {
         case (.solarized, true):
             return SolarizedDarkTheme.make()
 
-    #if os(OSX)
         case (.consolinotes, false):
             return ConsolinotesLightTheme.make()
         case (.consolinotes, true):
             return ConsolinotesDarkTheme.make()
-    #endif
         }
     }
 
@@ -65,10 +59,8 @@ enum EditorTheme: String, CaseIterable, Codable {
             return "atom-one"
         case .solarized:
             return "solarized"
-    #if os(OSX)
         case .consolinotes:
             return "consolinotes"
-    #endif
         }
     }
 

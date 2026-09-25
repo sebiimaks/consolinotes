@@ -9,11 +9,7 @@
 import Foundation
 import CoreServices
 
-#if os(OSX)
 import Cocoa
-#else
-import UIKit
-#endif
 
 class Storage {
     public static var instance: Storage? = nil
@@ -93,11 +89,9 @@ class Storage {
 
         removeCachesIfCrashed()
 
-#if os(OSX)
         if storageType == .local && UserDefaultsManagement.storageType == .iCloudDrive {
             shouldMovePrompt = true
         }
-#endif
 
         let name = getDefaultName(url: url)
         let project =
@@ -145,24 +139,7 @@ class Storage {
         ciphertextWriter.maxConcurrentOperationCount = 1
         ciphertextWriter.qualityOfService = .userInteractive
 
-    #if os(iOS)
-        checkWelcome()
-        
-        let revHistory = getRevisionsHistory()
-        let revHistoryDS = getRevisionsHistoryDocumentsSupport()
-
-        if FileManager.default.directoryExists(atUrl: revHistory) {
-            try? FileManager.default.moveItem(at: revHistory, to: revHistoryDS)
-        }
-
-        if !FileManager.default.directoryExists(atUrl: revHistoryDS) {
-            try? FileManager.default.createDirectory(at: revHistoryDS, withIntermediateDirectories: true, attributes: nil)
-        }
-    #endif
-
-    #if os(macOS)
         self.restoreUploadPaths()
-    #endif
     }
 
     public func insertProject(project: Project) {
@@ -194,27 +171,7 @@ class Storage {
     }
 
     public func getRoot() -> URL? {
-        #if targetEnvironment(simulator) || os(OSX)
-                return UserDefaultsManagement.storageUrl
-        #else
-            guard UserDefaultsManagement.iCloudDrive, let iCloudDocumentsURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent("Documents")
-                .standardized
-            else { return getLocalDocuments() }
-
-            if (!FileManager.default.fileExists(atPath: iCloudDocumentsURL.path, isDirectory: nil)) {
-                do {
-                    try FileManager.default.createDirectory(at: iCloudDocumentsURL, withIntermediateDirectories: true, attributes: nil)
-
-                    return iCloudDocumentsURL.standardized
-                } catch {
-                    print("Home directory creation: \(error)")
-                }
-                return nil
-            } else {
-                return iCloudDocumentsURL.standardized
-            }
-        #endif
+        return UserDefaultsManagement.storageUrl
     }
 
     public func getLocalDocuments() -> URL? {
@@ -332,11 +289,9 @@ class Storage {
     private func assignTrash(by url: URL) {
         var trashURL = url.appendingPathComponent("Trash", isDirectory: true)
         
-    #if os(OSX)
         if let trash = UserDefaultsManagement.trashURL {
             trashURL = trash
         }
-    #endif
         
         do {
             try FileManager.default.contentsOfDirectory(atPath: trashURL.path)
@@ -409,7 +364,6 @@ class Storage {
                 || UserDefaultsManagement.gitStorage == url {
                 continue
             }
-            
 
             let project = Project(storage: self, url: url, isBookmark: true)
             insertProject(project: project)
@@ -762,23 +716,14 @@ class Storage {
     }
     
     func getDemoSubdirURL() -> URL? {
-#if os(OSX)
         if let project = projects.first {
             return project.url
         }
         
         return nil
-#else
-        if let icloud = UserDefaultsManagement.iCloudDocumentsContainer {
-            return icloud
-        }
-
-        return UserDefaultsManagement.storageUrl
-#endif
     }
     
     func removeNotes(notes: [Note], fsRemove: Bool = true, completely: Bool = false, completion: @escaping ([URL: URL]?) -> ()) {
-    #if !SHARE_EXT
         guard notes.count > 0 else {
             completion(nil)
             return
@@ -804,7 +749,6 @@ class Storage {
         } else {
             completion(nil)
         }
-    #endif
     }
 
     private func fetchAllDirectories(url: URL) -> [URL]? {
@@ -879,17 +823,15 @@ class Storage {
     }
 
     private func cleanTrash() {
-        if #available(iOS 11.0, *) {
-            guard let trash = try? FileManager.default.url(for: .trashDirectory, in: .allDomainsMask, appropriateFor: UserDefaultsManagement.storageUrl, create: false) else { return }
+        guard let trash = try? FileManager.default.url(for: .trashDirectory, in: .allDomainsMask, appropriateFor: UserDefaultsManagement.storageUrl, create: false) else { return }
 
-            do {
-                let fileURLs = try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil, options: [])
+        do {
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil, options: [])
 
-                for fileURL in fileURLs {
-                    try FileManager.default.removeItem(at: fileURL)
-                }
-            } catch  { print(error) }
-        }
+            for fileURL in fileURLs {
+                try FileManager.default.removeItem(at: fileURL)
+            }
+        } catch  { print(error) }
     }
 
     public func saveCloudPins() {
@@ -1047,7 +989,6 @@ class Storage {
     }
 
     public func checkWelcome() {
-        #if os(OSX)
             guard let storageUrl = getDefault()?.url else { return }
             guard UserDefaultsManagement.showWelcome else { return }
             guard let bundlePath = Bundle.main.path(forResource: "Welcome", ofType: ".bundle") else { return }
@@ -1094,30 +1035,6 @@ class Storage {
             welcomeProject = project
             welcomeNote = notes.first(where: { $0.fileName == "1. Introduction"})
         
-        #else
-            guard UserDefaultsManagement.showWelcome else { return }
-            guard noteList.isEmpty else { return }
-
-            let welcomeFileName = "Meet consolinotes.textbundle"
-
-            guard let src = Bundle.main.resourceURL?.appendingPathComponent(welcomeFileName) else { return }
-            guard let dst = getDefault()?.url.appendingPathComponent(welcomeFileName) else { return }
-
-            do {
-                if !FileManager.default.fileExists(atPath: dst.path) {
-                    try FileManager.default.copyItem(atPath: src.path, toPath: dst.path)
-
-                    if let project = getDefault() {
-                        let note = Note(url: dst, with: project)
-                        add(note)
-                    }
-                }
-            } catch {
-                print("Initial copy error: \(error)")
-            }
-
-            UserDefaultsManagement.showWelcome = false
-        #endif
     }
 
     public func getNewsDate() -> Date? {
@@ -1353,20 +1270,6 @@ class Storage {
         }
     }
 
-    public func getRevisionsHistory() -> URL {
-        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        let revisionsUrl = documentDir.appendingPathComponent(".revisions")
-
-        return revisionsUrl
-    }
-
-    public func getRevisionsHistoryDocumentsSupport() -> URL {
-        let documentDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        let revisionsUrl = documentDir.appendingPathComponent(".revisions")
-
-        return revisionsUrl
-    }
-    
     public func saveUploadPaths() {
         let notes = noteList.filter({ $0.uploadPath != nil })
         

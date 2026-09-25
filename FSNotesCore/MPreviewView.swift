@@ -9,12 +9,7 @@
 import WebKit
 import ZipArchive
 
-#if os(iOS)
-import MobileCoreServices
-import AudioToolbox
-#else
 import Carbon.HIToolbox
-#endif
 
 public typealias MPreviewViewClosure = () -> ()
 
@@ -52,16 +47,9 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
 
         navigationDelegate = self
         
-#if os(OSX)
         if #available(macOS 10.14, *) {
               setValue(false, forKey: "drawsBackground")
         }
-#else
-        isOpaque = false
-        backgroundColor = UIColor.clear
-        scrollView.backgroundColor = UIColor.clear
-        scrollView.bounces = true
-#endif
 
         load(note: note, force: force)
     }
@@ -74,7 +62,6 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         self.editorVC = evc
     }
 
-#if os(OSX)
     override func mouseDown(with event: NSEvent) {
         guard let evc = editorVC else {
             super.mouseDown(with: event)
@@ -128,7 +115,6 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             }
         }
     }
-#endif
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         closure?()
@@ -145,16 +131,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 return
             }
 
-#if os(iOS)
-            if url.absoluteString.starts(with: "fsnotes://find?id=") {
-                UIApplication.getEVC().openWikiLink(query: url.absoluteString)
-                return
-            }
-
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-#elseif os(OSX)
             NSWorkspace.shared.open(url)
-#endif
         default:
             decisionHandler(.allow)
         }
@@ -189,11 +166,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
 
                 guard !imageURL.isImage && !imageURL.isVideo else { continue }
 
-                #if os(iOS)
-                let editor = UIApplication.getEVC().editArea
-                #else
                 let editor = ViewController.shared()?.editor
-                #endif
 
                 if let editor = editor {
                     let attachment = NoteAttachment(url: imageURL)
@@ -354,7 +327,6 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 webPath = UserDefaultsManagement.webPath
             }
         }
-        
 
         let state = !(web || print)
         htmlString = MPreviewView.loadAttachments(html: htmlString, note: note, showButton: state)
@@ -491,25 +463,16 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         let isWeb = webPath.count > 0
         let preview = String(webPath.count == 0)
 
-#if os(iOS)
-        platform = "ios"
-        if UITraitCollection.current.userInterfaceStyle == .dark && archivePath == nil {
-            appearance = "darkmode"
-        }
-#else
         platform = "macos"
         if UserDataService.instance.isDark && archivePath == nil && print == false {
             appearance = "darkmode"
         }
-#endif
 
         // The in-app preview on macOS matches the consolinotes window; published pages and prints keep the stock look.
         var theme = String()
-#if os(OSX)
         if !isWeb && archivePath == nil && print == false {
             theme = "consolinotes"
         }
-#endif
         let themeCss = theme.isEmpty ? "" : "<link charset=\"utf-8\" href=\"{WEB_PATH}\(theme).css\" rel=\"stylesheet\">"
 
         // Footer credit on published pages.
@@ -690,25 +653,15 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             codeStyle = content
         }
         
-        #if os(iOS)
-            let codeFamilyName = UserDefaultsManagement.codeFont.familyName
-            var familyName = UserDefaultsManagement.noteFont.familyName
-            let tagColor = "#6692cb"
-        #else
             let codeFamilyName = UserDefaultsManagement.codeFont.familyName ?? ""
             var familyName = UserDefaultsManagement.noteFont.familyName ?? ""
             let tagColor = NSColor.tagColor.hexString
-        #endif
 
         if familyName.starts(with: ".") {
             familyName = "Helvetica Neue";
         }
 
-        #if os(iOS)
-            var width = 10
-        #else
             var width = Int(ViewController.shared()!.editor.getInsetWidth())
-        #endif
 
         if fullScreen {
             width = 0
@@ -717,23 +670,11 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         let codeBackground = NotesTextProcessor.getHighlighter().options.style.backgroundColor.hexString
         var maxImageWidth = String(Int(UserDefaultsManagement.imagesWidth)) + "px"
         
-    #if os(iOS)
-        let fontSize = UserDefaultsManagement.noteFont.pointSize
-        let codeFontSize = fontSize
-        
-        let tagAttributes = [NSAttributedString.Key.font: UserDefaultsManagement.codeFont]
-        let oneCharSize = ("A" as NSString).size(withAttributes: tagAttributes as [NSAttributedString.Key : Any])
-        let codeLineHeight = UserDefaultsManagement.editorLineSpacing / 2 + Float(oneCharSize.height)
-        let lineHeight = Int(UserDefaultsManagement.editorLineSpacing) + Int(UserDefaultsManagement.noteFont.lineHeight)
-        
-        maxImageWidth = "auto"
-    #else
         let fontSize = UserDefaultsManagement.fontSize
         let codeFontSize = UserDefaultsManagement.codeFontSize
         
         let codeLineHeight = computeDefaultLineHeight(for: UserDefaultsManagement.codeFont, lineHeightMultiple: UserDefaultsManagement.lineHeightMultiple)
         let lineHeight = computeDefaultLineHeight(for: UserDefaultsManagement.noteFont, lineHeightMultiple: UserDefaultsManagement.lineHeightMultiple)
-    #endif
 
         var result = """
             @font-face {
@@ -860,9 +801,6 @@ class HandlerCheckbox: NSObject, WKScriptMessageHandler {
                     content.replaceCharacters(in: range, with: "- [x] ")
                 }
 
-                #if os(iOS)
-                AudioServicesPlaySystemSound(1519)
-                #endif
             }
 
             i = i + 1
@@ -878,13 +816,11 @@ class HandlerMouse: NSObject, WKScriptMessageHandler {
 
         guard let action = message.body as? String else { return }
 
-        #if os(OSX)
         if action == "enter" {
             NSCursor.pointingHand.set()
         } else {
             NSCursor.arrow.set()
         }
-        #endif
     }
 }
 
@@ -899,14 +835,8 @@ class HandlerClipboard: NSObject, WKScriptMessageHandler {
             cleanText.removeLast()
         }
 
-        #if os(OSX)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(cleanText, forType: .string)
-        #else
-            UIPasteboard.general.setItems([
-                [kUTTypePlainText as String: cleanText]
-            ])
-        #endif
     }
 }
 
@@ -932,7 +862,6 @@ class HandlerOpen: NSObject, WKScriptMessageHandler {
             return
         }
         
-        #if os(OSX)
             let result = cleanText.replacingOccurrences(
                 of: "^.*?/(tmp/wkPreview|Resources/MPreview\\.bundle)/",
                 with: "",
@@ -942,7 +871,6 @@ class HandlerOpen: NSObject, WKScriptMessageHandler {
             if let url = result.createURL(for: note) {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             }
-        #endif
     }
 }
 
@@ -954,11 +882,7 @@ class HandlerQuickLook: NSObject, WKScriptMessageHandler {
         let cleanText = "file://" + action.trim()
 
         if let url = URL(string: cleanText) {
-            #if os(iOS)
-                UIApplication.getEVC().quickLook(url: url)
-            #else
                 NSWorkspace.shared.activateFileViewerSelecting([url])
-            #endif
         }
     }
 }
