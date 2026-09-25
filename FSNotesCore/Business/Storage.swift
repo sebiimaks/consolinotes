@@ -253,7 +253,8 @@ class Storage {
             || url.lastPathComponent == "files"
             || url.lastPathComponent == "assets"
             || url.lastPathComponent == ".icloud"
-            || url.path.contains(".git")
+            // The sandbox container's io.github.* name is not a Git directory.
+            || url.pathComponents.contains(".git")
             || url.path.contains(".revisions")
             || url.path.contains(".Trash")
             || url.path.contains(".cache")
