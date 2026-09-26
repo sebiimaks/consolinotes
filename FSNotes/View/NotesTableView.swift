@@ -544,6 +544,9 @@ class NotesTableView: NSTableView,
         removeRows(at: indexSet, withAnimation: .slideDown)
         endUpdates()
 
+        // Keep the notes count in step when the file watcher removes notes.
+        vc.updateNotesCounter()
+
         if UserDefaultsManagement.inlineTags {
             vc.sidebarOutlineView.removeTags(notes: notes)
         }
@@ -574,6 +577,8 @@ class NotesTableView: NSTableView,
         
         self.insertRows(at: indexSet, withAnimation: .effectFade)
         endUpdates()
+
+        vc.updateNotesCounter()
         
         for note in insert {
             vc.sidebarOutlineView.insertTags(note: note)

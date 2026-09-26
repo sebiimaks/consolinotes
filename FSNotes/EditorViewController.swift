@@ -506,9 +506,14 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
 
         vcEditor?.userActivity?.needsSave = true
-        
+
         editor.note?.project.saveNotesPreview()
+
+        updateVimChrome()
     }
+
+    /// Refreshes the Vim statusline and command line of this editor's window. Windows with Vim chrome override it.
+    @objc dynamic func updateVimChrome() {}
     
     @IBAction func toggleMathJax(_ sender: NSMenuItem) {
         sender.state = sender.state == .on ? .off : .on
@@ -585,7 +590,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
         if let title = note.title.addingPercentEncoding(withAllowedCharacters: .alphanumerics) {
 
-            let name = "fsnotes://find?id=\(title)"
+            let name = AppLink.findPrefix + title
             let pasteboard = NSPasteboard.general
             pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
             pasteboard.setString(name, forType: NSPasteboard.PasteboardType.string)
@@ -891,11 +896,6 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         UserDataService.instance.searchTrigger = true
         vc.notesTableView.removeRows(notes: notes)
         
-        // Delete sharing
-        for note in notes {
-            vc.deleteAPI(note: note)
-        }
-        
         // Delete tags
         for note in notes {
             let tags = note.tags
@@ -1005,6 +1005,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             }
             
             viewController.view.window?.makeFirstResponder(viewController.editor)
+            viewController.updateVimChrome()
         }
     }
     
@@ -1144,8 +1145,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
             var passwordExist = false
             do {
-                let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
-                let password = try item.readPassword()
+                let password = try KeychainConfiguration.readMasterPassword()
                 passwordExist = password.count > 0
             } catch {/*_*/}
             
@@ -1171,8 +1171,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                 }
 
                 do {
-                    let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
-                    let password = try item.readPassword()
+                    let password = try KeychainConfiguration.readMasterPassword()
 
                     completion(password)
                     return

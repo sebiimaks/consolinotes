@@ -15,6 +15,9 @@ enum SettingsFilesNaming: Int {
     case date
     case altDate
     case autoRenameNew
+    case compactDate
+    case compactDateMinutes
+    case compactDateSeconds
 
     public var tag: Int {
         switch self {
@@ -24,6 +27,9 @@ enum SettingsFilesNaming: Int {
         case .date: return 0x03
         case .altDate: return 0x04
         case .autoRenameNew: return 0x05
+        case .compactDate: return 0x06
+        case .compactDateMinutes: return 0x07
+        case .compactDateSeconds: return 0x08
         }
     }
 
@@ -45,6 +51,26 @@ enum SettingsFilesNaming: Int {
             dateFromatter.dateFormat = "yyyy-MM-dd hh.mm.ss a"
             let date = dateFromatter.string(from: Date())
             return date
+        case .compactDate, .compactDateMinutes, .compactDateSeconds:
+            let formatter = DateFormatter()
+            // Fixed Gregorian digits, whatever the system calendar and locale.
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.calendar = Calendar(identifier: .gregorian)
+            formatter.dateFormat = dateFormat
+            return formatter.string(from: Date())
+        }
+    }
+
+    /// These formats number clashes as `_001`, `_002` and so on instead of appending a space and a digit.
+    public var usesSequenceSuffix: Bool {
+        return [.compactDate, .compactDateMinutes, .compactDateSeconds].contains(self)
+    }
+
+    private var dateFormat: String {
+        switch self {
+        case .compactDateMinutes: return "yyyyMMdd_HHmm"
+        case .compactDateSeconds: return "yyyyMMdd_HHmmss"
+        default: return "yyyyMMdd"
         }
     }
 }

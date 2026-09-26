@@ -45,7 +45,6 @@ class Storage {
         "etp" // Encrypted Text Pack
     ]
 
-    public var shouldMovePrompt = false
 
     private var trashURL = URL(string: String())
 
@@ -71,27 +70,15 @@ class Storage {
     public var welcomeNote: Note?
 
     init() {
-
-#if CLOUD_RELATED_BLOCK
-        // Sync pins and related stuff
-        
-        NSUbiquitousKeyValueStore.default.synchronize()
-#endif
-
         // Load root
 
         print("A. Bookmarks loading is started")
         let bookmarksManager = SandboxBookmark.sharedInstance()
         bookmarksManager.load()
 
-        let storageType = UserDefaultsManagement.storageType
         guard let url = getRoot() else { return }
 
         removeCachesIfCrashed()
-
-        if storageType == .local && UserDefaultsManagement.storageType == .iCloudDrive {
-            shouldMovePrompt = true
-        }
 
         let name = getDefaultName(url: url)
         let project =
@@ -131,8 +118,6 @@ class Storage {
 
         loadProjectRelations()
         
-        loadPins(notes: noteList)
-        
         plainWriter.maxConcurrentOperationCount = 1
         plainWriter.qualityOfService = .userInteractive
 
@@ -163,11 +148,7 @@ class Storage {
     }
     
     private func getDefaultName(url: URL) -> String {
-        var name = url.lastPathComponent
-        if let iCloudURL = getCloudDrive(), iCloudURL == url {
-            name = "iCloud Drive"
-        }
-        return name
+        return url.lastPathComponent
     }
 
     public func getRoot() -> URL? {
@@ -175,9 +156,7 @@ class Storage {
     }
 
     public func getLocalDocuments() -> URL? {
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.standardized
-
-        return url
+        return UserDefaultsManagement.defaultLocalDocuments?.standardized
     }
 
     // removes all caches after crash
@@ -317,17 +296,6 @@ class Storage {
         self.trashURL = trashURL
     }
     
-    private func getCloudDrive() -> URL? {
-        if let iCloudDocumentsURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents").standardized {
-            
-            var isDirectory = ObjCBool(true)
-            if FileManager.default.fileExists(atPath: iCloudDocumentsURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                return iCloudDocumentsURL
-            }
-        }
-        
-        return nil
-    }
             
     func projectExist(url: URL) -> Bool {
         projectsLock.lock()
@@ -835,71 +803,6 @@ class Storage {
         } catch  { print(error) }
     }
 
-    public func saveCloudPins() {
-        #if CLOUD_RELATED_BLOCK
-        if let pinned = getPinned() {
-            var names = [String]()
-            for note in pinned {
-                names.append(note.getRelatedPath())
-            }
-
-            let keyStore = NSUbiquitousKeyValueStore.default
-            keyStore.set(names, forKey: "co.fluder.fsnotes.pins.shared")
-            keyStore.synchronize()
-        
-            print("Pins successfully saved: \(names)")
-        }
-        #endif
-    }
-
-    public func loadPins(notes: [Note]) {
-        #if CLOUD_RELATED_BLOCK
-        let keyStore = NSUbiquitousKeyValueStore.default
-        keyStore.synchronize()
-
-        guard let names = keyStore.array(forKey: "co.fluder.fsnotes.pins.shared") as? [String]
-            else { return }
-
-        for note in notes {
-            if names.contains(note.getRelatedPath()) {
-                note.addPin(cloudSave: false)
-            } else {
-                note.removePin(cloudSave: false)
-            }
-        }
-        #endif
-    }
-
-    public func restoreCloudPins() -> (removed: [Note]?, added: [Note]?) {
-        var added = [Note]()
-        var removed = [Note]()
-
-        #if CLOUD_RELATED_BLOCK
-        let keyStore = NSUbiquitousKeyValueStore.default
-        keyStore.synchronize()
-        
-        if let names = keyStore.array(forKey: "co.fluder.fsnotes.pins.shared") as? [String] {
-            if let pinned = getPinned() {
-                for note in pinned {
-                    if !names.contains(note.getRelatedPath()) {
-                        note.removePin(cloudSave: false)
-                        removed.append(note)
-                    }
-                }
-            }
-
-            for note in noteList {
-                if !note.isPinned, names.contains(note.getRelatedPath()) {
-                    note.addPin(cloudSave: false)
-                    added.append(note)
-                }
-            }
-        }
-        #endif
-
-        return (removed, added)
-    }
-    
     public func getPinned() -> [Note]? {
         return noteList.filter({ $0.isPinned })
     }
@@ -1161,8 +1064,6 @@ class Storage {
             removeNotes.append(contentsOf: append)
         }
 
-        loadPins(notes: insertNotes)
-
         return (remove, insert, removeNotes, insertNotes)
     }
 
@@ -1185,7 +1086,6 @@ class Storage {
         note.loadModifiedLocalAt()
         note.loadCreationDate()
         
-        loadPins(notes: [note])
         add(note)
         
         print("FSWatcher import note: \"\(note.name)\"")
@@ -1464,29 +1364,6 @@ class Storage {
         self.sortDirectionState = UserDefaultsManagement.sortDirection ? .desc : .asc
     }
 
-    public func migrationAPIIds() {
-        guard let key = UserDefaultsManagement.deprecatedUploadKey else {
-            return
-        }
-
-        UserDefaultsManagement.uploadKey = key
-        UserDefaultsManagement.deprecatedUploadKey = nil
-
-         guard let data = UserDefaultsManagement.apiBookmarksData,
-               let uploadBookmarks = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSDictionary.self, NSURL.self, NSString.self], from: data) as? [URL: String] else { return }
-
-         for bookmark in uploadBookmarks {
-             if let note = getBy(url: bookmark.key) {
-                 if note.apiId == nil {
-                     note.apiId = bookmark.value
-                     note.project.saveWebAPI()
-                 }
-             }
-         }
-
-        UserDefaultsManagement.apiBookmarksData = nil
-    }
-    
     public func addNote(url: URL) -> Note {
         let projectURL = url.deletingLastPathComponent()
         var project: Project?

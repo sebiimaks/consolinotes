@@ -33,7 +33,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     public static var gitProgress: GitProgress?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        checkStorageChanges()
         loadDockIcon()
         
         if UserDefaultsManagement.showInMenuBar {
@@ -55,19 +54,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSFontManager.shared.fontPanel(false)?.orderOut(self)
 
         applyAppearance()
-
-        #if CLOUD_RELATED_BLOCK
-        if let iCloudDocumentsURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents").standardized {
-            
-            if (!FileManager.default.fileExists(atPath: iCloudDocumentsURL.path, isDirectory: nil)) {
-                do {
-                    try FileManager.default.createDirectory(at: iCloudDocumentsURL, withIntermediateDirectories: true, attributes: nil)
-                } catch {
-                    print("Home directory creation: \(error)")
-                }
-            }
-        }
-        #endif
 
         if UserDefaultsManagement.storagePath == nil {
             self.requestStorageDirectory()
@@ -159,34 +145,41 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
     
-    private func applyAppearance() {
-        if UserDefaultsManagement.appearanceType == .Dark {
-            NSApp.appearance = NSAppearance.init(named: NSAppearance.Name.darkAqua)
-            UserDataService.instance.isDark = true
+    /// Applies the Appearance preference. Safe to call while running: the colours are dynamic, so windows redraw in place.
+    func applyAppearance() {
+        switch UserDefaultsManagement.appearanceType {
+        case .Dark:
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        case .Light:
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case .System:
+            NSApp.appearance = nil
         }
 
-        if UserDefaultsManagement.appearanceType == .Light {
-            NSApp.appearance = NSAppearance.init(named: NSAppearance.Name.aqua)
-            UserDataService.instance.isDark = false
-        }
+        UserDataService.instance.isDark = NSApp.effectiveAppearance.isDark
+    }
 
-        if UserDefaultsManagement.appearanceType == .System, NSAppearance.current.isDark {
-            UserDataService.instance.isDark = true
+    /// Starts a new copy of the app, then quits this one. Running `/usr/bin/open` from inside
+    /// the sandbox can't launch apps, so the old restart only quit.
+    static func relaunch() {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
+            // If the new copy can't start, keep this one running rather than quitting.
+            guard error == nil else {
+                print("Relaunch failed: \(String(describing: error))")
+                return
+            }
+
+            DispatchQueue.main.async {
+                exit(0)
+            }
         }
     }
-    
+
     private func restartApp() {
-        guard let resourcePath = Bundle.main.resourcePath else { return }
-        
-        let url = URL(fileURLWithPath: resourcePath)
-        let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
-        let task = Process()
-        
-        task.launchPath = "/usr/bin/open"
-        task.arguments = [path]
-        task.launch()
-        
-        exit(0)
+        AppDelegate.relaunch()
     }
     
     private func requestStorageDirectory() {
@@ -390,17 +383,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         appDockTile.display()
-    }
-
-    private func checkStorageChanges() {
-        if Storage.shared().shouldMovePrompt,
-            let local = UserDefaultsManagement.localDocumentsContainer,
-            let iCloudDrive = UserDefaultsManagement.iCloudDocumentsContainer
-        {
-            let message = NSLocalizedString("We are detect that you are install consolinotes from Mac App Store with default storage in iCloud Drive, do you want to move old database in iCloud Drive?", comment: "")
-
-            promptToMoveDatabase(from: local, to: iCloudDrive, messageText: message)
-        }
     }
 
     public func promptToMoveDatabase(from currentURL: URL, to url : URL, messageText: String) {

@@ -58,11 +58,14 @@ extension EditTextView {
             return true
         }
         
-        // Handle non-fsnotes URLs with modifiers
-        if url.scheme != "fsnotes" {
-            if let handled = handleURLWithModifiers(url, at: charIndex) {
-                return handled
-            }
+        // Note and tag links open in this copy of the app, whichever app Launch Services prefers for the scheme.
+        if AppDelegate.openAppLink(url) {
+            return true
+        }
+
+        // Handle other URLs with modifiers
+        if let handled = handleURLWithModifiers(url, at: charIndex) {
+            return handled
         }
         
         super.clicked(onLink: link, at: charIndex)

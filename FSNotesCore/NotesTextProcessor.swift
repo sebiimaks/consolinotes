@@ -136,7 +136,7 @@ public class NotesTextProcessor {
     }
     
     /**
-     Coverts App links:`[[Link Title]]` to Markdown: `[Link](fsnotes://find/link%20title)`
+     Coverts App links:`[[Link Title]]` to Markdown: `[Link](consolinotes://find?id=link%20title)`
      
      - parameter content:      A string containing CommonMark Markdown
      
@@ -146,7 +146,7 @@ public class NotesTextProcessor {
     public static func convertAppLinks(in content: NSMutableAttributedString, codeBlockRanges: [NSRange]?) -> NSMutableAttributedString {
         let attributedString = content.mutableCopy() as! NSMutableAttributedString
         let range = NSRange(0..<content.string.utf16.count)
-        let tagQuery = "fsnotes://find?id="
+        let tagQuery = AppLink.findPrefix
 
         NotesTextProcessor.appUrlRegex.matches(content.string, range: range, completion: { (result) -> (Void) in
             guard let innerRange = result?.range else { return }
@@ -195,7 +195,7 @@ public class NotesTextProcessor {
         guard UserDefaultsManagement.inlineTags else { return attributedString}
 
         let range = NSRange(0..<content.string.utf16.count)
-        let tagQuery = "fsnotes://open/?tag="
+        let tagQuery = AppLink.tagPrefix
 
         FSParser.tagsInlineRegex.matches(content.string, range: range) { (result) -> Void in
             guard var range = result?.range(at: 1) else { return }
@@ -624,7 +624,7 @@ public class NotesTextProcessor {
 
             if let link = appLink.addingPercentEncoding(withAllowedCharacters: .alphanumerics) {
 
-                attributedString.addAttribute(.link, value: "fsnotes://find?id=" + link, range: _range)
+                attributedString.addAttribute(.link, value: AppLink.findPrefix + link, range: _range)
 
                 if let range = result?.range(at: 0) {
                     attributedString.addAttribute(.foregroundColor, value: Color.gray, range: range)
@@ -807,7 +807,7 @@ public class NotesTextProcessor {
 
                 guard let tag = substring.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return }
 
-                attributedString.addAttribute(.link, value: "fsnotes://open/?tag=\(tag)", range: range)
+                attributedString.addAttribute(.link, value: AppLink.tagPrefix + tag, range: range)
                 attributedString.addAttribute(.tag, value: "\(tag)", range: range)
             }
         }
@@ -874,9 +874,9 @@ public class NotesTextProcessor {
             let target = (value as? URL)?.absoluteString ?? (value as? String) ?? ""
             let color: PlatformColor?
 
-            if target.hasPrefix("fsnotes://find") {
+            if AppLink.isFindLink(target) {
                 color = wikiLinkColor
-            } else if target.hasPrefix("fsnotes://open/?tag=") {
+            } else if AppLink.isTagLink(target) {
                 color = tagColor
             } else {
                 color = linkColor

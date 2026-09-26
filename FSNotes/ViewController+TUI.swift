@@ -2,73 +2,198 @@
 //  ViewController+TUI.swift
 //  FSNotes
 //
-//  Installs the Modern TUI chrome around the storyboard layout: title strip, boxed
-//  panes with focus, and the key-hint/status footer.
+//  Installs the Vim modal chrome around the storyboard layout: a tabline, a statusline
+//  under each window (library, notes, editor) and a command line at the bottom.
 //
 
 import Cocoa
 
-extension ViewController {
-    static let tuiKeyHints: [(key: String, label: String)] = [
-        ("⌘N", "new"), ("⌘L", "search/create"), ("⌘/", "preview"), ("⌘T", "todo"), ("⇧⌘T", "move"),
-        ("⌘R", "rename"), ("⌘8", "pin"), ("⌥⌘L", "lock"), ("⇧⌘H", "history"), ("⌘S", "commit"),
-        ("⌥⌘B", "backlinks"), ("⌘,", "prefs")
-    ]
+/// Caret and size details of the open note, for the editor statusline and the command line.
+struct VimBufferInfo {
+    let words: Int
+    let characters: Int
+    let line: Int
+    let column: Int
+    let lineCount: Int
+    let byteCount: Int
 
-    var tuiPanes: [TUIPaneFrameView] {
-        return [tuiSidebarPane, tuiNotesPane, tuiEditorPane].compactMap { $0 }
+    init(content: String, caret: NSRange?, words: Int, characters: Int) {
+        let string = content as NSString
+        let location = min(caret?.location ?? 0, string.length)
+        let prefix = string.substring(to: location)
+        let lineStart = (prefix as NSString).range(of: "\n", options: .backwards)
+
+        self.words = words
+        self.characters = characters
+        // Count bytes, not Characters: Swift treats "\r\n" as one Character.
+        self.line = prefix.utf8.reduce(1) { $1 == 0x0A ? $0 + 1 : $0 }
+        self.column = location - (lineStart.location == NSNotFound ? 0 : NSMaxRange(lineStart)) + 1
+        // The empty line after a trailing newline counts, as the gutter numbers it and the caret can sit there.
+        self.lineCount = content.isEmpty ? 0 : content.utf8.reduce(1) { $1 == 0x0A ? $0 + 1 : $0 }
+        self.byteCount = content.utf8.count
     }
+}
+
+extension ViewController {
+    static let vimKeyHints = "⌘L /  ⌘N new  ⌘/ preview  ⇧⌘T move  ⌘R rename  ⌘, prefs"
 
     func configureTUI() {
         applyTUIEditorColors()
-        addTUIBars()
+        addVimBars()
 
-        tuiSidebarPane = addTUIPane(to: sidebarScrollView.superview, number: 1, title: "Library")
-        tuiNotesPane = addTUIPane(to: notesListCustomView, number: 2, title: "Notes")
-        tuiEditorPane = addTUIPane(to: editAreaScroll.superview, number: 3, title: "Editor")
+        vimSidebarStatus = addVimStatusLine(to: sidebarScrollView.superview)
+        vimNotesStatus = addVimStatusLine(to: notesListCustomView)
+        vimEditorStatus = addVimStatusLine(to: editAreaScroll.superview)
+        vimSidebarStatus?.name = "library"
 
         styleTUIViews()
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(tuiFirstResponderDidChange(_:)),
             name: .tuiFirstResponderDidChange, object: nil)
+
+        // The command line echoes the search as it is typed.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(tuiSearchDidChange(_:)),
+            name: NSControl.textDidChangeNotification, object: search)
+
+        // Only the key window shows a mode, as only Vim's current window does.
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(tuiFirstResponderDidChange(_:)), name: name, object: nil)
+        }
+
+        updateTUIStatus()
     }
 
-    /// Top offset for content inside a pane, below its title.
+    /// Top offset for the search field in the notes window.
     var tuiContentTop: CGFloat {
-        return TUIPaneFrameView.contentTop + 2
+        return 6
     }
 
     // MARK: - Status
 
     func updateTUIStatus() {
-        let location = tuiLocationName()
         let total = notesTableView.countNotes()
         let selected = notesTableView.selectedRowIndexes.count
 
-        tuiNotesPane?.title = location
+        vimNotesStatus?.name = tuiLocationName()
+        vimNotesStatus?.right = [selected > 1 ? "\(selected)/\(total) sel" : (total == 1 ? "1 note" : "\(total) notes")]
 
-        if selected > 1 {
-            tuiNotesPane?.footer = "\(selected) of \(total) selected"
-        } else {
-            tuiNotesPane?.footer = total == 1 ? "1 note" : "\(total) notes"
-        }
-
-        tuiTitleStrip?.title = "consolinotes — \(location)"
-
-        tuiStatusBar?.statusLeft = [("● ", TUITheme.green), (location, TUITheme.text)]
-        tuiStatusBar?.statusRight = [
-            ("\(storage.noteList.count) notes · \(storage.getProjects().count) folders", TUITheme.dim)
-        ]
+        updateVimMode()
     }
 
-    func updateTUIEditorPane(note: Note?, counts: String?) {
-        tuiEditorPane?.title = note?.url.lastPathComponent ?? "Editor"
-        tuiEditorPane?.footer = counts
+    func updateTUIEditorPane(note: Note?, info: VimBufferInfo?) {
+        vimBufferInfo = info
+
+        ViewController.fillVimEditorStatus(vimEditorStatus, note: note, info: info)
+        ViewController.refreshVimTabLines()
 
         // The chips stay visible, so keep the lock chip in step with the open note.
         lockUnlock.isHidden = note == nil
         lockUnlock.image = TUITheme.lockChip(encrypted: note?.isEncrypted() ?? false, locked: note?.isEncryptedAndLocked() ?? false)
+
+        updateVimMode()
+    }
+
+    override func updateVimChrome() {
+        updateVimMode()
+    }
+
+    /// Works out the mode from keyboard focus and puts it on the focused window's statusline.
+    func updateVimMode() {
+        let responder = view.window?.firstResponder
+        let responderView = responder as? NSView
+        let editorContainer = editAreaScroll.superview
+
+        var mode = VimMode.normal
+        var focused = vimNotesStatus
+
+        if let fieldEditor = search.currentEditor(), responder === fieldEditor {
+            mode = .command
+        } else if let container = editorContainer, responderView?.isDescendant(of: container) == true {
+            focused = vimEditorStatus
+            mode = editor.isPreviewEnabled() ? .preview : (editor.isEditable ? .insert : .normal)
+        } else if let container = sidebarScrollView.superview, responderView?.isDescendant(of: container) == true {
+            focused = vimSidebarStatus
+        }
+
+        let isKey = view.window?.isKeyWindow ?? false
+
+        for status in [vimSidebarStatus, vimNotesStatus, vimEditorStatus] {
+            status?.mode = isKey && status === focused ? mode : nil
+        }
+
+        vimCommandLine?.message = isKey ? ViewController.vimCommandLineMessage(mode: mode, search: search.stringValue) : []
+        vimCommandLine?.right = ViewController.vimFileInfo(note: editor.note, info: vimBufferInfo)
+    }
+
+    // MARK: - Shared with note windows
+
+    static func vimCommandLineMessage(mode: VimMode, search: String) -> [TUISegment] {
+        switch mode {
+        case .insert:
+            return [("-- INSERT --", TUITheme.bright)]
+        case .preview:
+            return [("-- PREVIEW --", TUITheme.bright)]
+        case .command:
+            return [("/", TUITheme.accent), (search, TUITheme.text)]
+        case .normal:
+            return [(vimKeyHints, TUITheme.faint)]
+        }
+    }
+
+    /// Vim's file message, like `"plan.md" 42L, 1234B`.
+    static func vimFileInfo(note: Note?, info: VimBufferInfo?) -> [TUISegment] {
+        guard let note = note, let info = info else { return [] }
+
+        return [("\"\(tuiFileName(note))\" \(info.lineCount)L, \(info.byteCount)B", TUITheme.dim)]
+    }
+
+    static func fillVimEditorStatus(_ status: VimStatusLine?, note: Note?, info: VimBufferInfo?) {
+        status?.name = note.map { $0.project.label + "/" + tuiFileName($0) } ?? "[No Name]"
+        status?.flags = note?.isEncryptedAndLocked() == true ? "[RO]" : ""
+        status?.right = info.map { ["markdown", "utf-8", "\($0.words)w \($0.characters)c"] } ?? []
+        status?.position = info.map { "\($0.line):\($0.column)" } ?? ""
+    }
+
+    /// Every window shows the same tabs: the main window's note first, then each note window's.
+    static func refreshVimTabLines() {
+        let main = ViewController.shared()
+        let windows = AppDelegate.noteWindows.compactMap { $0.contentViewController as? NoteViewController }
+        let names = [main?.editor.note] + windows.map { $0.editor.note }
+        let tabs = names.map { $0.map { tuiFileName($0) } ?? "[No Name]" }
+
+        main?.vimTabLine?.tabs = tabs
+        main?.vimTabLine?.activeIndex = 0
+
+        for (index, window) in windows.enumerated() {
+            window.vimTabLine?.tabs = tabs
+            window.vimTabLine?.activeIndex = index + 1
+        }
+    }
+
+    /// The note title becomes a left-aligned winbar, like Neovim's, instead of a centred title.
+    static func styleTUIWinbar(titleBar: NSView, titleLabel: NSTextField) {
+        titleBar.constraints
+            .first { $0.firstAttribute == .height && $0.secondItem == nil }?
+            .constant = 26
+        titleLabel.font = TUITheme.font(ofSize: 12, weight: .semibold)
+        titleLabel.textColor = TUITheme.dim
+        titleLabel.alignment = .left
+
+        for constraint in titleBar.constraints where constraint.firstItem === titleLabel || constraint.secondItem === titleLabel {
+            switch constraint.firstAttribute {
+            case .centerX:
+                constraint.isActive = false
+            case .leading:
+                constraint.constant = 10
+            default:
+                break
+            }
+        }
+
+        titleLabel.leadingAnchor.constraint(equalTo: titleBar.leadingAnchor, constant: 10).isActive = true
     }
 
     // MARK: - Private
@@ -76,24 +201,23 @@ extension ViewController {
     /// Markdown colours for the editor. Headers stay at body size so every line sits on the same grid.
     private func applyTUIEditorColors() {
         NotesTextProcessor.syntaxColor = TUITheme.faint
-        NotesTextProcessor.headerColor = TUITheme.accent
-        NotesTextProcessor.subheaderColor = TUITheme.cyan
+        NotesTextProcessor.headerColor = TUITheme.orange
+        NotesTextProcessor.subheaderColor = TUITheme.yellow
         NotesTextProcessor.uniformHeaderSize = true
         NotesTextProcessor.listMarkerColor = TUITheme.accent
         NotesTextProcessor.boldColor = TUITheme.bright
         NotesTextProcessor.strikeColor = TUITheme.dim
-        NotesTextProcessor.codeSpanColor = TUITheme.orange
+        NotesTextProcessor.codeSpanColor = TUITheme.green
         NotesTextProcessor.linkColor = TUITheme.cyan
         NotesTextProcessor.wikiLinkColor = TUITheme.magenta
         NotesTextProcessor.tagColor = TUITheme.green
     }
 
-    private func addTUIBars() {
-        let strip = TUITitleStrip()
-        let status = TUIStatusBar()
-        status.hints = ViewController.tuiKeyHints
+    private func addVimBars() {
+        let tabLine = VimTabLine()
+        let commandLine = VimCommandLine()
 
-        for bar in [strip, status] as [NSView] {
+        for bar in [tabLine, commandLine] as [NSView] {
             bar.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(bar)
         }
@@ -106,53 +230,54 @@ extension ViewController {
             .forEach { $0.isActive = false }
 
         NSLayoutConstraint.activate([
-            strip.topAnchor.constraint(equalTo: view.topAnchor),
-            strip.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            strip.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            strip.heightAnchor.constraint(equalToConstant: TUITitleStrip.height),
+            tabLine.topAnchor.constraint(equalTo: view.topAnchor),
+            tabLine.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tabLine.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tabLine.heightAnchor.constraint(equalToConstant: VimTabLine.height),
 
-            sidebarSplitView.topAnchor.constraint(equalTo: strip.bottomAnchor),
-            sidebarSplitView.bottomAnchor.constraint(equalTo: status.topAnchor),
+            sidebarSplitView.topAnchor.constraint(equalTo: tabLine.bottomAnchor),
+            sidebarSplitView.bottomAnchor.constraint(equalTo: commandLine.topAnchor),
 
-            status.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            status.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            status.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            status.heightAnchor.constraint(equalToConstant: TUIStatusBar.height)
+            commandLine.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            commandLine.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            commandLine.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            commandLine.heightAnchor.constraint(equalToConstant: VimCommandLine.height)
         ])
 
-        tuiTitleStrip = strip
-        tuiStatusBar = status
+        vimTabLine = tabLine
+        vimCommandLine = commandLine
     }
 
-    private func addTUIPane(to container: NSView?, number: Int, title: String) -> TUIPaneFrameView? {
+    /// Pins a statusline across the bottom of a window, above its content.
+    private func addVimStatusLine(to container: NSView?) -> VimStatusLine? {
         guard let container = container else { return nil }
 
-        let pane = TUIPaneFrameView()
-        pane.number = number
-        pane.title = title
-        pane.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(pane, positioned: .above, relativeTo: nil)
+        let status = VimStatusLine()
+        status.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(status, positioned: .above, relativeTo: nil)
 
         NSLayoutConstraint.activate([
-            pane.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
-            pane.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -2),
-            pane.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 2),
-            pane.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -2)
+            status.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            status.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            status.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            status.heightAnchor.constraint(equalToConstant: VimStatusLine.height)
         ])
 
-        return pane
+        return status
     }
 
     private func styleTUIViews() {
-        let bottom = TUIPaneFrameView.contentBottom + 2
+        let bottom = VimStatusLine.height
 
-        // Library: the header only reserved room for the traffic lights, which now sit on the title strip.
+        // Library: a NERDTree-style tree. The header only reserved room for the traffic lights.
         outlineHeader.isHidden = true
         sidebarScrollView.automaticallyAdjustsContentInsets = false
-        sidebarScrollView.contentInsets = NSEdgeInsets(top: tuiContentTop, left: 4, bottom: bottom, right: 4)
+        sidebarScrollView.contentInsets = NSEdgeInsets(top: 4, left: 0, bottom: bottom, right: 0)
+        sidebarScrollView.contentView.contentInsets = sidebarScrollView.contentInsets
+        sidebarScrollView.scrollerInsets = NSEdgeInsetsZero
         sidebarOutlineView.backgroundColor = TUITheme.background
 
-        // Notes: the counter moves into the pane footer.
+        // Notes: the counter moves into the statusline.
         searchTopConstraint.constant = tuiContentTop
         styleTUISearch()
         newNoteButton.image = TUITheme.glyph("+", color: TUITheme.accent, size: 18, weight: .semibold)
@@ -160,15 +285,19 @@ extension ViewController {
         notesCounterViewHeight.constant = 0
         notesCounter.superview?.isHidden = true
         notesScrollView.automaticallyAdjustsContentInsets = false
-        notesScrollView.contentInsets = NSEdgeInsets(top: 0, left: 4, bottom: bottom, right: 4)
+        notesScrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottom, right: 0)
         notesTableView.backgroundColor = TUITheme.background
         lockedFolder.font = TUITheme.font(ofSize: 12)
 
-        // Editor: word count moves into the pane footer; the title bar clears the pane title.
+        // Editor: the word count moves into the statusline, which covers the old counter bar.
         counter.isHidden = true
-        heightConstraint(of: counter.superview)?.constant = bottom
-        heightConstraint(of: titleBarView)?.constant = 46
-        titleLabel.font = TUITheme.font(ofSize: 13, weight: .semibold)
+        if let counterBar = counter.superview, let container = counterBar.superview {
+            heightConstraint(of: counterBar)?.constant = bottom
+            container.constraints
+                .filter { $0.firstItem === counterBar && $0.firstAttribute == .top }
+                .forEach { $0.constant = 0 }
+        }
+        ViewController.styleTUIWinbar(titleBar: titleBarView, titleLabel: titleLabel)
         nonSelectedLabel.font = TUITheme.font(ofSize: 13)
         nonSelectedLabel.textColor = TUITheme.dim
 
@@ -203,6 +332,7 @@ extension ViewController {
         guard let container = search.superview else { return }
 
         let strip = TUIFillView()
+        strip.color = TUITheme.bar
 
         // Clicking the prompt opens recent searches, as the magnifier did.
         let prompt = NSButton(title: "/", target: self, action: #selector(openRecentPopup(_:)))
@@ -221,23 +351,23 @@ extension ViewController {
 
         container.constraints
             .filter { $0.firstItem === search && $0.firstAttribute == .leading && $0.secondItem === container }
-            .forEach { $0.constant = 26 }
+            .forEach { $0.constant = 24 }
 
         NSLayoutConstraint.activate([
-            strip.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            strip.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
             strip.trailingAnchor.constraint(equalTo: newNoteButton.leadingAnchor, constant: -6),
             strip.centerYAnchor.constraint(equalTo: search.centerYAnchor),
-            strip.heightAnchor.constraint(equalToConstant: 24),
-            prompt.leadingAnchor.constraint(equalTo: strip.leadingAnchor, constant: 7),
+            strip.heightAnchor.constraint(equalToConstant: 22),
+            prompt.leadingAnchor.constraint(equalTo: strip.leadingAnchor, constant: 6),
             prompt.centerYAnchor.constraint(equalTo: search.centerYAnchor)
         ])
     }
 
     /// Shared by the main window and separate note windows.
     static func styleTUIChips(preview: NSButton?, lock: NSButton?, share: NSButton?) {
-        preview?.image = TUITheme.chip("preview ⌘/")
+        preview?.image = TUITheme.chip(":preview", background: .clear)
         lock?.image = TUITheme.lockChip(encrypted: false, locked: false)
-        share?.image = TUITheme.chip("share")
+        share?.image = TUITheme.chip(":share", background: .clear)
 
         for button in [preview, lock, share].compactMap({ $0 }) {
             button.isBordered = false
@@ -256,11 +386,18 @@ extension ViewController {
         return view?.constraints.first { $0.firstAttribute == .height && $0.secondItem == nil }
     }
 
+    /// The buffer name for a note. A TextBundle is named after its markdown text, not the bundle folder.
+    static func tuiFileName(_ note: Note) -> String {
+        return note.isTextBundle()
+            ? note.getFileName() + "." + note.getExtensionForContainer()
+            : note.url.lastPathComponent
+    }
+
     private func tuiLocationName() -> String {
         let item = sidebarOutlineView.item(atRow: sidebarOutlineView.selectedRow)
 
         if let project = item as? Project {
-            return project.label
+            return project.label + "/"
         }
 
         if let tag = item as? FSTag {
@@ -268,20 +405,19 @@ extension ViewController {
         }
 
         if let sidebarItem = item as? SidebarItem {
-            return sidebarItem.name
+            return sidebarItem.name.lowercased()
         }
 
-        return "Notes"
+        return "notes"
     }
 
     @objc private func tuiFirstResponderDidChange(_ notification: Notification) {
         guard let window = view.window, (notification.object as? NSWindow) === window else { return }
 
-        let responder = window.firstResponder as? NSView
+        updateVimMode()
+    }
 
-        for pane in tuiPanes {
-            guard let container = pane.superview else { continue }
-            pane.isFocused = responder?.isDescendant(of: container) ?? false
-        }
+    @objc private func tuiSearchDidChange(_ notification: Notification) {
+        updateVimMode()
     }
 }

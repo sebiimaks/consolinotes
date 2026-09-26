@@ -133,7 +133,19 @@
 			<key>CFBundleURLIconFile</key>
 			<string>makeNote</string>
 			<key>CFBundleURLName</key>
-			<string>co.fluder.fsnotes</string>
+			<string>io.github.sebiimaks.consolinotes</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>consolinotes</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLIconFile</key>
+			<string>makeNote</string>
+			<key>CFBundleURLName</key>
+			<string>io.github.sebiimaks.consolinotes.fsnotes</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>fsnotes</string>
@@ -145,7 +157,7 @@
 			<key>CFBundleURLIconFile</key>
 			<string>makeNote</string>
 			<key>CFBundleURLName</key>
-			<string>co.fluder.fsnotes</string>
+			<string>io.github.sebiimaks.consolinotes.nv</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>nv</string>
@@ -157,7 +169,7 @@
 			<key>CFBundleURLIconFile</key>
 			<string>makeNote</string>
 			<key>CFBundleURLName</key>
-			<string>co.fluder.fsnotes</string>
+			<string>io.github.sebiimaks.consolinotes.nvalt</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>nvalt</string>
@@ -183,21 +195,9 @@
 	<string>Main</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>NSUbiquitousContainers</key>
-	<dict>
-		<key>iCloud.co.fluder.fsnotes</key>
-		<dict>
-			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<true/>
-			<key>NSUbiquitousContainerName</key>
-			<string>FSNotes</string>
-			<key>NSUbiquitousContainerSupportedFolderLevels</key>
-			<string>One</string>
-		</dict>
-	</dict>
 	<key>NSUserActivityTypes</key>
 	<array>
-		<string>es.fsnot.handoff-open-note</string>
+		<string>io.github.sebiimaks.consolinotes.open-note</string>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>

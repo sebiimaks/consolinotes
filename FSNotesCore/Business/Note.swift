@@ -60,7 +60,6 @@ public class Note: NSObject  {
     public var cacheHash: UInt64?
     
     public var uploadPath: String?
-    public var apiId: String?
     
     public var previewState: Bool = false
 
@@ -723,21 +722,13 @@ public class Note: NSObject  {
         return type == .Markdown
     }
     
-    func addPin(cloudSave: Bool = true) {
+    func addPin() {
         isPinned = true
-        
-        if cloudSave {
-            Storage.shared().saveCloudPins()
-        }
     }
 
-    func removePin(cloudSave: Bool = true) {
+    func removePin() {
         if isPinned {
             isPinned = false
-            
-            if cloudSave {
-                Storage.shared().saveCloudPins()
-            }
         }
     }
     
@@ -1061,7 +1052,7 @@ public class Note: NSObject  {
         var data = [
             "transient": "true",
             "type": "\"\(type.uti)\"",
-            "creatorIdentifier": "\"co.fluder.fsnotes\"",
+            "creatorIdentifier": "\"\(Bundle.main.bundleIdentifier ?? "io.github.sebiimaks.consolinotes")\"",
             "version": "2"
         ]
 
@@ -1612,8 +1603,7 @@ public class Note: NSObject  {
 
         do {
             if password == nil {
-                let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
-                password = try item.readPassword()
+                password = try KeychainConfiguration.readMasterPassword()
             }
 
             guard let unwrappedPassword = password else { return }
@@ -2004,7 +1994,7 @@ public class Note: NSObject  {
     }
     
     public func isPublished() -> Bool {
-        return apiId != nil || uploadPath != nil
+        return uploadPath != nil
     }
     
     public func convertContainer(to: NoteContainer) {

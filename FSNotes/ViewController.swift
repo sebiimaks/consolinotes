@@ -143,12 +143,13 @@ class ViewController: EditorViewController,
     @IBOutlet weak var notesCounterViewHeight: NSLayoutConstraint!
     @IBOutlet weak var notesCounter: NSTextField!
 
-    // Modern TUI chrome, created in configureTUI()
-    var tuiSidebarPane: TUIPaneFrameView?
-    var tuiNotesPane: TUIPaneFrameView?
-    var tuiEditorPane: TUIPaneFrameView?
-    var tuiTitleStrip: TUITitleStrip?
-    var tuiStatusBar: TUIStatusBar?
+    // Vim modal chrome, created in configureTUI()
+    var vimTabLine: VimTabLine?
+    var vimCommandLine: VimCommandLine?
+    var vimSidebarStatus: VimStatusLine?
+    var vimNotesStatus: VimStatusLine?
+    var vimEditorStatus: VimStatusLine?
+    var vimBufferInfo: VimBufferInfo?
 
     // MARK: - Overrides
     
@@ -186,10 +187,6 @@ class ViewController: EditorViewController,
         loadMoveMenu()
         loadSortBySetting()
         checkSidebarConstraint()
-
-    #if CLOUD_RELATED_BLOCK
-        registerKeyValueObserver()
-    #endif
 
         ViewController.gitQueue.maxConcurrentOperationCount = 1
 
@@ -259,8 +256,6 @@ class ViewController: EditorViewController,
 
         // Reload added projects
         self.fsManager?.restart()
-        
-        self.storage.migrationAPIIds()
 
         print("1. Notes diff loading finished in \(diffLoading.timeIntervalSinceNow * -1) seconds")
 
@@ -1308,7 +1303,7 @@ class ViewController: EditorViewController,
 
         guard let note = note else {
             self.counter.stringValue = String()
-            updateTUIEditorPane(note: nil, counts: nil)
+            updateTUIEditorPane(note: nil, info: nil)
             return
         }
 
@@ -1316,27 +1311,29 @@ class ViewController: EditorViewController,
         // Take an immutable snapshot on the main thread and only count that snapshot
         // in the background operation.
         let content = note.content.string
+        let caret = charRange ?? (editor.note === note ? editor.selectedRange() : nil)
         
         counterQueue.cancelAllOperations()
         
         let operation = BlockOperation()
         operation.addExecutionBlock { [weak self] in
-            var title = String()
+            var counted: String? = content
             
             if let charRange = charRange, charRange.length > 0 {
-                if let string = content.substring(nsRange: charRange) {
-                    title = "W: \(string.countWords()) | C: \(string.countChars())"
-                    
-                }
-            } else {
-                title = "W: \(content.countWords()) | C: \(content.countChars())"
+                counted = content.substring(nsRange: charRange)
             }
+
+            let words = counted?.countWords() ?? 0
+            let chars = counted?.countChars() ?? 0
+            let title = counted == nil ? String() : "W: \(words) | C: \(chars)"
+
+            let info = VimBufferInfo(content: content, caret: caret, words: words, characters: chars)
             
             if operation.isCancelled { return }
             
             DispatchQueue.main.async {
                 self?.counter.stringValue = title
-                self?.updateTUIEditorPane(note: note, counts: title)
+                self?.updateTUIEditorPane(note: note, info: info)
             }
         }
             
@@ -1754,56 +1751,6 @@ class ViewController: EditorViewController,
         }
     }
     
-    func registerKeyValueObserver() {
-        let store = NSUbiquitousKeyValueStore.default
-
-        NotificationCenter.default.addObserver(self,
-            selector: #selector(ubiquitousKeyValueStoreDidChange(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: store)
-
-        if !store.synchronize() {
-            NSLog("iCloud key-value store is unavailable")
-        }
-    }
-    
-    @objc func ubiquitousKeyValueStoreDidChange(_ notification: NSNotification) {
-        if let keys = notification.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] {
-            for key in keys {
-                if key == "co.fluder.fsnotes.pins.shared" {
-                    let result = storage.restoreCloudPins()
-
-                    DispatchQueue.main.async {
-                        if let added = result.added {
-                            ViewController.shared()?.pin(selectedNotes: added)
-                        }
-
-                        if let removed = result.removed {
-                            ViewController.shared()?.pin(selectedNotes: removed)
-                        }
-                    }
-                }
-                
-                if key.startsWith(string: "es.fsnot.project-settings") {
-                    let settingsKey = key.replacingOccurrences(of: "es.fsnot.project-settings", with: "")
-                    if let project = storage.getProjectBy(settingsKey: settingsKey) {
-                        project.reloadSettings()
-
-                        DispatchQueue.main.async {
-                            if let result = project.loadWebAPI() {
-                                let toReload = result.0 + result.1
-
-                                for note in toReload {
-                                    ViewController.shared()?.notesTableView.reloadRow(note: note)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
     func checkSidebarConstraint() {
         // The traffic lights sit on the TUI title strip, so the search field no longer
         // needs to move down when the sidebar is hidden.
@@ -1994,7 +1941,10 @@ class ViewController: EditorViewController,
 
         var mainKey = false
         for item in unarchivedData.reversed() {
+            // Skip notes deleted while the app was closed. At launch the note list can still hold a
+            // cached entry for them, so getBy(url:) alone would reopen an empty window.
             guard let url = item["url"] as? URL,
+                  FileManager.default.fileExists(atPath: url.path),
                   let frameData = item["frame"] as? Data,
                   let main = item["main"] as? Bool,
                   let isKeyWindow = item["key"] as? Bool,
@@ -2043,7 +1993,7 @@ class ViewController: EditorViewController,
     public func importAndCreate() {
         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
 
-            // fsnotes://find
+            // consolinotes://find
 
             if let url = appDelegate.url {
                 appDelegate.url = nil
@@ -2058,7 +2008,7 @@ class ViewController: EditorViewController,
                 return
             }
 
-            // fsnotes://new/?title=URI-title&txt=URI-content
+            // consolinotes://new/?title=URI-title&txt=URI-content
 
             let name = appDelegate.newName
             let content = appDelegate.newContent

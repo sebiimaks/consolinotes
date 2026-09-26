@@ -28,7 +28,7 @@ class PreferencesAdvancedViewController: NSViewController {
             UserDefaultsManagement.appearanceType = type
         }
 
-        restart()
+        (NSApp.delegate as? AppDelegate)?.applyAppearance()
     }
 
     override func viewDidAppear() {
@@ -106,13 +106,7 @@ class PreferencesAdvancedViewController: NSViewController {
     }
 
     private func restart() {
-        let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
-        let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
-        let task = Process()
-        task.launchPath = "/usr/bin/open"
-        task.arguments = [path]
-        task.launch()
-        exit(0)
+        AppDelegate.relaunch()
     }
 
     @IBAction func dockIcon(_ sender: NSButton) {
@@ -170,19 +164,13 @@ class PreferencesAdvancedViewController: NSViewController {
     }
     
     @IBAction func resetSettings(_ sender: Any) {
-        let store = NSUbiquitousKeyValueStore.default
-        for (key, _) in store.dictionaryRepresentation {
-            store.removeObject(forKey: key)
-        }
-        store.synchronize()
-        
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
             UserDefaults.standard.synchronize()
-        }
-        
-        if let userDefaultsURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?.appendingPathComponent("Preferences").appendingPathComponent("co.fluder.FSNotes.plist") {
-            try? FileManager.default.removeItem(at: userDefaultsURL)
+
+            if let userDefaultsURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?.appendingPathComponent("Preferences").appendingPathComponent("\(bundleID).plist") {
+                try? FileManager.default.removeItem(at: userDefaultsURL)
+            }
         }
         
         if let editorsURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("editors.settings") {

@@ -17,8 +17,10 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     public var viewDelegate: ViewController?
     
     let storage = Storage.shared()
-    // Invalidation margin for the block caret, which is one character cell wide.
-    let caretWidth: CGFloat = 12
+    // Invalidation margin for the insert-mode bar caret.
+    let caretWidth: CGFloat = 2
+    // The cursorline last drawn, so moving the caret repaints only the old and new lines.
+    private var cursorLineShown: NSRect?
     var downView: MPreviewView?
     
     public var timer: Timer?
@@ -47,6 +49,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         if !isMouseDownInsideEditor() {
             loadSelectedRange()
         }
+
+        DispatchQueue.main.async { self.invalidateCursorLine() }
 
         return super.becomeFirstResponder()
     }
@@ -127,8 +131,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
 
     override func drawInsertionPoint(in rect: NSRect, color: NSColor, turnedOn flag: Bool) {
         var newRect = rect
-        var caretFont = UserDefaultsManagement.noteFont
-        
+
         // Fixes last line height
         
         if let textStorage = self.textStorage,
@@ -150,25 +153,61 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
                 } else {
                     fontToUse = UserDefaultsManagement.noteFont
                 }
-                
-                caretFont = fontToUse
+
                 newRect.size.height = layoutManager.lineHeight(for: fontToUse)
             }
         }
 
-        // Terminal-style block cursor: one character cell, translucent so the character stays readable.
-        newRect.size.width = TUITheme.cellWidth(for: caretFont)
-        super.drawInsertionPoint(in: newRect, color: TUITheme.accent.withAlphaComponent(0.55), turnedOn: flag)
+        // Vim's insert-mode cursor: a thin bar.
+        newRect.size.width = caretWidth
+        super.drawInsertionPoint(in: newRect, color: TUITheme.bright, turnedOn: flag)
     }
 
     override func updateInsertionPointStateAndRestartTimer(_ restartFlag: Bool) {
         super.updateInsertionPointStateAndRestartTimer(true)
     }
+
+    override func setSelectedRanges(_ ranges: [NSValue], affinity: NSSelectionAffinity, stillSelecting stillSelectingFlag: Bool) {
+        super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelectingFlag)
+        invalidateCursorLine()
+    }
+
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+
+        guard note != nil else { return }
+
+        if window?.firstResponder === self, let line = cursorLineRect(), line.intersects(rect) {
+            TUITheme.cursorLine.setFill()
+            line.intersection(rect).fill()
+        }
+
+        // Caret blinks and typing redraw narrow rects inside the text; only redraw the gutter when it is dirty.
+        let gutterMaxX = textContainerOrigin.x + (textContainer?.lineFragmentPadding ?? 0)
+        guard rect.minX < gutterMaxX, rect.maxX > gutterMaxX - vimGutterWidth else { return }
+
+        drawLineNumbers(in: rect)
+        drawEndOfBufferTildes(in: rect)
+    }
     
     override func setNeedsDisplay(_ invalidRect: NSRect) {
         var newInvalidRect = NSRect(origin: invalidRect.origin, size: invalidRect.size)
         newInvalidRect.size.width += self.caretWidth - 1
-        super.setNeedsDisplay(newInvalidRect)
+
+        super.setNeedsDisplay(fullRows(newInvalidRect, from: invalidRect))
+    }
+
+    // AppKit invalidates laid-out text through this variant, which bypasses setNeedsDisplay(_:).
+    override func setNeedsDisplay(_ invalidRect: NSRect, avoidAdditionalLayout flag: Bool) {
+        super.setNeedsDisplay(fullRows(invalidRect, from: invalidRect), avoidAdditionalLayout: flag)
+    }
+
+    /// Edits can move lines, so text invalidations repaint whole rows: line numbers, `~` and the cursorline band.
+    /// Caret blinks stay narrow.
+    private func fullRows(_ rect: NSRect, from invalidRect: NSRect) -> NSRect {
+        guard invalidRect.width > caretWidth else { return rect }
+
+        return rect.union(NSRect(x: 0, y: invalidRect.minY, width: bounds.width, height: invalidRect.height))
     }
     
     override func toggleContinuousSpellChecking(_ sender: Any?) {
@@ -1546,7 +1585,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
 
     public func getInsetWidth() -> CGFloat {
         let lineWidth = UserDefaultsManagement.lineWidth
-        let margin = UserDefaultsManagement.marginSize
+        // The line-number column sits in the left margin, so the margin is at least that wide.
+        let margin = max(UserDefaultsManagement.marginSize, Float(vimGutterWidth + 6))
         let width = frame.width
 
         if lineWidth == 1000 {
@@ -1558,6 +1598,158 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         }
 
         return CGFloat((Float(width) - lineWidth) / 2)
+    }
+
+    // MARK: Vim line numbers, cursorline and end-of-buffer tildes
+
+    /// Width of the line-number column: four digits and a gap, one cell each.
+    var vimGutterWidth: CGFloat {
+        return TUITheme.cellWidth(for: UserDefaultsManagement.noteFont) * 5
+    }
+
+    func invalidateCursorLine() {
+        if let rect = cursorLineShown {
+            setNeedsDisplay(rect)
+        }
+
+        cursorLineShown = window?.firstResponder === self ? cursorLineRect() : nil
+
+        if let rect = cursorLineShown {
+            setNeedsDisplay(rect)
+        }
+    }
+
+    /// The screen line holding the caret, across the full width. Nil while text is selected.
+    private func cursorLineRect() -> NSRect? {
+        guard let layoutManager = layoutManager, let storage = textStorage, storage.editedMask.isEmpty else { return nil }
+
+        let selection = selectedRange()
+        guard selection.length == 0 else { return nil }
+
+        var fragment = NSRect.zero
+
+        if selection.location >= storage.length {
+            fragment = layoutManager.extraLineFragmentRect
+        }
+
+        if fragment.isEmpty, storage.length > 0 {
+            let glyph = layoutManager.glyphIndexForCharacter(at: min(selection.location, storage.length - 1))
+            fragment = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil, withoutAdditionalLayout: true)
+        }
+
+        guard !fragment.isEmpty else { return nil }
+
+        return NSRect(x: 0, y: fragment.minY + textContainerOrigin.y, width: bounds.width, height: fragment.height)
+    }
+
+    /// Absolute numbers on the first screen line of each line, with the caret's line in bold yellow.
+    private func drawLineNumbers(in rect: NSRect) {
+        guard let layoutManager = layoutManager, let container = textContainer, let storage = textStorage else { return }
+
+        let string = storage.string as NSString
+        let origin = textContainerOrigin
+        let font = UserDefaultsManagement.noteFont
+        let boldFont = NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask)
+        let rightEdge = origin.x + container.lineFragmentPadding - TUITheme.cellWidth(for: font)
+        let caretLine = string.lineRange(for: NSRange(location: min(selectedRange().location, string.length), length: 0)).location
+
+        func draw(_ number: Int, isCurrent: Bool, baseline: CGFloat) {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: isCurrent ? boldFont : font,
+                .foregroundColor: isCurrent ? TUITheme.yellow : TUITheme.lineNumber
+            ]
+            let text = String(number) as NSString
+            let width = text.size(withAttributes: attributes).width
+            text.draw(at: NSPoint(x: rightEdge - width, y: baseline - font.ascender), withAttributes: attributes)
+        }
+
+        let visible = rect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphs = layoutManager.glyphRange(forBoundingRectWithoutAdditionalLayout: visible, in: container)
+        let characters = layoutManager.characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
+
+        // Empty lines and images report no useful baseline, so every number uses one measured from a text line.
+        let offset = plainLineMetrics()?.baseline ?? layoutManager.defaultBaselineOffset(for: font)
+
+        if characters.length > 0 {
+            var index = string.lineRange(for: NSRange(location: characters.location, length: 0)).location
+            var number = lineNumber(at: index, in: string)
+
+            while index < string.length && index < NSMaxRange(characters) {
+                let glyph = layoutManager.glyphIndexForCharacter(at: index)
+                let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil, withoutAdditionalLayout: true)
+
+                draw(number, isCurrent: index == caretLine, baseline: fragment.minY + offset + origin.y)
+
+                index = NSMaxRange(string.lineRange(for: NSRange(location: index, length: 0)))
+                number += 1
+            }
+        }
+
+        // The empty line after a trailing newline has no characters of its own.
+        let extra = layoutManager.extraLineFragmentRect
+
+        if !extra.isEmpty, extra.offsetBy(dx: 0, dy: origin.y).intersects(rect) {
+            draw(lineNumber(at: string.length, in: string), isCurrent: caretLine == string.length, baseline: extra.minY + offset + origin.y)
+        }
+    }
+
+    /// Baseline offset and height of a plain text line, measured from the first one on screen.
+    private func plainLineMetrics() -> (baseline: CGFloat, height: CGFloat)? {
+        guard let layoutManager = layoutManager, let container = textContainer, let storage = textStorage else { return nil }
+
+        let string = storage.string as NSString
+        let origin = textContainerOrigin
+        let visible = visibleRect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphs = layoutManager.glyphRange(forBoundingRectWithoutAdditionalLayout: visible, in: container)
+        let characters = layoutManager.characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
+        var index = characters.location
+
+        while index < min(NSMaxRange(characters), string.length) {
+            if string.character(at: index) != 0x0A, storage.attribute(.attachment, at: index, effectiveRange: nil) == nil {
+                let glyph = layoutManager.glyphIndexForCharacter(at: index)
+                let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil, withoutAdditionalLayout: true)
+
+                return (layoutManager.location(forGlyphAt: glyph).y, fragment.height)
+            }
+
+            index = NSMaxRange(string.lineRange(for: NSRange(location: index, length: 0)))
+        }
+
+        return nil
+    }
+
+    private func lineNumber(at index: Int, in string: NSString) -> Int {
+        guard index > 0 else { return 1 }
+
+        var characters = [unichar](repeating: 0, count: index)
+        string.getCharacters(&characters, range: NSRange(location: 0, length: index))
+
+        return characters.reduce(1) { $1 == 0x0A ? $0 + 1 : $0 }
+    }
+
+    /// Vim marks the rows past the end of the buffer with "~".
+    private func drawEndOfBufferTildes(in rect: NSRect) {
+        guard let layoutManager = layoutManager as? LayoutManager, let container = textContainer,
+              let storage = textStorage, layoutManager.firstUnlaidCharacterIndex() >= storage.length else { return }
+
+        let font = UserDefaultsManagement.noteFont
+        let origin = textContainerOrigin
+        let metrics = plainLineMetrics()
+        let lineHeight = metrics?.height
+            ?? layoutManager.lineHeight(for: font) + CGFloat(UserDefaultsManagement.editorLineSpacing)
+        let baseline = metrics?.baseline ?? layoutManager.defaultBaselineOffset(for: font)
+        let x = origin.x + container.lineFragmentPadding - vimGutterWidth
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: TUITheme.accent.withAlphaComponent(0.6)]
+        var y = origin.y + layoutManager.usedRect(for: container).maxY
+
+        guard lineHeight > 0 else { return }
+
+        while y < rect.maxY {
+            if y + lineHeight > rect.minY {
+                ("~" as NSString).draw(at: NSPoint(x: x, y: y + baseline - font.ascender), withAttributes: attributes)
+            }
+            y += lineHeight
+        }
     }
 
     private func deleteUnusedImages(checkRange: NSRange) {
@@ -1734,6 +1926,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     override func resignFirstResponder() -> Bool {
         userActivity?.needsSave = true
 
+        DispatchQueue.main.async { self.invalidateCursorLine() }
+
         return super.resignFirstResponder()
     }
 
@@ -1742,7 +1936,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             let updateDict:  [String: String] = ["note-file-name": note.name]
-            let activity = NSUserActivity(activityType: "es.fsnot.handoff-open-note")
+            let activity = NSUserActivity(activityType: "io.github.sebiimaks.consolinotes.open-note")
             activity.isEligibleForHandoff = true
             activity.userInfo = updateDict
             activity.title = NSLocalizedString("Open note", comment: "Document opened")

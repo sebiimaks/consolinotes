@@ -23,8 +23,8 @@ def check_project():
     ]))
     objects = project["objects"]
     targets = [obj for obj in objects.values() if obj.get("isa") == "PBXNativeTarget"]
-    if {target["name"] for target in targets} != {"FSNotes", "FSNotes (iCloud)"}:
-        raise ValueError("Expected only the two macOS application targets")
+    if {target["name"] for target in targets} != {"FSNotes"}:
+        raise ValueError("Expected only the macOS application target")
     for target in targets:
         resources = []
         for phase_id in target.get("buildPhases", []):

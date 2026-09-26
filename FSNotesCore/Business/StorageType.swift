@@ -11,6 +11,6 @@ import Foundation
 public enum StorageType: Int {
     case none        = 0x00
     case local       = 0x01
-    case iCloudDrive = 0x02
+    // 0x02 was iCloud Drive; a stored 2 now reads as .none and is recomputed.
     case custom      = 0x03
 }

@@ -1065,6 +1065,15 @@ CA
                                             <menuItem title="Format: yyyy-MM-dd hh.mm.ss a" tag="4" id="qn1-vy-8oB">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
+                                            <menuItem title="Format: yyyyMMdd" tag="6" id="cN2-dt-Day">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="Format: yyyyMMdd_HHmm" tag="7" id="cN2-dt-Min">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="Format: yyyyMMdd_HHmmss" tag="8" id="cN2-dt-Sec">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
                                         </items>
                                     </menu>
                                 </popUpButtonCell>
@@ -3311,7 +3320,7 @@ Olena Hlushchenko</string>
                             </box>
                             <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sW2-Jy-o1S">
                                 <rect key="frame" x="35" y="516" width="311" height="16"/>
-                                <buttonCell key="cell" type="check" title="Separate .git in project dir (except iCloud Drive)" bezelStyle="regularSquare" imagePosition="left" inset="2" id="dop-ho-N26">
+                                <buttonCell key="cell" type="check" title="Separate .git in project dir" bezelStyle="regularSquare" imagePosition="left" inset="2" id="dop-ho-N26">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -3545,21 +3554,33 @@ Olena Hlushchenko</string>
                             </textField>
                             <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xZA-pB-1nm">
                                 <rect key="frame" x="147" y="512" width="107" height="24"/>
-                                <popUpButtonCell key="cell" type="push" title="atom-one" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="ME1-My-h4q" id="ai1-t2-fc1">
+                                <popUpButtonCell key="cell" type="push" title="consolinotes" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="cN7-tU-i0x" id="ai1-t2-fc1">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" usesAppearanceFont="YES"/>
                                     <menu key="menu" id="OOr-cO-sjv">
                                         <items>
-                                            <menuItem title="github" localization="NO" mirroring="NO" id="v1K-9W-2aB">
+                                            <menuItem title="consolinotes" state="on" localization="NO" mirroring="NO" id="cN7-tU-i0x">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="gruvbox" localization="NO" mirroring="NO" id="cN4-th-Grv">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
                                             <menuItem title="solarized" localization="NO" mirroring="NO" id="SpX-N8-9td">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
-                                            <menuItem title="atom-one" localization="NO" mirroring="NO" id="ME1-My-h4q">
+                                            <menuItem title="tokyo-night" localization="NO" mirroring="NO" id="cN4-th-Tok">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
-                                            <menuItem title="consolinotes" state="on" localization="NO" mirroring="NO" id="cN7-tU-i0x">
+                                            <menuItem title="catppuccin" localization="NO" mirroring="NO" id="cN4-th-Cat">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="nord" localization="NO" mirroring="NO" id="cN4-th-Nrd">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="dracula" localization="NO" mirroring="NO" id="cN4-th-Drc">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
+                                            <menuItem title="atom-one" localization="NO" mirroring="NO" id="ME1-My-h4q">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
                                         </items>
@@ -4247,14 +4268,6 @@ Olena Hlushchenko</string>
                                     <action selector="dockIcon:" target="mvt-gI-iG0" id="YWP-6B-yB4"/>
                                 </connections>
                             </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Atm-xW-q1V">
-                                <rect key="frame" x="33" y="35" width="180" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Made with ❤️ in Ukraine 🇺🇦 " id="fsF-5N-tWg">
-                                    <font key="font" usesAppearanceFont="YES"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
                             <textField focusRingType="none" horizontalHuggingPriority="500" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Dxk-ZE-26V">
                                 <rect key="frame" x="422" y="35" width="41" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="v2.9.0" id="dgD-xe-DVG">
@@ -4351,9 +4364,6 @@ Olena Hlushchenko</string>
                             <constraint firstItem="qKm-Ud-lP4" firstAttribute="leading" secondItem="F2w-YD-uv3" secondAttribute="trailing" constant="8" symbolic="YES" id="R71-hL-Y9k"/>
                             <constraint firstItem="wBg-NB-AcO" firstAttribute="bottom" secondItem="0VK-px-m8C" secondAttribute="bottom" id="RLM-bH-VZc"/>
                             <constraint firstItem="SxW-70-Bdh" firstAttribute="centerX" secondItem="gGT-qO-FvD" secondAttribute="centerX" id="Sef-1z-bg4"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Atm-xW-q1V" secondAttribute="trailing" constant="35" id="TkE-XR-BL0"/>
-                            <constraint firstItem="Atm-xW-q1V" firstAttribute="top" secondItem="AMX-oh-6ZS" secondAttribute="bottom" constant="20" id="VTa-wY-OGE"/>
-                            <constraint firstAttribute="bottom" secondItem="Atm-xW-q1V" secondAttribute="bottom" constant="35" id="WkH-LJ-Vl2"/>
                             <constraint firstItem="vJo-sa-P9T" firstAttribute="centerX" secondItem="ia3-Pz-Sap" secondAttribute="centerX" id="XEq-ZV-NgO"/>
                             <constraint firstItem="Dxk-ZE-26V" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tJA-7g-MI3" secondAttribute="leading" constant="35" id="YJ4-Re-a1W"/>
                             <constraint firstItem="0Kp-8d-0J0" firstAttribute="leading" secondItem="tJA-7g-MI3" secondAttribute="leading" constant="35" id="Ytx-lh-azX"/>
@@ -4371,6 +4381,8 @@ Olena Hlushchenko</string>
                             <constraint firstItem="Vab-UF-AXx" firstAttribute="leading" secondItem="8Sd-jT-XTG" secondAttribute="trailing" constant="8" symbolic="YES" id="hLf-et-kbV"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ZXG-8N-Rny" secondAttribute="trailing" constant="20" symbolic="YES" id="hPq-Re-kkU"/>
                             <constraint firstAttribute="trailing" secondItem="Dxk-ZE-26V" secondAttribute="trailing" constant="35" id="hcm-lG-5wC"/>
+                            <constraint firstItem="Dxk-ZE-26V" firstAttribute="top" secondItem="AMX-oh-6ZS" secondAttribute="bottom" constant="20" id="cN3-vr-Top"/>
+                            <constraint firstAttribute="bottom" secondItem="Dxk-ZE-26V" secondAttribute="bottom" constant="35" id="cN3-vr-Btm"/>
                             <constraint firstItem="0VK-px-m8C" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tJA-7g-MI3" secondAttribute="leading" constant="35" id="hfs-tZ-GjB"/>
                             <constraint firstItem="eiE-QT-Gmx" firstAttribute="trailing" secondItem="UMU-6c-hjh" secondAttribute="trailing" id="ikG-7H-gE3"/>
                             <constraint firstItem="F2w-YD-uv3" firstAttribute="top" secondItem="UMU-6c-hjh" secondAttribute="bottom" constant="20" id="jpe-aH-Vay"/>
@@ -4383,11 +4395,9 @@ Olena Hlushchenko</string>
                             <constraint firstAttribute="trailing" secondItem="UMU-6c-hjh" secondAttribute="trailing" constant="20" symbolic="YES" id="sW8-G2-PYI"/>
                             <constraint firstItem="ZXG-8N-Rny" firstAttribute="top" secondItem="eiE-QT-Gmx" secondAttribute="bottom" constant="20" id="uCa-UE-P7e"/>
                             <constraint firstItem="eiE-QT-Gmx" firstAttribute="top" secondItem="CPL-jT-YaF" secondAttribute="bottom" constant="20" id="uWn-jw-iOO"/>
-                            <constraint firstItem="Dxk-ZE-26V" firstAttribute="centerY" secondItem="Atm-xW-q1V" secondAttribute="centerY" id="wMd-RG-lha"/>
                             <constraint firstItem="CPL-jT-YaF" firstAttribute="trailing" secondItem="F2w-YD-uv3" secondAttribute="trailing" id="wUA-ok-lMw"/>
                             <constraint firstItem="8Sd-jT-XTG" firstAttribute="top" secondItem="Fi8-x1-uYd" secondAttribute="bottom" constant="8" symbolic="YES" id="wdx-Xt-c5d"/>
                             <constraint firstItem="qKm-Ud-lP4" firstAttribute="leading" secondItem="tJA-7g-MI3" secondAttribute="centerX" id="wrn-en-VJA"/>
-                            <constraint firstItem="Atm-xW-q1V" firstAttribute="leading" secondItem="tJA-7g-MI3" secondAttribute="leading" constant="35" id="yP7-6b-9AL"/>
                             <constraint firstItem="wBg-NB-AcO" firstAttribute="leading" secondItem="0VK-px-m8C" secondAttribute="trailing" constant="12" symbolic="YES" id="yhq-ng-3LF"/>
                             <constraint firstItem="eiE-QT-Gmx" firstAttribute="leading" secondItem="UMU-6c-hjh" secondAttribute="leading" id="yvd-g9-W8U"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Fi8-x1-uYd" secondAttribute="trailing" constant="20" symbolic="YES" id="z0k-Lq-e92"/>
@@ -4546,7 +4556,7 @@ Olena Hlushchenko</string>
             <objects>
                 <viewController title="Publish" id="X76-X8-PbG" customClass="PreferencesWebViewController" customModule="FSNotes" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="tsp-KF-Yi6">
-                        <rect key="frame" x="0.0" y="0.0" width="468" height="573"/>
+                        <rect key="frame" x="0.0" y="0.0" width="468" height="492"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sQu-2C-39G">
@@ -4647,7 +4657,7 @@ Olena Hlushchenko</string>
                             </textField>
                             <textField identifier="settingsWebUsername" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="M2V-5H-D91">
                                 <rect key="frame" x="234" y="242" width="151" height="24"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="hlushchenko" drawsBackground="YES" id="4gs-Bc-GHG">
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="user" drawsBackground="YES" id="4gs-Bc-GHG">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -4722,37 +4732,6 @@ Olena Hlushchenko</string>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <button verticalHuggingPriority="750" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="KP8-dY-CEz">
-                                <rect key="frame" x="35" y="498" width="117" height="16"/>
-                                <buttonCell key="cell" type="radio" title="FSNotes Server" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="gFA-SA-v9T">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="publishTo:" target="X76-X8-PbG" id="5Jk-ec-6wA"/>
-                                </connections>
-                            </button>
-                            <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6Pu-ln-xgk">
-                                <rect key="frame" x="160" y="498" width="112" height="16"/>
-                                <buttonCell key="cell" type="radio" title="Custom Server" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Dp7-4n-ilt">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="publishTo:" target="X76-X8-PbG" id="Cmw-fx-aFR"/>
-                                </connections>
-                            </button>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="752" translatesAutoresizingMaskIntoConstraints="NO" id="eNd-rT-JgT">
-                                <rect key="frame" x="33" y="522" width="106" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Publish notes to:" id="bUL-WS-rIS">
-                                    <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                            <box verticalHuggingPriority="750" verticalCompressionResistancePriority="751" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="lCo-ku-pRS">
-                                <rect key="frame" x="20" y="475" width="428" height="5"/>
-                            </box>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="t4Y-nY-xQx">
                                 <rect key="frame" x="305" y="127" width="58" height="24"/>
                                 <buttonCell key="cell" type="push" title="Reset" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XEU-Ia-4j2">
@@ -4793,10 +4772,8 @@ Olena Hlushchenko</string>
                             </textField>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="eNd-rT-JgT" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="35" id="0LB-Dk-H4m"/>
                             <constraint firstItem="Lfk-dJ-eYH" firstAttribute="centerX" secondItem="tsp-KF-Yi6" secondAttribute="centerX" id="0Oi-eH-cZj"/>
                             <constraint firstItem="38E-P8-sdH" firstAttribute="trailing" secondItem="ef1-zy-Vs0" secondAttribute="trailing" id="0bs-2O-kiG"/>
-                            <constraint firstItem="oHV-K7-pRq" firstAttribute="leading" secondItem="lCo-ku-pRS" secondAttribute="leading" id="0oG-EG-yEQ"/>
                             <constraint firstItem="qqs-mC-mg8" firstAttribute="centerY" secondItem="Zgg-g2-JdS" secondAttribute="centerY" id="0tg-3r-pKx"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="uVS-UC-gNC" secondAttribute="trailing" constant="20" symbolic="YES" id="2Mm-9E-DPv"/>
                             <constraint firstItem="ehk-E6-jpV" firstAttribute="leading" secondItem="qqs-mC-mg8" secondAttribute="leading" id="2jF-JP-FtK"/>
@@ -4813,33 +4790,27 @@ Olena Hlushchenko</string>
                             <constraint firstItem="PWy-Mv-FmM" firstAttribute="trailing" secondItem="pBL-yA-rtI" secondAttribute="trailing" id="Bg9-6u-NKS"/>
                             <constraint firstItem="M2V-5H-D91" firstAttribute="baseline" secondItem="pBL-yA-rtI" secondAttribute="baseline" id="Bwj-zg-SEm"/>
                             <constraint firstItem="XxT-6E-AmS" firstAttribute="top" secondItem="ehk-E6-jpV" secondAttribute="bottom" constant="10" symbolic="YES" id="Ec4-IA-g7c"/>
-                            <constraint firstItem="qqs-mC-mg8" firstAttribute="top" secondItem="tsp-KF-Yi6" secondAttribute="top" constant="168" id="FUH-xM-AXF"/>
+                            <constraint firstItem="qqs-mC-mg8" firstAttribute="top" secondItem="tsp-KF-Yi6" secondAttribute="top" constant="87" id="FUH-xM-AXF"/>
                             <constraint firstItem="ycX-Lf-Ogr" firstAttribute="baseline" secondItem="PWy-Mv-FmM" secondAttribute="baseline" id="FiE-Js-YyI"/>
                             <constraint firstItem="MMZ-ZU-abQ" firstAttribute="top" secondItem="XxT-6E-AmS" secondAttribute="bottom" constant="15" id="FlP-Jx-oqy"/>
                             <constraint firstItem="t4Y-nY-xQx" firstAttribute="centerY" secondItem="DCf-Af-hOC" secondAttribute="centerY" id="G1z-9S-jhz"/>
                             <constraint firstItem="sJC-70-IBX" firstAttribute="top" secondItem="uVS-UC-gNC" secondAttribute="bottom" constant="25" id="HAf-ap-Iry"/>
                             <constraint firstItem="QTV-x3-Da5" firstAttribute="centerY" secondItem="ef1-zy-Vs0" secondAttribute="centerY" id="HSx-bY-by1"/>
-                            <constraint firstItem="lCo-ku-pRS" firstAttribute="top" secondItem="KP8-dY-CEz" secondAttribute="bottom" constant="20" id="Hax-iJ-21S"/>
                             <constraint firstItem="QTV-x3-Da5" firstAttribute="leading" secondItem="DCf-Af-hOC" secondAttribute="leading" id="I8o-MD-Fkr"/>
                             <constraint firstItem="XUd-k8-fNm" firstAttribute="baseline" secondItem="jwc-Mi-vbr" secondAttribute="firstBaseline" id="IDe-y8-AUw"/>
-                            <constraint firstItem="KP8-dY-CEz" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="35" id="IZh-O8-ZQt"/>
                             <constraint firstItem="38E-P8-sdH" firstAttribute="centerX" secondItem="Zc9-cU-2GY" secondAttribute="centerX" id="JNy-Dd-VHu"/>
                             <constraint firstItem="ehk-E6-jpV" firstAttribute="leading" secondItem="QTV-x3-Da5" secondAttribute="leading" id="LN5-bg-zVf"/>
                             <constraint firstItem="pb8-h4-LhO" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="35" id="MD2-bE-ACP"/>
                             <constraint firstItem="DCf-Af-hOC" firstAttribute="leading" secondItem="sJC-70-IBX" secondAttribute="trailing" constant="10" id="MX3-Os-KOh"/>
-                            <constraint firstItem="sQu-2C-39G" firstAttribute="top" secondItem="lCo-ku-pRS" secondAttribute="bottom" constant="20" id="Mx6-5a-9rS"/>
                             <constraint firstItem="XxT-6E-AmS" firstAttribute="centerY" secondItem="Zc9-cU-2GY" secondAttribute="centerY" id="N9D-Ja-xdD"/>
-                            <constraint firstItem="oHV-K7-pRq" firstAttribute="trailing" secondItem="lCo-ku-pRS" secondAttribute="trailing" id="NRL-RK-QEj"/>
                             <constraint firstItem="38E-P8-sdH" firstAttribute="centerX" secondItem="ef1-zy-Vs0" secondAttribute="centerX" id="Op3-I7-drb"/>
                             <constraint firstAttribute="centerX" secondItem="jwc-Mi-vbr" secondAttribute="trailing" constant="10" id="PZe-i0-mz9"/>
                             <constraint firstItem="ehk-E6-jpV" firstAttribute="top" secondItem="qqs-mC-mg8" secondAttribute="bottom" constant="10" symbolic="YES" id="PoS-1J-4Sa"/>
                             <constraint firstItem="XUd-k8-fNm" firstAttribute="baseline" secondItem="jwc-Mi-vbr" secondAttribute="baseline" id="PqW-Ge-8Nt"/>
-                            <constraint firstItem="KP8-dY-CEz" firstAttribute="top" secondItem="eNd-rT-JgT" secondAttribute="bottom" constant="8" symbolic="YES" id="PvY-qB-vRg"/>
                             <constraint firstItem="ycX-Lf-Ogr" firstAttribute="baseline" secondItem="PWy-Mv-FmM" secondAttribute="firstBaseline" id="QoF-Yf-p3I"/>
                             <constraint firstItem="XxT-6E-AmS" firstAttribute="leading" secondItem="QTV-x3-Da5" secondAttribute="leading" id="RG6-4J-tc7"/>
                             <constraint firstItem="XUd-k8-fNm" firstAttribute="trailing" secondItem="ycX-Lf-Ogr" secondAttribute="trailing" id="RaJ-Ks-cKU"/>
                             <constraint firstItem="ycX-Lf-Ogr" firstAttribute="leading" secondItem="M2V-5H-D91" secondAttribute="leading" id="Rul-41-U0O"/>
-                            <constraint firstItem="eNd-rT-JgT" firstAttribute="top" secondItem="tsp-KF-Yi6" secondAttribute="top" constant="35" id="SAV-1M-vwC"/>
                             <constraint firstItem="pBL-yA-rtI" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="20" symbolic="YES" id="SWH-im-0MK"/>
                             <constraint firstItem="ycX-Lf-Ogr" firstAttribute="trailing" secondItem="M2V-5H-D91" secondAttribute="trailing" id="Srp-fb-STQ"/>
                             <constraint firstItem="QTV-x3-Da5" firstAttribute="leading" secondItem="ef1-zy-Vs0" secondAttribute="trailing" constant="10" id="SyG-Vm-i1C"/>
@@ -4848,7 +4819,6 @@ Olena Hlushchenko</string>
                             <constraint firstItem="Zgg-g2-JdS" firstAttribute="trailing" secondItem="ef1-zy-Vs0" secondAttribute="trailing" id="Uzi-Sj-V06"/>
                             <constraint firstItem="pBL-yA-rtI" firstAttribute="top" secondItem="pb8-h4-LhO" secondAttribute="bottom" constant="8" symbolic="YES" id="VBm-ky-asT"/>
                             <constraint firstItem="oHV-K7-pRq" firstAttribute="top" secondItem="XUd-k8-fNm" secondAttribute="bottom" constant="15" id="Vsa-EG-drX"/>
-                            <constraint firstItem="lCo-ku-pRS" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="20" symbolic="YES" id="Wp8-gX-6It"/>
                             <constraint firstItem="Zc9-cU-2GY" firstAttribute="top" secondItem="38E-P8-sdH" secondAttribute="bottom" constant="15" id="Zgm-dm-Sgn"/>
                             <constraint firstItem="XxT-6E-AmS" firstAttribute="trailing" secondItem="QTV-x3-Da5" secondAttribute="trailing" id="a9Q-T3-sSD"/>
                             <constraint firstItem="uVS-UC-gNC" firstAttribute="top" secondItem="ycX-Lf-Ogr" secondAttribute="bottom" constant="20" id="bGX-I1-8n7"/>
@@ -4858,25 +4828,24 @@ Olena Hlushchenko</string>
                             <constraint firstItem="M2V-5H-D91" firstAttribute="leading" secondItem="XxT-6E-AmS" secondAttribute="leading" id="bye-bi-293"/>
                             <constraint firstItem="t4Y-nY-xQx" firstAttribute="width" secondItem="DCf-Af-hOC" secondAttribute="width" id="c7B-tn-OTc"/>
                             <constraint firstItem="PWy-Mv-FmM" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="20" symbolic="YES" id="cD7-dO-coi"/>
-                            <constraint firstItem="MMZ-ZU-abQ" firstAttribute="leading" secondItem="lCo-ku-pRS" secondAttribute="leading" id="e3R-kO-cj9"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="eNd-rT-JgT" secondAttribute="trailing" constant="35" id="e9J-Ng-kUm"/>
-                            <constraint firstAttribute="trailing" secondItem="lCo-ku-pRS" secondAttribute="trailing" constant="20" symbolic="YES" id="fJ9-Zm-DGb"/>
                             <constraint firstItem="XUd-k8-fNm" firstAttribute="top" secondItem="DCf-Af-hOC" secondAttribute="bottom" constant="8" symbolic="YES" id="iw7-Mm-O5d"/>
-                            <constraint firstItem="MMZ-ZU-abQ" firstAttribute="trailing" secondItem="lCo-ku-pRS" secondAttribute="trailing" id="jcI-z1-lp9"/>
                             <constraint firstItem="Lfk-dJ-eYH" firstAttribute="top" secondItem="oHV-K7-pRq" secondAttribute="bottom" constant="20" id="kLy-oV-UH1"/>
                             <constraint firstItem="sJC-70-IBX" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tsp-KF-Yi6" secondAttribute="leading" id="lT2-Fv-mtu"/>
                             <constraint firstItem="ef1-zy-Vs0" firstAttribute="top" secondItem="sQu-2C-39G" secondAttribute="bottom" constant="8" symbolic="YES" id="lfu-Qr-wb4"/>
                             <constraint firstItem="DCf-Af-hOC" firstAttribute="centerY" secondItem="sJC-70-IBX" secondAttribute="centerY" id="lgT-Gv-15J"/>
                             <constraint firstItem="jwc-Mi-vbr" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="145" id="pV2-fd-1dU"/>
-                            <constraint firstItem="6Pu-ln-xgk" firstAttribute="leading" secondItem="KP8-dY-CEz" secondAttribute="trailing" constant="8" symbolic="YES" id="rXF-ew-oOJ"/>
                             <constraint firstItem="t4Y-nY-xQx" firstAttribute="leading" secondItem="DCf-Af-hOC" secondAttribute="trailing" constant="12" symbolic="YES" id="sAJ-Id-mbU"/>
                             <constraint firstItem="ycX-Lf-Ogr" firstAttribute="top" secondItem="M2V-5H-D91" secondAttribute="bottom" constant="10" symbolic="YES" id="t7T-PN-gkL"/>
-                            <constraint firstItem="6Pu-ln-xgk" firstAttribute="centerY" secondItem="KP8-dY-CEz" secondAttribute="centerY" id="tsv-N8-8zZ"/>
                             <constraint firstItem="qqs-mC-mg8" firstAttribute="top" secondItem="QTV-x3-Da5" secondAttribute="bottom" constant="10" symbolic="YES" id="uPM-Ot-N2V"/>
                             <constraint firstItem="Zc9-cU-2GY" firstAttribute="centerX" secondItem="Zgg-g2-JdS" secondAttribute="centerX" id="vH9-Er-t1D"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="sQu-2C-39G" secondAttribute="trailing" constant="20" symbolic="YES" id="x8s-r9-a0f"/>
                             <constraint firstItem="M2V-5H-D91" firstAttribute="trailing" secondItem="XxT-6E-AmS" secondAttribute="trailing" id="xTf-q1-pA0"/>
                             <constraint firstAttribute="centerX" secondItem="pBL-yA-rtI" secondAttribute="trailing" constant="10" id="zsk-b3-Nl8"/>
+                            <constraint firstItem="sQu-2C-39G" firstAttribute="top" secondItem="tsp-KF-Yi6" secondAttribute="top" constant="35" id="cN1-sq-Top"/>
+                            <constraint firstItem="MMZ-ZU-abQ" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="20" symbolic="YES" id="cN1-mm-Ldg"/>
+                            <constraint firstAttribute="trailing" secondItem="MMZ-ZU-abQ" secondAttribute="trailing" constant="20" symbolic="YES" id="cN1-mm-Trl"/>
+                            <constraint firstItem="oHV-K7-pRq" firstAttribute="leading" secondItem="tsp-KF-Yi6" secondAttribute="leading" constant="20" symbolic="YES" id="cN1-oh-Ldg"/>
+                            <constraint firstAttribute="trailing" secondItem="oHV-K7-pRq" secondAttribute="trailing" constant="20" symbolic="YES" id="cN1-oh-Trl"/>
                         </constraints>
                     </view>
                     <connections>
@@ -4886,8 +4855,6 @@ Olena Hlushchenko</string>
                         <outlet property="password" destination="ycX-Lf-Ogr" id="IJo-eV-9IC"/>
                         <outlet property="path" destination="ehk-E6-jpV" id="9qc-Y8-Ls2"/>
                         <outlet property="port" destination="qqs-mC-mg8" id="Unn-VB-l6b"/>
-                        <outlet property="publishCustom" destination="6Pu-ln-xgk" id="loA-RM-KPZ"/>
-                        <outlet property="publishFSNotes" destination="KP8-dY-CEz" id="2jP-IW-sYB"/>
                         <outlet property="rsaPath" destination="sJC-70-IBX" id="8oY-RI-eD5"/>
                         <outlet property="uploadAndTest" destination="Lfk-dJ-eYH" id="8rr-4V-tq2"/>
                         <outlet property="username" destination="M2V-5H-D91" id="aj9-mm-ahK"/>

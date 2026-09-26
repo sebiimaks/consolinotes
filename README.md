@@ -4,16 +4,19 @@
 
 **A terminal-style notes app for macOS, built on FSNotes.**
 
-consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/fsnotes) by Oleksandr Hlushchenko. It builds on FSNotes' macOS note-taking features and restyles the app as a console: box-drawn panes, a monospace grid, key hints and a status line. Notes stay plain Markdown or text files, so you can open them with any editor.
+consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/fsnotes) by Oleksandr Hlushchenko. It builds on FSNotes' macOS note-taking features and restyles the app after Vim: split windows, a monospace grid, line numbers, statuslines and a command line. Notes stay plain Markdown or text files, so you can open them with any editor.
 
 > consolinotes is not affiliated with, or endorsed by, the FSNotes project. If you want the original app, get [FSNotes](https://fsnot.es) and support its author.
 
 ## What's different from FSNotes
 
-- **Modern TUI look.** Boxed library, note list and editor panes with focus highlighting, a title strip, and a key-hint and status bar.
+- **Vim modal look.** A tabline, a NERDTree-style library, and a statusline under each split whose mode (NORMAL, INSERT, PREVIEW, COMMAND) follows keyboard focus. The editor has line numbers, a cursorline and `~` past the end of the note, with a command line at the bottom.
 - **JetBrains Mono everywhere.** Headers stay at body size, so every line sits on one grid.
-- **Matching colours.** A "consolinotes" code theme, Markdown colours in the editor, and a preview that uses the same palette in light and dark.
+- **Matching colours.** Markdown colours in the editor and a preview that uses the same palette in light and dark. Code blocks use the consolinotes theme or a terminal favourite: Gruvbox, Solarized, Tokyo Night, Catppuccin, Nord, Dracula or One, identical in the editor and the preview.
 - **New name and icon.**
+- **Its own identity.** Bundle identifier `io.github.sebiimaks.consolinotes`, and note and tag links use `consolinotes://`. `fsnotes://` links from existing notes still open in consolinotes.
+- **Notes in `~/Documents/consolinotes`.** That folder is the default storage, and on first launch notes that earlier builds kept inside the app's sandbox are moved there. There is no built-in iCloud integration: to sync through iCloud Drive, choose a folder in iCloud Drive as the storage location in Preferences.
+- **Web pages on your own server.** Create Web Page publishes over SSH to a server you configure in Preferences → Publish. The FSNotes publishing service is not included.
 
 Everything else comes from FSNotes: plain-file storage, folders, tags and `[[wikilinks]]`, AES-256 encrypted notes, Git versioning, web publishing, Mermaid and MathJax.
 
@@ -33,7 +36,7 @@ For a Release build for local use, run:
 bash scripts/build-local-macos.sh
 ```
 
-This uses ad-hoc signing, preserves the app sandbox, and uses the separate bundle identifier `io.github.sebiimaks.consolinotes`. It needs no Apple signing account and produces `build/DerivedData/Build/Products/Release/consolinotes.app`. The script verifies the signature and bundled licences. This local build does not enable the original developer's iCloud capabilities.
+This uses ad-hoc signing and preserves the app sandbox, with one exception that lets the app use `~/Documents/consolinotes`. It needs no Apple signing account and produces `build/DerivedData/Build/Products/Release/consolinotes.app`. The script verifies the signature and bundled licences.
 
 ## Licence
 

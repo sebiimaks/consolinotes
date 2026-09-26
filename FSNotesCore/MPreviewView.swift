@@ -131,6 +131,10 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 return
             }
 
+            if AppDelegate.openAppLink(url) {
+                return
+            }
+
             NSWorkspace.shared.open(url)
         default:
             decisionHandler(.allow)
@@ -321,11 +325,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 SSZipArchive.createZipFile(atPath: zipURL.path, withContentsOfDirectory: note.url.path, keepParentDirectory: true)
             }
             
-            if UserDefaultsManagement.customWebServer {
-                webPath = UserDefaultsManagement.sftpWeb
-            } else {
-                webPath = UserDefaultsManagement.webPath
-            }
+            webPath = UserDefaultsManagement.sftpWeb
         }
 
         let state = !(web || print)
@@ -694,7 +694,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             img:not(footer img, .attachment) {display: block; margin: 0 auto; max-width: \(maxImageWidth); }
         
             img.attachment { height: \(fontSize + 5)px; max-width: auto }
-            a[href^=\"fsnotes://open/?tag=\"] { background: \(tagColor); }
+            a[href^=\"consolinotes://open/?tag=\"], a[href^=\"fsnotes://open/?tag=\"] { background: \(tagColor); }
             p, li, blockquote, dl, ol, ul { line-height: \(lineHeight)px; -webkit-text-size-adjust: none; } \(codeStyle) \(css)
         
             code, .hljs { background: \(codeBackground); }

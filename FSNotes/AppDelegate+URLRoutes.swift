@@ -13,6 +13,7 @@ import Cocoa
 extension AppDelegate {
     
     enum HandledSchemes: String {
+        case consolinotes = "consolinotes"
         case fsnotes = "fsnotes"
         case nv = "nv"
         case nvALT = "nvalt"
@@ -48,7 +49,8 @@ extension AppDelegate {
             } else {
                 self.urls = urls
             }
-        case HandledSchemes.fsnotes.rawValue:
+        case HandledSchemes.consolinotes.rawValue,
+             HandledSchemes.fsnotes.rawValue:
             FSNotesRouter(url)
         case HandledSchemes.nv.rawValue,
              HandledSchemes.nvALT.rawValue:
@@ -56,6 +58,16 @@ extension AppDelegate {
         default:
             break
         }
+    }
+
+    /// Opens a note or tag link in this running copy of the app instead of asking Launch Services,
+    /// which could pick another installed copy, or FSNotes itself for fsnotes:// links.
+    @discardableResult
+    static func openAppLink(_ url: URL) -> Bool {
+        guard AppLink.isAppLink(url), let delegate = NSApp.delegate as? AppDelegate else { return false }
+
+        delegate.application(NSApp, open: [url])
+        return true
     }
 
     func importNotes(urls: [URL]) {
@@ -104,8 +116,8 @@ extension AppDelegate {
         }
     }
     
-    /// Handles URLs with the tag fsnotes://open/?tag=test
-    /// Handles URLs with the tag fsnotes://open/?title=Open+Or+Create+If+Not+Exist
+    /// Handles URLs with the tag consolinotes://open/?tag=test (or fsnotes://)
+    /// Handles URLs with the tag consolinotes://open/?title=Open+Or+Create+If+Not+Exist
     ///
     func RouteFSNotesOpen(_ url: URL) {
         guard let vc = ViewController.shared() else { return }
@@ -200,9 +212,9 @@ extension AppDelegate {
     }
     
     /// Handles URLs with the following paths:
-    ///   - fsnotes://make/?title=URI-escaped-title&html=URI-escaped-HTML-data
-    ///   - fsnotes://make/?title=URI-escaped-title&txt=URI-escaped-plain-text
-    ///   - fsnotes://make/?txt=URI-escaped-plain-text
+    ///   - consolinotes://new/?title=URI-escaped-title&html=URI-escaped-HTML-data
+    ///   - consolinotes://new/?title=URI-escaped-title&txt=URI-escaped-plain-text
+    ///   - consolinotes://new/?txt=URI-escaped-plain-text
     ///
     /// The three possible parameters (title, txt, html) are all optional.
     ///

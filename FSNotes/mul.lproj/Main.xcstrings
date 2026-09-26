@@ -3109,49 +3109,49 @@
       }
     },
     "4gs-Bc-GHG.placeholderString" : {
-      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"hlushchenko\"; ObjectID = \"4gs-Bc-GHG\";",
+      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"user\"; ObjectID = \"4gs-Bc-GHG\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "hi" : {
@@ -3163,67 +3163,67 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hlushchenko"
+            "value" : "user"
           }
         }
       }
@@ -9378,126 +9378,6 @@
         }
       }
     },
-    "bUL-WS-rIS.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Publish notes to:\"; ObjectID = \"bUL-WS-rIS\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "انشر الملاحظات على:"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zveřejnit poznámky na:"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veröffentlichen Sie Notizen an:"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Publish notes to:"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Publicar notas sobre:"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Publier des notes sur:"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "פרסם הערות על:"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "नोट प्रकाशित करें:"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pubblica note su:"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以下に関するメモを公開します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "다음에 대한 메모 게시:"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Publiceer notities over:"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Publicar notas para:"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Publicar notas para:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Публиковать заметки на:"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notları şuraya yayınla:"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Публікувати нотатки на:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发布笔记到:"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發布筆記至："
-          }
-        }
-      }
-    },
     "BX0-nb-tVk.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Untagged\"; ObjectID = \"BX0-nb-tVk\";",
       "extractionState" : "extracted_with_value",
@@ -9854,6 +9734,366 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "轉換"
+          }
+        }
+      }
+    },
+    "cN2-dt-Day.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Format: yyyyMMdd\"; ObjectID = \"cN2-dt-Day\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ar-IQ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التنسيق: yyyyMMdd"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formát: yyyyMMdd"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Format: yyyyMMdd"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "פורמט: yyyyMMdd"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्रारूप: yyyyMMdd"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォーマット: yyyyMMdd"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체재: yyyyMMdd"
+          }
+        },
+        "nl-NL" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biçim: yyyyMMdd"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式: yyyyMMdd"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式：yyyyMMdd"
+          }
+        }
+      }
+    },
+    "cN2-dt-Min.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Format: yyyyMMdd_HHmm\"; ObjectID = \"cN2-dt-Min\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ar-IQ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التنسيق: yyyyMMdd_HHmm"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formát: yyyyMMdd_HHmm"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmm"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Format: yyyyMMdd_HHmm"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmm"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmm"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "פורמט: yyyyMMdd_HHmm"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्रारूप: yyyyMMdd_HHmm"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmm"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォーマット: yyyyMMdd_HHmm"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체재: yyyyMMdd_HHmm"
+          }
+        },
+        "nl-NL" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmm"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmm"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmm"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd_HHmm"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biçim: yyyyMMdd_HHmm"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd_HHmm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式: yyyyMMdd_HHmm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式：yyyyMMdd_HHmm"
+          }
+        }
+      }
+    },
+    "cN2-dt-Sec.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"Format: yyyyMMdd_HHmmss\"; ObjectID = \"cN2-dt-Sec\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ar-IQ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التنسيق: yyyyMMdd_HHmmss"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formát: yyyyMMdd_HHmmss"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmmss"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Format: yyyyMMdd_HHmmss"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmmss"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmmss"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "פורמט: yyyyMMdd_HHmmss"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्रारूप: yyyyMMdd_HHmmss"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmmss"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォーマット: yyyyMMdd_HHmmss"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체재: yyyyMMdd_HHmmss"
+          }
+        },
+        "nl-NL" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: yyyyMMdd_HHmmss"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmmss"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato: yyyyMMdd_HHmmss"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd_HHmmss"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biçim: yyyyMMdd_HHmmss"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Формат: yyyyMMdd_HHmmss"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式: yyyyMMdd_HHmmss"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式：yyyyMMdd_HHmmss"
           }
         }
       }
@@ -11779,241 +12019,121 @@
       }
     },
     "dop-ho-N26.title" : {
-      "comment" : "Class = \"NSButtonCell\"; title = \"Separate .git in project dir (except iCloud Drive)\"; ObjectID = \"dop-ho-N26\";",
+      "comment" : "Class = \"NSButtonCell\"; title = \"Separate .git in project dir\"; ObjectID = \"dop-ho-N26\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar-IQ" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oddělený .git soubor ve složce projektu (kromě iCloud Drive)"
+            "value" : "Oddělený .git soubor ve složce projektu"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "प्रोजेक्ट निर्देशिका से .git अलग करे (iCloud ड्राइव को छोड़कर)"
+            "value" : "प्रोजेक्ट निर्देशिका से .git अलग करे"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "nl-NL" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : ".git в каталоге проекта (кроме iCloud Drive)"
+            "value" : ".git в каталоге проекта"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Proje dizininde .git'i ayırın (iCloud Drive hariç)"
+            "value" : "Proje dizininde .git'i ayırın"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separate .git in project dir (except iCloud Drive)"
+            "value" : "Separate .git in project dir"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在项目目录中分隔.git (iCloud 除外)"
+            "value" : "在项目目录中分隔.git"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在專案目錄中分離 .git（iCloud 雲碟除外）"
-          }
-        }
-      }
-    },
-    "Dp7-4n-ilt.title" : {
-      "comment" : "Class = \"NSButtonCell\"; title = \"Custom Server\"; ObjectID = \"Dp7-4n-ilt\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "خادم مخصص"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vlastní server"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benutzerdefinierter Server"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Custom Server"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor personalizado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serveur personnalisé"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "שרת מותאם אישית"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "कस्टम सर्वर"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server personalizzato"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カスタムサーバー"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "커스텀 서버"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aangepaste server"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor personalizado"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor personalizado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пользовательский сервер"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Özel Sunucu"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Користувацький сервер"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自定义服务器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自訂伺服器"
+            "value" : "在專案目錄中分離 .git"
           }
         }
       }
@@ -15595,126 +15715,6 @@
         }
       }
     },
-    "fsF-5N-tWg.title" : {
-      "comment" : "Class = \"NSTextFieldCell\"; title = \"Made with ❤️ in Ukraine 🇺🇦 \"; ObjectID = \"fsF-5N-tWg\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "مصنوع من ❤️ في أوكرانيا 🇺🇦 "
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vytvořeno s ❤️ v Ukrajině 🇺🇦 "
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hergestellt mit ❤️ in der Ukraine 🇺🇦"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Made with ❤️ in Ukraine 🇺🇦 "
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hecho con ❤️ en Ucrania 🇺🇦 "
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fait avec ❤️ en Ukraine 🇺🇦 "
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "נבנה ב-❤️ באוקראינה 🇺🇦"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "यूक्रेन 🇺🇦 में ❤️ के साथ बनाया गया"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Realizzato con ❤️ in Ucraina 🇺🇦 "
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ウクライナで❤️を使って作られました🇺🇦"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "우크라이나에서 ❤️으로 만든 🇺🇦"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gemaakt met ❤️ in Ukraine 🇺🇦 "
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feito com ❤️ na Ucrânia 🇺🇦"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feito com ❤️ na Ucrânia 🇺🇦"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сделано с ❤️ в Украине 🇺🇦"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ukrayna'da ❤️ ile yapıldı 🇺🇦"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Зроблено з ❤️ в Україні 🇺🇦"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "乌克兰 ❤️ 制造 🇺🇦 "
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "來自烏克蘭的 ❤️ 製作"
-          }
-        }
-      }
-    },
     "fzU-ZR-Ubv.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"Rename Folder\"; ObjectID = \"fzU-ZR-Ubv\";",
       "extractionState" : "extracted_with_value",
@@ -16671,126 +16671,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "格式"
-          }
-        }
-      }
-    },
-    "gFA-SA-v9T.title" : {
-      "comment" : "Class = \"NSButtonCell\"; title = \"FSNotes Server\"; ObjectID = \"gFA-SA-v9T\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar-IQ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "خادم FSNotes"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes server"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes Server"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "FSNotes Server"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor de FSNotes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serveur FSNotes"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes שרת"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes सर्वर"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server FSNotes"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes サーバー"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes 서버"
-          }
-        },
-        "nl-NL" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes-server"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor do FSNotes"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor FSNotes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сервер FSNotes"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes Sunucu"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes сервер"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes 服务器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FSNotes 伺服器"
           }
         }
       }
@@ -24576,6 +24456,71 @@
           }
         }
       }
+    },
+    "cN4-th-Grv.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"gruvbox\"; ObjectID = \"cN4-th-Grv\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "gruvbox"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "cN4-th-Tok.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"tokyo-night\"; ObjectID = \"cN4-th-Tok\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "tokyo-night"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "cN4-th-Cat.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"catppuccin\"; ObjectID = \"cN4-th-Cat\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "catppuccin"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "cN4-th-Nrd.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"nord\"; ObjectID = \"cN4-th-Nrd\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "nord"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "cN4-th-Drc.title" : {
+      "comment" : "Class = \"NSMenuItem\"; title = \"dracula\"; ObjectID = \"cN4-th-Drc\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "dracula"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "ME1-My-h4q.title" : {
       "comment" : "Class = \"NSMenuItem\"; title = \"atom-one\"; ObjectID = \"ME1-My-h4q\";",
@@ -36848,19 +36793,6 @@
           }
         }
       }
-    },
-    "v1K-9W-2aB.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"github\"; ObjectID = \"v1K-9W-2aB\";",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "github"
-          }
-        }
-      },
-      "shouldTranslate" : false
     },
     "v9k-wu-2xL.placeholderString" : {
       "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"empty log\"; ObjectID = \"v9k-wu-2xL\";",

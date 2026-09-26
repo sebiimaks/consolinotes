@@ -12,11 +12,7 @@ import Cocoa
 
 public class UserDefaultsManagement {
     
-    static var apiPath = "https://api.fsnot.es/"
-    static var webPath = "https://p.fsnot.es/"
 
-    public static var global = NSUbiquitousKeyValueStore.default
-    
     typealias Color = NSColor
     typealias Image = NSImage
     typealias Font = NSFont
@@ -34,7 +30,6 @@ public class UserDefaultsManagement {
         static let AllowTouchID = "allowTouchID"
         static let AppearanceTypeKey = "appearanceType"
         static let AskCommitMessage = "askCommitMessage"
-        static let ApiBookmarksData = "apiBookmarksData"
         static let AutoInsertHeader = "autoInsertHeader"
         static let AutoVersioning = "autoVersioning"
         static let AutomaticSpellingCorrection = "automaticSpellingCorrection"
@@ -58,7 +53,6 @@ public class UserDefaultsManagement {
         static let codeTheme = "codeTheme2025"
         static let ContinuousSpellChecking = "continuousSpellChecking"
         static let CrashedLastTime = "crashedLastTime"
-        static let CustomWebServer = "customWebServer"
         static let DefaultLanguageKey = "defaultLanguage"
         static let DefaultKeyboardKey = "defaultKeyboard"
         static let FontNameKey = "font"
@@ -81,7 +75,6 @@ public class UserDefaultsManagement {
         static let HideSidebar = "hideSidebar"
         static let HidePreviewKey = "hidePreview"
         static let HidePreviewImages = "hidePreviewImages"
-        static let iCloudDrive = "iCloudDrive"
         static let ImagesWidthKey = "imagesWidthKey"
         static let IndentUsing = "indentUsing"
         static let InlineTags = "inlineTags"
@@ -136,7 +129,6 @@ public class UserDefaultsManagement {
         static let TableOrientation = "isUseHorizontalMode"
         static let TextMatchAutoSelection = "textMatchAutoSelection"
         static let TrashKey = "trashKey"
-        static let UploadKey = "uploadKey"
         static let UseTextBundleToStoreDates = "useTextBundleToStoreDates"
         static let AutocloseBrackets = "autocloseBrackets"
         static let Welcome = "welcome2026"
@@ -232,34 +224,74 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var iCloudDocumentsContainer: URL? {
-        get {
-            if let iCloudDocumentsURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents").standardized {
-                if (!FileManager.default.fileExists(atPath: iCloudDocumentsURL.path, isDirectory: nil)) {
-                    do {
-                        try FileManager.default.createDirectory(at: iCloudDocumentsURL, withIntermediateDirectories: true, attributes: nil)
-                        
-                        return iCloudDocumentsURL.standardized
-                    } catch {
-                        print("Home directory creation: \(error)")
-                    }
-                } else {
-                   return iCloudDocumentsURL.standardized
-                }
-            }
-
-            return nil
-        }
-    }
-    
+    /// Default storage: ~/Documents/consolinotes. The first request sets the folder up.
     static var localDocumentsContainer: URL? {
         get {
-            if let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
-                return URL(fileURLWithPath: path, isDirectory: true)
-            }
- 
-            return nil
+            _ = consolinotesDocumentsPrepared
+            return defaultLocalDocuments
         }
+    }
+
+    /// ~/Documents/consolinotes once it exists, otherwise the sandbox's own Documents folder, without creating anything.
+    static var defaultLocalDocuments: URL? {
+        if let folder = consolinotesDocuments, FileManager.default.fileExists(atPath: folder.path) {
+            return folder
+        }
+
+        return sandboxDocuments
+    }
+
+    /// ~/Documents/consolinotes in the real home folder. The entitlements grant the sandbox access to this folder only.
+    private static var consolinotesDocuments: URL? {
+        guard let home = getpwuid(getuid())?.pointee.pw_dir else { return nil }
+
+        return URL(fileURLWithPath: String(cString: home), isDirectory: true)
+            .appendingPathComponent("Documents", isDirectory: true)
+            .appendingPathComponent("consolinotes", isDirectory: true)
+    }
+
+    /// Documents inside the app's sandbox container, where earlier builds kept notes by default.
+    private static var sandboxDocuments: URL? {
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+    }
+
+    private static let consolinotesDocumentsPrepared: Bool = prepareConsolinotesDocuments()
+
+    /// Creates ~/Documents/consolinotes and moves in notes that earlier builds kept in the sandbox.
+    /// Runs only while the folder doesn't exist, so notes move once and are never overwritten.
+    private static func prepareConsolinotesDocuments() -> Bool {
+        let fileManager = FileManager.default
+
+        guard let destination = consolinotesDocuments else { return false }
+        guard !fileManager.fileExists(atPath: destination.path) else { return true }
+
+        do {
+            try fileManager.createDirectory(at: destination, withIntermediateDirectories: false)
+        } catch {
+            print("Creating \(destination.path) failed, keeping notes in the sandbox: \(error)")
+            return false
+        }
+
+        guard let source = sandboxDocuments,
+              let items = try? fileManager.contentsOfDirectory(at: source, includingPropertiesForKeys: nil) else { return true }
+
+        // projects.state is app state, not notes, so it stays in the sandbox.
+        let notes = items.filter { !["projects.state", ".DS_Store"].contains($0.lastPathComponent) }
+
+        for item in notes {
+            do {
+                try fileManager.moveItem(at: item, to: destination.appendingPathComponent(item.lastPathComponent))
+            } catch {
+                print("Moving \(item.lastPathComponent) to \(destination.path) failed: \(error)")
+            }
+        }
+
+        // The cached sidebar tree lists the old locations.
+        if !notes.isEmpty, let caches = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            try? fileManager.removeItem(at: caches.appendingPathComponent("sidebarTree"))
+        }
+
+        return true
     }
     
     static var customStoragePath: String? {
@@ -285,11 +317,6 @@ public class UserDefaultsManagement {
         get {
             if let customStoragePath = self.customStoragePath {
                 return customStoragePath
-            }
-
-            if let iCloudDocumentsURL = self.iCloudDocumentsContainer {
-                storageType = .iCloudDrive
-                return iCloudDocumentsURL.path
             }
 
             if let localDocumentsContainer = localDocumentsContainer {
@@ -408,27 +435,27 @@ public class UserDefaultsManagement {
         
     static var sort: SortBy {
         get {
-            if let result = global.object(forKey: "sortBy") as? String, let sortBy = SortBy(rawValue: result) {
+            if let result = shared?.object(forKey: "sortBy") as? String, let sortBy = SortBy(rawValue: result) {
                 return sortBy
             } else {
                 return .modificationDate
             }
         }
         set {
-            global.set(newValue.rawValue, forKey: "sortBy")
+            shared?.set(newValue.rawValue, forKey: "sortBy")
         }
     }
     
     static var sortDirection: Bool {
         get {
-            if let returnMode = global.object(forKey: "sortDirection") as? Bool {
+            if let returnMode = shared?.object(forKey: "sortDirection") as? Bool {
                 return returnMode
             } else {
                 return true
             }
         }
         set {
-            global.set(newValue, forKey: "sortDirection")
+            shared?.set(newValue, forKey: "sortDirection")
         }
     }
     
@@ -1379,30 +1406,6 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var iCloudDrive: Bool {
-        get {
-            if let result = shared?.object(forKey: Constants.iCloudDrive) as? Bool {
-                return result
-            }
-            return true
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.iCloudDrive)
-        }
-    }
-    
-    static var customWebServer: Bool {
-        get {
-            if let result = shared?.object(forKey: Constants.CustomWebServer) as? Bool {
-                return result
-            }
-            return false
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.CustomWebServer)
-        }
-    }
-    
     static var sftpHost: String {
         get {
             if let result = shared?.object(forKey: Constants.SftpHost) as? String {
@@ -1534,15 +1537,6 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var apiBookmarksData: Data? {
-        get {
-            return shared?.data(forKey: Constants.ApiBookmarksData)
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.ApiBookmarksData)
-        }
-    }
-    
     static var gitPrivateKeyData: Data? {
         get {
             return shared?.data(forKey: Constants.GitPrivateKeyData)
@@ -1565,35 +1559,6 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var uploadKey: String {
-        get {
-            if let result = global.object(forKey: Constants.UploadKey) as? String, result.count > 0 {
-                return result
-            }
-
-            let key = String.random(length: 20)
-            global.set(key, forKey: Constants.UploadKey)
-
-            return key
-        }
-        set {
-            global.set(newValue, forKey: Constants.UploadKey)
-        }
-    }
-
-    static var deprecatedUploadKey: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.UploadKey) as? String, result.count > 0 {
-                return result
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.UploadKey)
-        }
-    }
-
     static var clickableLinks: Bool {
         get {
             if let highlight = shared?.object(forKey: Constants.ClickableLinks) as? Bool {
@@ -1655,19 +1620,6 @@ public class UserDefaultsManagement {
         
         set {
             shared?.set(newValue, forKey: Constants.LastCommitMessage)
-        }
-    }
-    
-    static var lightCodeTheme: String {
-        get {
-            if let theme = UserDefaults.standard.object(forKey: Constants.codeTheme) as? String {
-                return theme
-            }
-
-            return "github"
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Constants.codeTheme)
         }
     }
     

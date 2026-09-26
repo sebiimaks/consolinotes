@@ -585,11 +585,13 @@ code.language-mermaid {
     text-align: center;
 }
 
+a[href^="consolinotes://open/?tag="],
 a[href^="fsnotes://open/?tag="] {
     border-radius: 4px;
     color: white;
     padding: 2px;
 }
+    a[href^="consolinotes://open/?tag="]:hover,
     a[href^="fsnotes://open/?tag="]:hover {
         text-decoration: none;
     }

@@ -109,11 +109,6 @@ class Sidebar {
     private func getDefaultLabelName(project: Project) -> String {
         var name = project.label
 
-        let iCloudPath = "/Users/\(NSUserName())/Library/Mobile Documents"
-        if project.url.path.starts(with: iCloudPath) {
-            name = NSLocalizedString("iCloud Drive", comment: "")
-        }
-
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path
         if let path = documentsPath, project.url.path.starts(with: path) {
             name = NSLocalizedString("Documents", comment: "")

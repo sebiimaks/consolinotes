@@ -33,22 +33,22 @@
 }
 
 body.consolinotes {
-    --cn-bg: #f6f5f0;
-    --cn-bar: #e9e7e0;
-    --cn-fg: #2b2d36;
-    --cn-bright: #101118;
-    --cn-dim: #555a69;
-    --cn-faint: #8d909c;
-    --cn-border: #c9c5b9;
-    --cn-accent: #2d5bd0;
-    --cn-selection: #e3eafb;
-    --cn-code: #eeece5;
-    --cn-match: #ffe28a;
-    --cn-green: #316612;
-    --cn-yellow: #754c00;
-    --cn-magenta: #7a47c2;
-    --cn-cyan: #0b6a8a;
-    --cn-orange: #944200;
+    --cn-bg: #f5f0e4;
+    --cn-bar: #e8e0cf;
+    --cn-fg: #3a352d;
+    --cn-bright: #1c1914;
+    --cn-dim: #5b5447;
+    --cn-faint: #a39a88;
+    --cn-border: #d3c9b5;
+    --cn-accent: #2b5d88;
+    --cn-selection: #e9e1ce;
+    --cn-code: #f0eadd;
+    --cn-match: #f3d67a;
+    --cn-green: #3f580b;
+    --cn-yellow: #725000;
+    --cn-magenta: #7d4893;
+    --cn-cyan: #1c6b59;
+    --cn-orange: #8a440a;
 
     background: var(--cn-bg);
     color: var(--cn-fg);
@@ -56,22 +56,22 @@ body.consolinotes {
 }
 
 body.consolinotes.darkmode {
-    --cn-bg: #14151b;
-    --cn-bar: #1c1e28;
-    --cn-fg: #c9cedc;
-    --cn-bright: #eef1f8;
-    --cn-dim: #979eb7;
-    --cn-faint: #666d88;
-    --cn-border: #474d66;
-    --cn-accent: #7aa2f7;
-    --cn-selection: #263150;
-    --cn-code: #1a1c25;
-    --cn-match: #5c4a17;
-    --cn-green: #9ece6a;
-    --cn-yellow: #e0af68;
-    --cn-magenta: #bb9af7;
-    --cn-cyan: #7dcfff;
-    --cn-orange: #ff9e64;
+    --cn-bg: #1d1c1a;
+    --cn-bar: #161513;
+    --cn-fg: #dcd3c0;
+    --cn-bright: #f4ecd8;
+    --cn-dim: #a69d8b;
+    --cn-faint: #6b6558;
+    --cn-border: #3d3a34;
+    --cn-accent: #83a9cc;
+    --cn-selection: #34312a;
+    --cn-code: #232220;
+    --cn-match: #5e4b16;
+    --cn-green: #a9c26f;
+    --cn-yellow: #e3b341;
+    --cn-magenta: #c9a0d6;
+    --cn-cyan: #7fc7b2;
+    --cn-orange: #e8a063;
 }
 
 body.consolinotes ::selection {
@@ -120,13 +120,13 @@ body.consolinotes h6 {
 }
 
 body.consolinotes h1 {
-    color: var(--cn-accent);
-    border-bottom: 3px solid var(--cn-accent);
+    color: var(--cn-orange);
+    border-bottom: 3px solid var(--cn-orange);
     padding-bottom: 0.2em;
 }
 
 body.consolinotes h2 {
-    color: var(--cn-cyan);
+    color: var(--cn-yellow);
     border-bottom: 1px solid var(--cn-border);
     padding-bottom: 0.2em;
 }
@@ -148,11 +148,13 @@ body.consolinotes a:visited {
     text-underline-offset: 3px;
 }
 
+body.consolinotes a[href^="consolinotes://find"],
 body.consolinotes a[href^="fsnotes://find"] {
     color: var(--cn-magenta);
     text-decoration-color: color-mix(in srgb, var(--cn-magenta) 45%, transparent);
 }
 
+body.consolinotes a[href^="consolinotes://open/?tag="],
 body.consolinotes a[href^="fsnotes://open/?tag="] {
     background: var(--cn-selection);
     color: var(--cn-green);
@@ -207,24 +209,18 @@ body.consolinotes hr {
     height: 0;
 }
 
-/* Code: inline spans and box-drawn blocks */
+/* Code: inline spans in the app palette; blocks take the selected code theme inside a square frame */
 
-body.consolinotes code {
-    color: var(--cn-orange);
+body.consolinotes :not(pre) > code {
+    color: var(--cn-green);
     background: var(--cn-code);
     border-radius: 0;
 }
 
 body.consolinotes pre {
-    background: var(--cn-code);
+    background: transparent;
     border: 1px solid var(--cn-border);
     border-radius: 0;
-}
-
-body.consolinotes pre code,
-body.consolinotes pre code.hljs {
-    color: var(--cn-fg);
-    background: transparent;
 }
 
 body.consolinotes code.language-mermaid {

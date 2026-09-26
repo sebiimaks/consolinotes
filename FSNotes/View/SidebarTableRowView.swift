@@ -19,13 +19,10 @@ class SidebarTableRowView: NSTableRowView {
     }
 }
 
-/// Selected row in a TUI list: a tinted band with an accent bar on the left edge.
+/// Selected row in a list, drawn like Vim's cursorline: a full-width tinted band.
 enum TUIRowSelection {
     static func draw(in rect: NSRect, emphasized: Bool) {
         (emphasized ? TUITheme.selection : TUITheme.selectionInactive).setFill()
         rect.fill()
-
-        TUITheme.accent.setFill()
-        NSRect(x: rect.minX, y: rect.minY, width: 3, height: rect.height).fill()
     }
 }

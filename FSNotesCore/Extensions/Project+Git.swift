@@ -18,7 +18,7 @@ extension Project {
     }
 
     public func getRepositoryUrl() -> URL {
-        if UserDefaultsManagement.separateRepo && !isCloudProject() {
+        if UserDefaultsManagement.separateRepo {
             return url.appendingPathComponent(".git", isDirectory: true)
         }
 
@@ -111,18 +111,7 @@ extension Project {
     }
 
     public func useSeparateRepo() -> Bool {
-        return UserDefaultsManagement.separateRepo && !isCloudProject()
-    }
-
-    public func isCloudProject() -> Bool {
-        guard let storagePath = UserDefaultsManagement.storagePath,
-              let documentsProject = UserDefaultsManagement.iCloudDocumentsContainer else { return false }
-
-        if storagePath == documentsProject.path, url.path.contains(storagePath) {
-            return true
-        }
-
-        return false
+        return UserDefaultsManagement.separateRepo
     }
 
     public func getAuthHandler() -> SshKeyHandler? {
@@ -281,7 +270,7 @@ extension Project {
     }
 
     public func isUseWorkTree() -> Bool {
-        return !UserDefaultsManagement.separateRepo || isCloudProject()
+        return !UserDefaultsManagement.separateRepo
     }
 
     public func isGitOriginExist() -> Bool {

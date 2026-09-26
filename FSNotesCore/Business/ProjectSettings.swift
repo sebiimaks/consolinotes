@@ -24,6 +24,7 @@ public class ProjectSettings: NSObject, NSSecureCoding {
     public var gitPublicKey: Data?
     public var gitPrivateKeyPassphrase: String?
     public var notesPreview = [String]()
+    // Note IDs from FSNotes' publishing service. consolinotes doesn't use them, but keeps them when saving settings.
     public var notesAPI: [String: String]?
 
     public override init() {/*_*/}

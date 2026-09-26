@@ -30,8 +30,7 @@ class MasterPasswordViewController: NSViewController {
         var password = String()
 
         do {
-            let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
-            password = try item.readPassword()
+            password = try KeychainConfiguration.readMasterPassword()
         } catch {
             print(error)
         }

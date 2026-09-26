@@ -461,9 +461,13 @@ class SidebarOutlineView: NSOutlineView,
         cell.label.frame.origin.x = 25
 
         if let tag = item as? FSTag {
+            // Tags read as they are written in a note. Renaming goes through a dialog, so the "#" is display only.
             cell.type = .Tag
-            cell.icon.image = TUITheme.glyph("#", color: TUITheme.green)
-            cell.textField?.stringValue = tag.getName()
+            cell.icon.image = nil
+            cell.icon.isHidden = true
+            cell.label.frame.origin.x = 4
+            cell.textField?.stringValue = "#" + tag.getName()
+            cell.textField?.textColor = TUITheme.green
 
         } else if let project = item as? Project {
 
@@ -471,14 +475,16 @@ class SidebarOutlineView: NSOutlineView,
                 cell.type = project.isLocked() ? .ProjectEncryptedLocked : .ProjectEncryptedUnlocked
                 cell.icon.image = TUITheme.glyph(project.isLocked() ? "◆" : "◇", color: TUITheme.magenta)
             } else {
-                // Folders show only the ▸/▾ disclosure glyph, like a terminal file tree.
+                // Folders show only the ▸/▾ disclosure glyph, like NERDTree.
                 cell.type = .Project
                 cell.icon.image = nil
                 cell.icon.isHidden = true
                 cell.label.frame.origin.x = 4
             }
 
-            cell.textField?.stringValue = project.label
+            // NERDTree marks directories with a trailing slash; renameFolderMenu drops it before editing.
+            cell.textField?.stringValue = project.label + "/"
+            cell.textField?.textColor = TUITheme.accent
 
         } else if let si = item as? SidebarItem {
             let name = si.type == .Separator ? "" : si.name
@@ -490,10 +496,11 @@ class SidebarOutlineView: NSOutlineView,
             if si.type == .Header {
                 let cell = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "HeaderCell"), owner: self) as! SidebarHeaderCellView
 
+                // Storage headers read as Vim comments.
                 cell.label.frame.origin.x = 2
-                cell.label.stringValue = name.uppercased()
-                cell.label.font = TUITheme.font(ofSize: 11, weight: .semibold)
-                cell.label.textColor = TUITheme.dim
+                cell.label.stringValue = "\" " + name
+                cell.label.font = TUITheme.font(ofSize: 12)
+                cell.label.textColor = TUITheme.faint
 
                 return cell
             }
@@ -670,7 +677,12 @@ class SidebarOutlineView: NSOutlineView,
 
         guard let projectRow = sidebarOutlineView.rowView(atRow: sidebarOutlineView.selectedRow, makeIfNecessary: false),
               let cell = projectRow.view(atColumn: 0) as? SidebarCellView else { return }
-        
+
+        // Edit the bare name, without the trailing "/" shown in the tree.
+        if let project = cell.objectValue as? Project {
+            cell.label.stringValue = project.label
+        }
+
         cell.label.isEditable = true
         cell.label.becomeFirstResponder()
     }

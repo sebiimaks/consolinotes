@@ -18,6 +18,7 @@ consolinotes is a fork of [FSNotes](https://github.com/glushchenko/fsnotes). Thi
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | 2.304 | OFL-1.1 | macOS app and preview |
 | [Source Code Pro](https://github.com/adobe-fonts/source-code-pro) | 1.058, 2.030, 2.038 | OFL-1.1 | macOS, preview |
 | [highlight.js](https://github.com/highlightjs/highlight.js) | 9.13.1 | BSD-3-Clause | Preview code highlighting; the code themes are based on its styles |
+| Code theme palettes: [Gruvbox](https://github.com/morhetz/gruvbox), [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme), [Catppuccin](https://github.com/catppuccin/catppuccin), [Nord](https://github.com/nordtheme/nord), [Dracula](https://github.com/dracula/dracula-theme) | published palettes | MIT | Colour values for the gruvbox, tokyo-night, catppuccin, nord and dracula code themes |
 | [Mermaid](https://github.com/mermaid-js/mermaid) | 11.12.2 | MIT | Preview diagrams |
 | [MathJax](https://github.com/mathjax/MathJax) | 3.0.0 | Apache-2.0 | Preview maths |
 | [JavaScript Load Image](https://github.com/blueimp/JavaScript-Load-Image) | bundled build | MIT | Preview images |
@@ -277,6 +278,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
+
+### Code theme palettes
+
+MIT. The gruvbox, tokyo-night, catppuccin, nord and dracula code themes use colour values from
+these projects' published palettes. No code from them is included; consolinotes' own generator
+(`scripts/generate-code-themes.py`) writes the editor and preview styles, and moves any colour
+below 4.5:1 contrast toward black or white so code stays readable.
+
+- Gruvbox by Pavel Pertsev: https://github.com/morhetz/gruvbox
+- Tokyo Night by enkia: https://github.com/enkia/tokyo-night-vscode-theme
+- Catppuccin by the Catppuccin organisation: https://github.com/catppuccin/catppuccin
+- Nord by Arctic Ice Studio and Sven Greb: https://github.com/nordtheme/nord
+- Dracula by the Dracula Theme team: https://github.com/dracula/dracula-theme
+
+Each project is released under the MIT licence; see its repository for the copyright notice.
 
 ### Mermaid
 

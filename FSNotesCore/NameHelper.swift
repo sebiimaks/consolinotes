@@ -24,6 +24,10 @@ class NameHelper {
 
         if name.isEmpty {
             name = defaultName
+
+            if UserDefaultsManagement.naming.usesSequenceSuffix {
+                return sequencedFileName(name, project: project, ext: ext)
+            }
         }
 
         var fileUrl = project.url
@@ -51,6 +55,20 @@ class NameHelper {
             let increment = postfix + 1
             let newName = name + " " + String(increment)
             return NameHelper.getUniqueFileName(name: newName, postfix: increment, project: project, ext: ext)
+        }
+
+        return fileUrl
+    }
+
+    /// The first free name out of `name`, `name_001`, `name_002` and so on.
+    private static func sequencedFileName(_ name: String, project: Project, ext: String) -> URL {
+        var fileUrl = project.url.appendingPathComponent(name + "." + ext, isDirectory: false)
+        var number = 0
+
+        while FileManager.default.fileExists(atPath: fileUrl.path) {
+            number += 1
+            let numbered = name + "_" + String(format: "%03d", number)
+            fileUrl = project.url.appendingPathComponent(numbered + "." + ext, isDirectory: false)
         }
 
         return fileUrl

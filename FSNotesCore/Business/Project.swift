@@ -16,7 +16,6 @@ public class Project: NSObject {
 
     public var label: String
     var isTrash: Bool
-    var isCloudDrive: Bool = false
     public var parent: Project?
     var isDefault: Bool
 
@@ -66,7 +65,6 @@ public class Project: NSObject {
 
         self.settingsKey = getSettingsKey()
         self.loadLabel(label)
-        self.isCloudDrive = isCloudDriveFolder(url: url)
 
         if let settings = getSettings() {
             self.settings = settings
@@ -100,17 +98,11 @@ public class Project: NSObject {
             NSKeyedArchiver.setClassName("ProjectSettings", for: ProjectSettings.self)
             let data = try NSKeyedArchiver.archivedData(withRootObject: settings, requiringSecureCoding: true)
             let key = getLongSettingsKey()
-            
-            #if CLOUD_RELATED_BLOCK
-            let keyStore = NSUbiquitousKeyValueStore.default
-                keyStore.set(data, forKey: key)
-                keyStore.synchronize()
-            #else
-                if let documentDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-                    let url = documentDir.appendingPathComponent(key)
-                    try? data.write(to: url)
-                }
-            #endif
+
+            if let documentDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                let url = documentDir.appendingPathComponent(key)
+                try? data.write(to: url)
+            }
         } catch {
             print("Settings arc error: \(error.localizedDescription)")
         }
@@ -119,16 +111,11 @@ public class Project: NSObject {
     public func getSettings() -> ProjectSettings? {
         let key = getLongSettingsKey()
         var data: Data?
-                
-        #if CLOUD_RELATED_BLOCK
-        let keyStore = NSUbiquitousKeyValueStore.default
-            data = keyStore.data(forKey: key)
-        #else
-            if let documentDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-                let url = documentDir.appendingPathComponent(key)
-                data = try? Data(contentsOf: url)
-            }
-        #endif
+
+        if let documentDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let url = documentDir.appendingPathComponent(key)
+            data = try? Data(contentsOf: url)
+        }
         
         NSKeyedUnarchiver.setClass(ProjectSettings.self, forClassName: "ProjectSettings")
         if let data = data, let settings = try? NSKeyedUnarchiver.unarchivedObject(ofClass: ProjectSettings.self, from: data) {
@@ -149,12 +136,8 @@ public class Project: NSObject {
     public func getSettingsKey() -> String {
         var prefix = String()
         
-        // iCloud Documents
-        if let path = getCloudDriveRelativePath() {
-            prefix = "i\(path)"
-            
         // Local documents
-        } else if let path = getLocalDocumentsRelativePath() {
+        if let path = getLocalDocumentsRelativePath() {
             prefix = "l\(path)"
             
         // External
@@ -304,14 +287,11 @@ public class Project: NSObject {
             print("From disk: \(notes.count), lbl: \(label)")
         }
         
-        storage.loadPins(notes: notes)
-
         for note in notes {
             storage.add(note)
         }
 
         loadNotesPreview()
-        _ = loadWebAPI()
 
         return notes
     }
@@ -367,37 +347,9 @@ public class Project: NSObject {
         return FileManager.default.fileExists(atPath: fileURL.path)
     }
 
-    private func isCloudDriveFolder(url: URL) -> Bool {
-        if let iCloudDocumentsURL =
-            FileManager.default.url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent("Documents", isDirectory: true)
-                .standardized
-        {
-            
-            if FileManager.default.fileExists(atPath: iCloudDocumentsURL.path, isDirectory: nil), url.path.contains(iCloudDocumentsURL.path) {
-                return true
-            }
-        }
-        
-        return false
-    }
-   
-    private func getCloudDriveRelativePath() -> String? {
-        if let iCloudDir =
-            FileManager.default.url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent("Documents", isDirectory: true)
-                .standardized,
-           
-            url.path.contains(iCloudDir.path) {
-            
-            return url.path.replacingOccurrences(of: iCloudDir.path, with: "")
-        }
-        
-        return nil
-    }
-    
     private func getLocalDocumentsRelativePath() -> String? {
-        if let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+        // Relative to the default local storage, so settings keys survive the move to ~/Documents/consolinotes.
+        if let documentDir = UserDefaultsManagement.defaultLocalDocuments,
             url.path.contains(documentDir.path) {
             
             return url.path.replacingOccurrences(of: documentDir.path, with: "")
@@ -476,30 +428,6 @@ public class Project: NSObject {
         }
         
         return "consolinotes › \(label)"
-    }
-
-    public func getRelativePath() -> String? {
-        if let iCloudRoot =  FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents").standardized {
-
-            let path = url.path.replacingOccurrences(of: iCloudRoot.path, with: "")
-            return path.md5
-        }
-
-        return nil
-    }
-    
-    public func getPathChecksum() -> String {
-        if !UserDefaultsManagement.iCloudDrive, let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            var path = url.path.replacingOccurrences(of: documentDir.path, with: "")
-            
-            if path == "" {
-                path = "Local"
-            }
-            
-            return path.md5
-        } else {
-            return url.path.md5
-        }
     }
 
     public func getMd5CheckSum() -> String {
@@ -915,41 +843,4 @@ public class Project: NSObject {
         }
     }
 
-    public func saveWebAPI() {
-        let notes = getNotes()
-        var result = [String: String]()
-        for note in notes {
-            if let apiId = note.apiId {
-                result[note.name] = apiId
-            }
-        }
-        settings.notesAPI = result
-        saveSettings()
-    }
-
-    public func loadWebAPI() -> ([Note], [Note])? {
-        guard let items = settings.notesAPI else { return nil }
-
-        var keys = [String]()
-        for (key, _) in items {
-            keys.append(key)
-        }
-
-        let notes = storage.getNotesBy(project: self)
-
-        var added = [Note]()
-        var removed = [Note]()
-
-        for note in notes {
-            if note.apiId != nil && !keys.contains(note.name) {
-                removed.append(note)
-                note.apiId = nil
-            } else if note.apiId == nil && keys.contains(note.name) {
-                added.append(note)
-                note.apiId = items[note.name]
-            }
-        }
-
-        return (added, removed)
-    }
 }

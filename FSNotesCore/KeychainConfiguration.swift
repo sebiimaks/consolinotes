@@ -10,7 +10,26 @@
 import Foundation
 
 struct KeychainConfiguration {
-    static let serviceName = "FSNotesApp"
+    static let serviceName = "consolinotes"
+
+    /// The service name FSNotes uses. A master password saved under it is copied to `serviceName` when first read.
+    static let legacyServiceName = "FSNotesApp"
+
+    static let masterPasswordAccount = "Master Password"
+
+    static func readMasterPassword() throws -> String {
+        let item = KeychainPasswordItem(service: serviceName, account: masterPasswordAccount)
+
+        do {
+            return try item.readPassword()
+        } catch {
+            let legacy = KeychainPasswordItem(service: legacyServiceName, account: masterPasswordAccount)
+            guard let password = try? legacy.readPassword() else { throw error }
+
+            try? item.savePassword(password)
+            return password
+        }
+    }
 
     /*
      Specifying an access group to use with `KeychainPasswordItem` instances

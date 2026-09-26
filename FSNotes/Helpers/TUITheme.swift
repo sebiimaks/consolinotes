@@ -2,7 +2,7 @@
 //  TUITheme.swift
 //  FSNotes
 //
-//  Modern TUI look: one palette and one monospace type scale for the whole window.
+//  Vim modal look: one palette and one monospace type scale for the whole window.
 //  Colours live in Images.xcassets/TUI so light and dark variants resolve per appearance.
 //
 
@@ -29,6 +29,9 @@ enum TUITheme {
     static var magenta: NSColor { named("tuiMagenta") }
     static var cyan: NSColor { named("tuiCyan") }
     static var orange: NSColor { named("tuiOrange") }
+    static var statusLine: NSColor { named("tuiStatusLine") }
+    static var cursorLine: NSColor { named("tuiCursorLine") }
+    static var lineNumber: NSColor { named("tuiLineNumber") }
 
     // MARK: - Type
 
@@ -75,8 +78,8 @@ enum TUITheme {
         return image
     }
 
-    /// A text chip like "[ share ]" in a terminal status line, for image-only buttons.
-    static func chip(_ text: String, color: NSColor = dim, background: NSColor = bar) -> NSImage {
+    /// A text label like ":share" on the winbar, for image-only buttons.
+    static func chip(_ text: String, color: NSColor = dim, background: NSColor = .clear) -> NSImage {
         let attributes: [NSAttributedString.Key: Any] = [.font: font(ofSize: 12), .foregroundColor: color]
         let textSize = (text as NSString).size(withAttributes: attributes)
         let size = NSSize(width: ceil(textSize.width) + 12, height: ceil(textSize.height) + 4)
@@ -91,13 +94,13 @@ enum TUITheme {
         return image
     }
 
-    /// Title-bar lock chip naming what the button does next. Labels share one width, so the button never resizes.
+    /// Winbar lock chip naming the command the button runs next. Labels share one width, so the button never resizes.
     static func lockChip(encrypted: Bool, locked: Bool) -> NSImage {
         if !encrypted {
-            return chip("encrypt ")
+            return chip(":encrypt")
         }
 
-        return locked ? chip("◆ unlock", color: magenta) : chip("◇ lock  ", color: magenta)
+        return locked ? chip(":unlock ", color: magenta) : chip(":lock   ", color: magenta)
     }
 
     // MARK: - Private
