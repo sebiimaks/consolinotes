@@ -89,6 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        EditorViewController.cancelPasswordRequests()
         // A failed encrypted write must never be followed by deletion of its
         // only recoverable plaintext. All note writes are synchronous.
         guard let storage = Storage.instance else { return .terminateNow }

@@ -586,7 +586,7 @@ class ViewController: EditorViewController,
         }
 
         if project.isEncrypted && project.isLocked() {
-            getMasterPassword() { password in
+            getMasterPassword(allowPIV: false) { password in
                 self.sidebarOutlineView.unlock(projects: [project], password: password)
                 guard !project.isLocked() else { completion(false); return }
                 performMove(password: project.password)
@@ -1161,6 +1161,7 @@ class ViewController: EditorViewController,
     }
         
     @IBAction func lockAll(_ sender: Any) {
+        Self.cancelPasswordRequests()
         let notes = storage.noteList.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
         var failures = 0
         for note in notes {

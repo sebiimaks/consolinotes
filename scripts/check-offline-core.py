@@ -23,6 +23,7 @@ def method(source, signature):
 
 def check_entitlements(data):
     assert data.get("com.apple.security.app-sandbox") is True, "Sandbox must remain enabled"
+    assert data.get("com.apple.security.smartcard") is True, "PIV inventory requires scoped smart-card access"
     for key in ["com.apple.security.network.client", "com.apple.security.network.server",
                 "com.apple.security.get-task-allow", "get-task-allow"]:
         assert not data.get(key), f"Unexpected entitlement: {key}"
@@ -138,6 +139,10 @@ final class AppDelegate {
     func search(query: String) { queries.append(query) }
     func showTerminationSaveFailure() { failures += 1 }
 ''' + methods + "\n" + quit_policy + r'''
+}
+enum EditorViewController {
+    static var cancellations = 0
+    static func cancelPasswordRequests() { cancellations += 1 }
 }
 extension String {
 ''' + string_helper + r'''

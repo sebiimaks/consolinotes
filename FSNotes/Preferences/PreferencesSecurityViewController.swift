@@ -31,6 +31,18 @@ class PreferencesSecurityViewController: NSViewController {
         allowTouchID.isEnabled = available
         masterPassword.isEnabled = available
         if !available { allowTouchID.state = .off }
+
+        let yubikey = NSButton(title: "Unlock with YubiKey…", target: self, action: #selector(openPIVUnlockWindow))
+        yubikey.bezelStyle = .rounded
+        yubikey.toolTip = "Encrypt a saved note password for an existing PIV identity on your security key."
+        yubikey.setAccessibilityIdentifier("security.yubikey")
+        yubikey.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(yubikey)
+        NSLayoutConstraint.activate([
+            yubikey.leadingAnchor.constraint(equalTo: masterPassword.trailingAnchor, constant: 12),
+            yubikey.centerYAnchor.constraint(equalTo: masterPassword.centerYAnchor),
+            yubikey.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -30)
+        ])
     }
 
     override func viewWillAppear() {
@@ -45,6 +57,10 @@ class PreferencesSecurityViewController: NSViewController {
 
             presentAsSheet(controller)
         }
+    }
+
+    @objc private func openPIVUnlockWindow() {
+        presentAsSheet(PIVUnlockViewController())
     }
 
     @IBAction func lockOnSleep(_ sender: NSButton) {

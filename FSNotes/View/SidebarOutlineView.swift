@@ -835,7 +835,7 @@ class SidebarOutlineView: NSOutlineView,
         guard let firstProject = projects.first  else { return }
 
         if firstProject.isEncrypted {
-            vc.getMasterPassword() { password in
+            vc.getMasterPassword(allowPIV: false) { password in
                 vc.sidebarOutlineView.decrypt(projects: projects, password: password)
             }
         }
@@ -863,7 +863,7 @@ class SidebarOutlineView: NSOutlineView,
         // Unlock
         } else {
             let action = sender.identifier?.rawValue
-            vc.getMasterPassword() { password in
+            vc.getMasterPassword(allowPIV: false) { password in
                 vc.sidebarOutlineView.unlock(projects: projects, password: password, action: action)
             }
         }
@@ -919,6 +919,7 @@ class SidebarOutlineView: NSOutlineView,
     }
 
     public func lock(projects: [Project]) {
+        EditorViewController.cancelPasswordRequests()
         guard let vc = ViewController.shared() else { return }
         for project in projects { _ = project.lock() }
         reloadTags()

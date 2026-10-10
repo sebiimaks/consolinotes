@@ -91,6 +91,7 @@ public class UserDefaultsManagement {
         static let LockAfterUserSwitch = "lockAfterUserSwitch"
         static let MarginSizeKey = "marginSize"
         static let MasterPasswordHint = "masterPasswordHint"
+        static let SuppressNewEncryptionFormatNotice = "suppressNewEncryptionFormatNotice"
         static let MathJaxPreview = "mathJaxPreview"
         static let NonContiguousLayout = "allowsNonContiguousLayout"
         static let NoteContainer = "noteContainer"
@@ -908,6 +909,15 @@ public class UserDefaultsManagement {
         }
         set {
             shared?.set(newValue, forKey: Constants.MasterPasswordHint)
+        }
+    }
+
+    static var suppressNewEncryptionFormatNotice: Bool {
+        get {
+            shared?.bool(forKey: Constants.SuppressNewEncryptionFormatNotice) ?? false
+        }
+        set {
+            shared?.set(newValue, forKey: Constants.SuppressNewEncryptionFormatNotice)
         }
     }
 

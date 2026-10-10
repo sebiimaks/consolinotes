@@ -32,6 +32,8 @@ Encrypted-note writes complete synchronously and replace ciphertext atomically. 
 
 Newly encrypted notes use AES-256-GCM and PBKDF2-HMAC-SHA256 with 600,000 iterations, implemented by CryptoKit and CommonCrypto. A key is derived once per unlock; each save uses a new random nonce. Existing RNCryptor v3 notes remain supported and retain their format when edited, subject to the archive safety limits below. To upgrade one, unlock it and choose **File → Upgrade Encryption…**. The password stays the same. New and upgraded files require consolinotes 1.2 or newer; FSNotes and older consolinotes cannot read them. Upgrading the live file does not upgrade older history or backups.
 
+The new-encryption notice has a **Do not ask again.** checkbox. Its preference is saved only when you confirm **Encrypt**, never when you cancel. It does not suppress the separate confirmation for upgrading an existing note.
+
 Unlocked encrypted notes still use temporary plaintext working files. New working copies are in `ConsolinotesEncryption.noindex` inside the app's temporary directory, with owner-only permissions and Time Machine exclusion. Preview directories use the same indexing/backup precautions; thumbnails render in memory without disk caches. Successful locking removes working copies, while failed writes deliberately retain recovery data. Interrupted sessions and older `Encryption` directories are preserved for recovery. This is not a memory-only vault, and backup exclusion does not control third-party software. Archive members are checked for links/special files, and new saves and extracted content are limited to 512 MiB and fewer than 16,384 child entries. The extraction metadata guard is not a strict hostile-ZIP64 decompression budget.
 
 Optional saved unlock passwords now use the macOS Data Protection Keychain, require OS-enforced user presence, are device-only and do not synchronize. Earlier saved passwords are never fetched automatically. Explicitly re-enter a password in **Preferences → Security → Saved Unlock Password…** to save and verify its protected replacement; only then is consolinotes' older saved copy removed. FSNotes' Keychain item is untouched. Appropriate signing/provisioning is required by macOS, so ad-hoc local builds may support only manual password entry. The app never substitutes an unprotected saved password. Password hints remain plaintext. See Apple's [Mac Keychain guidance](https://developer.apple.com/documentation/technotes/tn3137-on-mac-keychains).
@@ -43,6 +45,22 @@ Deleting a note saves and locks any encrypted working copy first; a failed save 
 On launch, the app removes legacy networking preferences and its own imported Git key copies, and rewrites its project-settings archives without saved credentials. Original SSH key files, notes, Git repositories and already-published sites are preserved. Cleanup failures are reported and retried. Copies in external backups are outside this cleanup.
 
 Local history uses libgit2 1.9.7 built from pinned source for arm64 and x86_64. All network transport implementations are excluded; the old swift-cgit2, libssh2 and OpenSSL binary dependencies are removed. Complete source, the local patch and build provenance ship with the app. Existing historical plaintext is not rewritten. These measures are not a claim of complete security certification.
+
+### Optional YubiKey unlocking
+
+In **Preferences → Security → Unlock with YubiKey…**, select a dedicated, existing PIV RSA encryption identity and enter the password of an existing encrypted note. Enrollment verifies an actual private-key decryption before saving an encrypted password envelope. It never creates, imports, resets or overwrites any key credential. This initial integration supports RSA 2048/3072/4096 identities exposed by macOS's built-in PIV driver, including appropriately configured YubiKey 5 devices. ECC and FIDO-only keys are not supported by this integration. The driver filter is not Yubico manufacturer attestation.
+
+This saves one password on this Mac. When unlocking an individual encrypted note, choose **Use YubiKey**, **Enter Password…**, or the protected Keychain password if enabled. Removing the enrollment deletes only the app's encrypted envelope. The original note password remains a recovery method, and note files keep their existing encryption. New encryption and folder protection use manual/protected Keychain passwords: an optional public-key envelope must not choose the secret for new ciphertext. This is not the stronger “Require YubiKey” mode. Removal of the key does not automatically lock notes; use Lock All or the existing auto-lock settings.
+
+PIN entry is handled by macOS, and PIN/touch requirements follow the key's configured policy. The app does not infer, alter or override those policies, and macOS may cache PIN authorization. A cancelled/failed hardware request never silently selects another saved password. Lock All, configured sleep/screen-lock/user-switch locking, and quit invalidate pending password results so a late authentication response cannot reopen notes.
+
+**Setup is required before live use.** The local build script produces an ad-hoc signature. Apple's native token access requires an application identifier authorized by a provisioning profile; adding a fabricated entitlement is not sufficient. Configure Xcode's signing for this bundle identifier with an appropriate Apple signing identity and profile, retain the sandbox/hardened runtime and smart-card entitlement, and verify the resulting app on the target Mac. See [Apple's token-access guidance](https://developer.apple.com/forums/thread/725152) and [development provisioning profiles](https://developer.apple.com/help/account/provisioning-profiles/create-a-development-provisioning-profile). The app does not need the `com.apple.token` Keychain access-group entitlement on macOS.
+
+For an unconfigured YubiKey, use [Yubico's PIV tools](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html) to inspect the key first. Prepare a dedicated unused encryption slot, commonly Key Management (9D), with an RSA 2048-bit key and matching certificate. Do not replace an occupied slot. Set nondefault PIN/PUK/management credentials and choose the desired PIN and touch policies when creating the key; requiring both on every operation means choosing **Always** for both where supported. Policy changes can require replacing a key, so decide before enrolling. Follow [Yubico's policy documentation](https://docs.yubico.com/yesdk/users-manual/application-piv/pin-touch-policies.html). Keep your note password separately; losing/resetting the key does not provide a way to recover it from the envelope.
+
+The envelope lives in the app's Application Support directory at `consolinotes/HardwareUnlock.noindex/piv-password.envelope`, outside note/history folders. It contains certificate/token metadata and a password encrypted with a random AES-256-GCM key; RSA-OAEP-SHA256 wraps that key. Version, identity metadata and wrapped key are authenticated. Directories/files are owner-only, writes replace atomically, and reads reject links and oversized input. Unwrapped keys/passwords exist in memory during use, subject to the existing unlocked-note lifetime. No PIN or unwrapped secret is saved. Enrollment is local and does not automatically migrate to another Mac.
+
+Synthetic tests verify cryptography, failure handling, storage and UI behavior without using real credentials. Live enumeration, PIN/touch prompts, key removal and relaunch must still be verified with a configured key and a provisioned build before relying on this feature.
 
 ### Encrypted note format
 
@@ -83,6 +101,9 @@ After building, run these checks on macOS:
 python3 scripts/check-encrypted-storage.py
 python3 scripts/check-encrypted-codec.py
 python3 scripts/check-protected-keychain.py
+python3 scripts/check-password-routing.py
+python3 scripts/check-piv-password.py
+python3 scripts/check-piv-unlock-ui.py
 python3 scripts/check-private-working-storage.py
 python3 scripts/check-protected-moves.py
 python3 scripts/check-note-attachments.py

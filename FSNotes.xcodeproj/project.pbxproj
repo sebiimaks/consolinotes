@@ -263,6 +263,8 @@
 		CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000001 /* EncryptedNoteCodec.swift */; };
 		CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000003 /* PrivateWorkingDirectory.swift */; };
 		CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000005 /* PrivateNoteArchive.swift */; };
+		CC1300000000000000000002 /* PIVPasswordProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1300000000000000000001 /* PIVPasswordProvider.swift */; };
+		CC1300000000000000000004 /* PIVUnlockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1300000000000000000003 /* PIVUnlockViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -548,6 +550,8 @@
 		CC1200000000000000000001 /* EncryptedNoteCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptedNoteCodec.swift; sourceTree = "<group>"; };
 		CC1200000000000000000003 /* PrivateWorkingDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateWorkingDirectory.swift; sourceTree = "<group>"; };
 		CC1200000000000000000005 /* PrivateNoteArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateNoteArchive.swift; sourceTree = "<group>"; };
+		CC1300000000000000000001 /* PIVPasswordProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIVPasswordProvider.swift; sourceTree = "<group>"; };
+		CC1300000000000000000003 /* PIVUnlockViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIVUnlockViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -651,6 +655,7 @@
 				CC1200000000000000000001 /* EncryptedNoteCodec.swift */,
 				CC1200000000000000000003 /* PrivateWorkingDirectory.swift */,
 				CC1200000000000000000005 /* PrivateNoteArchive.swift */,
+				CC1300000000000000000001 /* PIVPasswordProvider.swift */,
 				CC1100000000000000000001 /* LegacyNetworkCleanup.swift */,
 				D7C52B8028C7A8C2001B2065 /* Cgit2 */,
 				11D943172E643ECF0010CC2B /* SwiftHighlighter */,
@@ -902,6 +907,7 @@
 				D7F5C0F7223ED57D0038F172 /* PreferencesSecurityViewController.swift */,
 				D7F5C0FA223ED58F0038F172 /* PreferencesAdvancedViewController.swift */,
 				D738356C2242871400B260DD /* MasterPasswordViewController.swift */,
+				CC1300000000000000000003 /* PIVUnlockViewController.swift */,
 				D7CA7FD3232652E300E9717A /* PreferencesGitViewController.swift */,
 				D79798A129C0FE6A00B9A878 /* SettingsViewController.swift */,
 			);
@@ -1426,6 +1432,8 @@
 				CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */,
 				CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */,
 				CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */,
+				CC1300000000000000000002 /* PIVPasswordProvider.swift in Sources */,
+				CC1300000000000000000004 /* PIVUnlockViewController.swift in Sources */,
 				CC1100000000000000000002 /* LegacyNetworkCleanup.swift in Sources */,
 				D7F5C0F5223ED5620038F172 /* PreferencesEditorViewController.swift in Sources */,
 				D738356D2242871400B260DD /* MasterPasswordViewController.swift in Sources */,
@@ -1629,8 +1637,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 1.2.0;
-				CURRENT_PROJECT_VERSION = 8;
+				MARKETING_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 9;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;
@@ -1670,8 +1678,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				ONLY_ACTIVE_ARCH = YES;
-				MARKETING_VERSION = 1.2.0;
-				CURRENT_PROJECT_VERSION = 8;
+				MARKETING_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 9;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;
