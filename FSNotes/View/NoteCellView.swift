@@ -226,38 +226,9 @@ class NoteCellView: NSTableCellView {
 
     public func getPreviewImage(imageUrl: URL, note: Note) -> Image? {
         guard imageUrl.isFileURL, !note.isEncryptedAndLocked() else { return nil }
-        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MainNotesList")
-
-        if !FileManager.default.fileExists(atPath: tempURL.path) {
-            try? FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: false, attributes: nil)
-        }
-
-        if let cacheName = imageUrl.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)?.md5 {
-
-            let file = tempURL.appendingPathComponent(cacheName)
-            if FileManager.default.fileExists(atPath: file.path) {
-                if let data = try? Data(contentsOf: file), let image = NSImage(data: data) {
-                    return image
-                }
-            }
-
-            do {
-                let data = try Data(contentsOf: imageUrl)
-                if let image = NSImage(data: data) {
-                    let size = CGSize(width: 70, height: 70)
-
-                    if let resized = image.crop(to: size) {
-                        let jpegImageData = resized.jpgData
-                        try? jpegImageData?.write(to: file, options: .atomic)
-                        return resized
-                    }
-                }
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-
-        return nil
+        // Sidebar previews must not leave a second plaintext attachment on disk.
+        guard let data = try? Data(contentsOf: imageUrl), let image = NSImage(data: data) else { return nil }
+        return image.crop(to: CGSize(width: 70, height: 70))
     }
 
     public func adjustPinPosition() {

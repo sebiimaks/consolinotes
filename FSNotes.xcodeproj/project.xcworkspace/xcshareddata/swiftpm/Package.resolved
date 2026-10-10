@@ -1,5 +1,4 @@
 {
-  "originHash": "a794e65706e224ceca8e2c0f73fa7cc9071e8237ffa77aab0ec280c9e4bf6a72",
   "pins": [
     {
       "identity": "libcmark_gfm",
@@ -11,30 +10,12 @@
       }
     },
     {
-      "identity": "libssh2prebuild",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/glushchenko/Libssh2Prebuild.git",
-      "state": {
-        "revision": "024c2cf73e0b47deeea92a1176998f48f98ff4df",
-        "version": "1.11.0-OpenSSL-1-1-1u"
-      }
-    },
-    {
       "identity": "rncryptor",
       "kind": "remoteSourceControl",
       "location": "https://github.com/RNCryptor/RNCryptor.git",
       "state": {
         "revision": "5e3bbf44f08bf90049537cb8902d8f4fa911a79a",
         "version": "5.1.0"
-      }
-    },
-    {
-      "identity": "swift-cgit2",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/glushchenko/swift-cgit2",
-      "state": {
-        "revision": "ab1a18d82002b185c1c73b0daaa4174bb6b4f29c",
-        "version": "1.2.2"
       }
     },
     {

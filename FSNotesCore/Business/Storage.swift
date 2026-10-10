@@ -180,16 +180,9 @@ class Storage {
     }
 
     public func makeTempEncryptionDirectory() -> URL? {
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("Encryption")
-            .appendingPathComponent(UUID().uuidString)
-
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-            return url
-        } catch {
-            return nil
-        }
+        // Do not clean abandoned encryption directories: they can hold edits
+        // whose ciphertext write failed before a crash or forced termination.
+        return try? PrivateWorkingDirectory.makeEncryptionDirectory()
     }
 
     public func getChildProjects(project: Project) -> [Project] {
@@ -689,19 +682,20 @@ class Storage {
             return
         }
         
+        var removed = [URL: URL]()
         for note in notes {
+            if fsRemove {
+                guard let result = note.removeFile(completely: completely) else { continue }
+                if case let .trashed(destination, original) = result {
+                    removed[destination] = original
+                }
+            } else if note.isUnlocked() || note.hasPendingPlaintextCleanup || (!note.isEncryptedAndLocked() && note.lastWriteError != nil) {
+                // A watcher event must not orphan the only unsaved working copy.
+                note.preserveAfterExternalRemoval()
+                continue
+            }
             note.removeCacheForPreviewImages()
             removeBy(note: note)
-        }
-        
-        var removed = [URL: URL]()
-        
-        if fsRemove {
-            for note in notes {
-                if let trashURLs = note.removeFile(completely: completely) {
-                    removed[trashURLs[0]] = trashURLs[1]
-                }
-            }
         }
         
         if removed.count > 0 {

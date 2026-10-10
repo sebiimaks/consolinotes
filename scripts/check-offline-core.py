@@ -37,7 +37,7 @@ assert not info.get("NSAppTransportSecurity", {}).get("NSAllowsArbitraryLoads"),
 assert not info.get("NSUserActivityTypes"), "Handoff must not remain registered"
 pins = json.loads((ROOT / "FSNotes.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved").read_text())
 identities = {pin["identity"] for pin in pins["pins"]}
-assert not identities.intersection({"shout", "bluesocket", "swift-git", "swift-system"}), "Unused transport packages returned"
+assert not identities.intersection({"shout", "bluesocket", "swift-git", "swift-system", "swift-cgit2", "libssh2prebuild"}), "Unused transport packages returned"
 project = plistlib.loads(subprocess.check_output(["plutil", "-convert", "xml1", "-o", "-", str(ROOT / "FSNotes.xcodeproj/project.pbxproj")]))
 objects = project["objects"]
 for target in [x for x in objects.values() if x.get("isa") == "PBXNativeTarget"]:
@@ -87,6 +87,7 @@ final class Note {
     let title: String; let project: Project
     var content = NSMutableAttributedString(string: "original fixture")
     var unlocked = false; var encrypted = true
+    var hasPendingPlaintextCleanup = false
     var lastWriteError: String?; var lockSucceeds = true; var saveSucceeds = true
     var saveCalls = 0; var lockCalls = 0; var appendCalls = 0
     init(_ title: String, project: Project = Project()) { self.title = title; self.project = project }
@@ -94,7 +95,7 @@ final class Note {
     func isEncryptedAndLocked() -> Bool { encrypted && !unlocked }
     func lock() -> Bool {
         lockCalls += 1
-        if lockSucceeds { unlocked = false }
+        if lockSucceeds { unlocked = false; hasPendingPlaintextCleanup = false }
         return lockSucceeds
     }
     func save() -> Bool { saveCalls += 1; return saveSucceeds }
@@ -196,6 +197,14 @@ expect(good.project.password == nil && delegate.failures == 1, "finished project
 expect(vc.sidebarOutlineView.tagReloads >= 2 && vc.sidebarOutlineView.dataReloads >= 2, "sidebar must refresh even on cancellation")
 failed.lockSucceeds = true
 expect(delegate.applicationShouldTerminate(NSApp) == .terminateNow, "successful retry must permit quit")
+
+let cleanup = Note("cleanup-only")
+cleanup.hasPendingPlaintextCleanup = true; cleanup.lockSucceeds = false
+Storage.shared().noteList = [cleanup]
+expect(delegate.applicationShouldTerminate(NSApp) == .terminateCancel, "locked cleanup-only notes must block quit until cleanup completes")
+expect(cleanup.lockCalls == 1 && cleanup.saveCalls == 0, "quit must retry cleanup through lock without a normal save")
+cleanup.lockSucceeds = true
+expect(delegate.applicationShouldTerminate(NSApp) == .terminateNow && !cleanup.hasPendingPlaintextCleanup, "successful cleanup retry must permit quit")
 
 let plain = Note("plain")
 plain.encrypted = false; plain.lastWriteError = "write failed"; plain.saveSucceeds = false

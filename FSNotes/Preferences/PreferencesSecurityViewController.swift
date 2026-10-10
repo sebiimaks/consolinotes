@@ -22,20 +22,15 @@ class PreferencesSecurityViewController: NSViewController {
         lockOnScreenActivated.state = UserDefaultsManagement.lockOnScreenActivated ? .on : .off
         lockWhenFastUser.state = UserDefaultsManagement.lockOnUserSwitch ? .on : .off
         
+        allowTouchID.title = "Use saved unlock password"
+        allowTouchID.toolTip = "macOS authentication protects the saved password on this Mac. You can always enter each note's password manually."
+        masterPassword.title = "Saved Unlock Password…"
+        masterPassword.toolTip = "Save a device-only password with macOS authentication. This does not change any encrypted note's password."
         allowTouchID.state = UserDefaultsManagement.allowTouchID ? .on : .off
-        allowTouchID.isEnabled = true
-        
-        masterPassword.isEnabled = UserDefaultsManagement.allowTouchID
-        
-        if #available(OSX 10.12.2, *) {
-            let context = LAContext()
-            if !context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) {
-                disableTouchID()
-                return
-            }
-        } else {
-            disableTouchID()
-        }
+        let available = LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
+        allowTouchID.isEnabled = available
+        masterPassword.isEnabled = available
+        if !available { allowTouchID.state = .off }
     }
 
     override func viewWillAppear() {
@@ -67,13 +62,7 @@ class PreferencesSecurityViewController: NSViewController {
     @IBAction func allowTouchID(_ sender: NSButton) {
         UserDefaultsManagement.allowTouchID = (sender.state == .on)
 
-        masterPassword.isEnabled = UserDefaultsManagement.allowTouchID
-    }
-
-    private func disableTouchID() {
-        masterPassword.isEnabled = false
-        allowTouchID.isEnabled = false
-        allowTouchID.state = .off
+        // Turning this off stops convenience unlocking; it does not erase a saved password.
     }
 
 }

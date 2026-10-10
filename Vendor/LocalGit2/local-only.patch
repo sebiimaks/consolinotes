@@ -1,0 +1,199 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,3 +1,4 @@
++# Modified for consolinotes on 2026-10-10: exclude network transports.
+ # The main libgit2 source tree: this CMakeLists.txt identifies platform
+ # support and includes the subprojects that make up core libgit2 support.
+ 
+@@ -39,7 +40,7 @@
+ include(SelectGSSAPI)
+ include(SelectHTTPSBackend)
+ include(SelectHashes)
+-include(SelectHTTPParser)
++# consolinotes: no HTTP parser; network transports are excluded.
+ include(SelectRegex)
+ include(SelectXdiff)
+ include(SelectSSH)
+--- a/src/libgit2/CMakeLists.txt
++++ b/src/libgit2/CMakeLists.txt
+@@ -1,3 +1,4 @@
++# Modified for consolinotes on 2026-10-10: exclude network transports.
+ # libgit2: the shared library: this CMakeLists.txt compiles the core
+ # git library functionality.
+ 
+@@ -21,8 +22,7 @@
+ target_sources(libgit2 PRIVATE ${SRC_H})
+ 
+ file(GLOB SRC_GIT2 *.c *.h
+-	streams/*.c streams/*.h
+-	transports/*.c transports/*.h)
++	transports/local.c transports/local.h)
+ list(SORT SRC_GIT2)
+ target_sources(libgit2 PRIVATE ${SRC_GIT2})
+ 
+--- a/src/libgit2/libgit2.c
++++ b/src/libgit2/libgit2.c
+@@ -1,3 +1,4 @@
++/* Modified for consolinotes on 2026-10-10: exclude network transports. */
+ /*
+  * Copyright (C) the libgit2 contributors. All rights reserved.
+  *
+@@ -46,11 +47,6 @@
+ 		git_sysdir_global_init,
+ 		git_filter_global_init,
+ 		git_merge_driver_global_init,
+-		git_transport_ssh_libssh2_global_init,
+-		git_stream_registry_global_init,
+-		git_socket_stream_global_init,
+-		git_openssl_stream_global_init,
+-		git_mbedtls_stream_global_init,
+ 		git_mwindow_global_init,
+ 		git_pool_global_init,
+ 		git_settings_global_init
+@@ -93,7 +89,6 @@
+ #ifdef GIT_USE_NSEC
+ 		| GIT_FEATURE_NSEC
+ #endif
+-		| GIT_FEATURE_HTTP_PARSER
+ 		| GIT_FEATURE_REGEX
+ #ifdef GIT_USE_ICONV
+ 		| GIT_FEATURE_I18N
+@@ -166,15 +161,7 @@
+ 		break;
+ 
+ 	case GIT_FEATURE_HTTP_PARSER:
+-#if defined(GIT_HTTPPARSER_HTTPPARSER)
+-		return "httpparser";
+-#elif defined(GIT_HTTPPARSER_LLHTTP)
+-		return "llhttp";
+-#elif defined(GIT_HTTPPARSER_BUILTIN)
+-		return "builtin";
+-#endif
+-		GIT_ASSERT_WITH_RETVAL(!"Unknown HTTP parser backend", NULL);
+-		break;
++		return NULL; /* consolinotes: no network parser or transport. */
+ 
+ 	case GIT_FEATURE_REGEX:
+ #if defined(GIT_REGEX_REGCOMP_L)
+--- a/src/libgit2/settings.c
++++ b/src/libgit2/settings.c
+@@ -1,3 +1,4 @@
++/* Modified for consolinotes on 2026-10-10: exclude network transports. */
+ /*
+  * Copyright (C) the libgit2 contributors. All rights reserved.
+  *
+@@ -31,8 +32,6 @@
+ #include "streams/mbedtls.h"
+ #include "streams/openssl.h"
+ #include "streams/socket.h"
+-#include "transports/smart.h"
+-#include "transports/http.h"
+ #include "transports/ssh_libssh2.h"
+ 
+ #ifdef GIT_WIN32
+@@ -48,8 +47,6 @@
+ extern bool git_disable_pack_keep_file_checks;
+ extern int git_odb__packed_priority;
+ extern int git_odb__loose_priority;
+-extern int git_socket_stream__connect_timeout;
+-extern int git_socket_stream__timeout;
+ 
+ char *git__user_agent;
+ char *git__user_agent_product;
+@@ -320,7 +317,8 @@
+ 		break;
+ 
+ 	case GIT_OPT_ENABLE_OFS_DELTA:
+-		git_smart__ofs_delta_enabled = (va_arg(ap, int) != 0);
++		git_error_set(GIT_ERROR_NET, "network transports disabled in consolinotes");
++		error = -1;
+ 		break;
+ 
+ 	case GIT_OPT_ENABLE_FSYNC_GITDIR:
+@@ -372,7 +370,8 @@
+ 		break;
+ 
+ 	case GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE:
+-		git_http__expect_continue = (va_arg(ap, int) != 0);
++		git_error_set(GIT_ERROR_NET, "network transports disabled in consolinotes");
++		error = -1;
+ 		break;
+ 
+ 	case GIT_OPT_SET_ODB_PACKED_PRIORITY:
+@@ -433,37 +432,11 @@
+ 		break;
+ 
+ 	case GIT_OPT_GET_SERVER_CONNECT_TIMEOUT:
+-		*(va_arg(ap, int *)) = git_socket_stream__connect_timeout;
+-		break;
+-
+ 	case GIT_OPT_SET_SERVER_CONNECT_TIMEOUT:
+-		{
+-			int timeout = va_arg(ap, int);
+-
+-			if (timeout < 0) {
+-				git_error_set(GIT_ERROR_INVALID, "invalid connect timeout");
+-				error = -1;
+-			} else {
+-				git_socket_stream__connect_timeout = timeout;
+-			}
+-		}
+-		break;
+-
+ 	case GIT_OPT_GET_SERVER_TIMEOUT:
+-		*(va_arg(ap, int *)) = git_socket_stream__timeout;
+-		break;
+-
+ 	case GIT_OPT_SET_SERVER_TIMEOUT:
+-		{
+-			int timeout = va_arg(ap, int);
+-
+-			if (timeout < 0) {
+-				git_error_set(GIT_ERROR_INVALID, "invalid timeout");
+-				error = -1;
+-			} else {
+-				git_socket_stream__timeout = timeout;
+-			}
+-		}
++		git_error_set(GIT_ERROR_NET, "network transports disabled in consolinotes");
++		error = -1;
+ 		break;
+ 
+ 	default:
+--- a/src/libgit2/transport.c
++++ b/src/libgit2/transport.c
+@@ -1,3 +1,4 @@
++/* Modified for consolinotes on 2026-10-10: exclude network transports. */
+ /*
+  * Copyright (C) the libgit2 contributors. All rights reserved.
+  *
+@@ -20,27 +21,10 @@
+ 	void *param;
+ } transport_definition;
+ 
+-static git_smart_subtransport_definition http_subtransport_definition = { git_smart_subtransport_http, 1, NULL };
+-static git_smart_subtransport_definition git_subtransport_definition = { git_smart_subtransport_git, 0, NULL };
+-
+-#ifdef GIT_SSH
+-static git_smart_subtransport_definition ssh_subtransport_definition = { git_smart_subtransport_ssh, 0, NULL };
+-#endif
+-
++/* consolinotes: only filesystem transport is compiled and registered. */
+ static transport_definition local_transport_definition = { "file://", git_transport_local, NULL };
+-
+ static transport_definition transports[] = {
+-	{ "git://",   git_transport_smart, &git_subtransport_definition },
+-	{ "http://",  git_transport_smart, &http_subtransport_definition },
+-	{ "https://", git_transport_smart, &http_subtransport_definition },
+-	{ "file://",  git_transport_local, NULL },
+-
+-#ifdef GIT_SSH
+-	{ "ssh://",   git_transport_smart, &ssh_subtransport_definition },
+-	{ "ssh+git://",   git_transport_smart, &ssh_subtransport_definition },
+-	{ "git+ssh://",   git_transport_smart, &ssh_subtransport_definition },
+-#endif
+-
++	{ "file://", git_transport_local, NULL },
+ 	{ NULL, 0, 0 }
+ };
+ 

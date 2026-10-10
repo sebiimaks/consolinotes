@@ -23,11 +23,12 @@ The macOS application target carries the root licence, third-party notices,
 as well as the aggregate notices.
 
 Shout, BlueSocket and the unused swift-git/swift-system wrappers have been removed.
-The existing libgit2 binary still links libssh2 initialization symbols, so
-Libssh2Prebuild and the corresponding libssh2/OpenSSL notices remain. Their
-presence documents a residual native dependency, not an app networking feature.
-The full source archive remains available for the linked libgit2 and its build
-material. Replacing this old binary requires a separate provenance review.
+Local history now uses a locally compiled libgit2 1.9.7 with only filesystem
+transport. The legacy swift-cgit2, libssh2 and OpenSSL binaries are removed.
+`Vendor/LocalGit2/build-provenance.json` records the compiler, SDK, flags and all
+output hashes; `libgit2-source.json` pins the official source and local patch.
+The bundled archive contains complete upstream source, the patch and standalone
+build recipe. See `SOURCE_CODE.md` for rebuilding and dependency updates.
 
 ## Release verification
 

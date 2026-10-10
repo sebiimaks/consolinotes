@@ -167,6 +167,12 @@ CA
                                                 <action selector="fsToggleLockItem:" target="Ady-hI-5gd" id="J64-eG-cRe"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Upgrade Encryption…" localization="NO" identifier="fileMenu.upgradeEncryption" id="CN1-UE-main">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="upgradeNoteEncryption:" target="Ady-hI-5gd" id="CN1-UE-action"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem title="Open External" image="iphone.and.arrow.right.outward" catalog="system" keyEquivalent="e" localization="NO" mirroring="NO" identifier="fileMenu.external" id="7MT-fy-lXN">
                                             <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
                                             <connections>
@@ -2157,6 +2163,12 @@ CA
                                 <action selector="toggleNotesLock:" target="rPt-NT-nkU" id="tK5-CH-cx8"/>
                             </connections>
                         </menuItem>
+                        <menuItem title="Upgrade Encryption…" localization="NO" identifier="popup.upgradeEncryption" id="CN1-UE-popup">
+                            <modifierMask key="keyEquivalentModifierMask"/>
+                            <connections>
+                                <action selector="upgradeNoteEncryption:" target="rPt-NT-nkU" id="CN1-UE-popact"/>
+                            </connections>
+                        </menuItem>
                         <menuItem title="Open External" image="iphone.and.arrow.right.outward" catalog="system" localization="NO" mirroring="NO" identifier="popup.external" id="3tV-h0-YEb">
                             <modifierMask key="keyEquivalentModifierMask"/>
                             <connections>
@@ -2307,7 +2319,7 @@ CA
                             </textField>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9Qs-KA-Pou">
                                 <rect key="frame" x="248" y="20" width="75" height="24"/>
-                                <buttonCell key="cell" type="push" title="Change" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="frt-CF-STi">
+                                <buttonCell key="cell" type="push" title="Save" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="frt-CF-STi">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -2317,7 +2329,7 @@ CA
                             </button>
                             <textField focusRingType="none" horizontalHuggingPriority="500" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="69b-H3-sPW">
                                 <rect key="frame" x="37" y="188" width="97" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="New Password:" id="iNK-dg-n5E">
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Save Password:" id="iNK-dg-n5E">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -3902,7 +3914,7 @@ Olena Hlushchenko</string>
                             </button>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vfa-TJ-FAD">
                                 <rect key="frame" x="33" y="143" width="484" height="16"/>
-                                <textFieldCell key="cell" lineBreakMode="clipping" title="Touch ID:" id="Nw2-km-iDW">
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Saved Unlock Password:" id="Nw2-km-iDW">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

@@ -44,8 +44,10 @@ enum LocalPreviewSecurity {
     static func makeDirectory() throws -> URL {
         _ = cleanupAtFirstUse
         let directory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("ConsolinotesPreview-\(getpid())-" + UUID().uuidString, isDirectory: true)
+            .appendingPathComponent("ConsolinotesPreview-\(getpid())-" + UUID().uuidString + ".noindex", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        do { try PrivateWorkingDirectory.excludeFromBackup(directory) }
+        catch { try? FileManager.default.removeItem(at: directory); throw error }
         mutex.lock()
         directories.insert(directory)
         attachments[directory] = [:]
@@ -57,7 +59,7 @@ enum LocalPreviewSecurity {
     /// Active previews in another instance, unrelated files, symlinks and encryption
     /// recovery directories are deliberately outside this cleanup's scope.
     static func removeAbandonedStaging(in temporary: URL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)) {
-        guard let pattern = try? NSRegularExpression(pattern: "^ConsolinotesPreview-([1-9][0-9]*)-[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$"),
+        guard let pattern = try? NSRegularExpression(pattern: "^ConsolinotesPreview-([1-9][0-9]*)-[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}(\\.noindex)?$"),
               let children = try? FileManager.default.contentsOfDirectory(at: temporary, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return }
         for child in children {
             let name = child.lastPathComponent

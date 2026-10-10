@@ -57,5 +57,5 @@ with tempfile.TemporaryDirectory(prefix="consolinotes-editor-attachment-check-")
     main = work / "main.swift"
     main.write_text(source)
     executable = work / "attachment-tests"
-    subprocess.run(["xcrun", "swiftc", "-module-cache-path", str(work / "module-cache"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(main), "-o", str(executable)], check=True)
+    subprocess.run(["xcrun", "swiftc", "-module-cache-path", str(work / "module-cache"), str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(main), "-o", str(executable)], check=True)
     subprocess.run([str(executable), str(work)], check=True)

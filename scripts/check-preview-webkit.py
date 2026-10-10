@@ -93,7 +93,7 @@ def main():
             source = directory / "main.swift"
             source.write_text(SWIFT)
             executable = directory / "webkit-tests"
-            subprocess.run(["swiftc", "-module-cache-path", str(directory / "modules"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(source), "-o", str(executable)], check=True)
+            subprocess.run(["swiftc", "-module-cache-path", str(directory / "modules"), str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(source), "-o", str(executable)], check=True)
             subprocess.run([str(executable), str(page / "index.html")], check=True, timeout=40)
             # Independently verify the WebKit resource rules; do not rely solely on CSP.
             without_csp = re.sub(r'    <meta http-equiv="Content-Security-Policy"[^>]*>\n', '', (page / "index.html").read_text())

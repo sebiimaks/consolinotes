@@ -1,2 +1,5 @@
 *.pbxproj merge=union
 
+# Preserve byte-for-byte upstream headers and unified-diff context in the pinned build inputs.
+Vendor/LocalGit2/libgit2.xcframework/**/Headers/** -whitespace
+Vendor/LocalGit2/local-only.patch -whitespace

@@ -20,4 +20,5 @@ app_path="$repo_root/build/DerivedData/Build/Products/Release/consolinotes.app"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 python3 scripts/check-license-distribution.py --app "$app_path" --require-tracked
 python3 scripts/check-offline-core.py --app "$app_path"
+python3 scripts/test-local-history.py --app "$app_path"
 printf '\nLocal app: %s\n' "$app_path"

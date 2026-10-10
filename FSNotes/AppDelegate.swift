@@ -102,7 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ViewController.shared()?.sidebarOutlineView.reloadData()
         }
         for note in storage.noteList {
-            if note.isUnlocked() {
+            if note.isUnlocked() || note.hasPendingPlaintextCleanup {
                 guard note.lock() else {
                     showTerminationSaveFailure()
                     return .terminateCancel
@@ -123,7 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let alert = NSAlert()
         alert.alertStyle = .critical
         alert.messageText = "consolinotes cannot quit safely yet"
-        alert.informativeText = "A note could not be saved. The app will stay open so you can retry saving or export your changes."
+        alert.informativeText = "A note could not be saved or its temporary plaintext could not be cleaned up. The app will stay open so you can retry, resolve the storage problem, or export your changes."
         alert.runModal()
     }
 

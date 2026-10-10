@@ -89,7 +89,7 @@ extension Project {
             progress.log(message: "git add .")
         }
 
-        let success = head.add(path: ".")
+        let success = try head.add(path: ".")
 
         // No commits yet or added files was found
         if success || lastCommit == nil {

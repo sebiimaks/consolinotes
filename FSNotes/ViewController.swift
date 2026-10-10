@@ -1150,15 +1150,18 @@ class ViewController: EditorViewController,
     
     @IBAction func emptyTrash(_ sender: NSMenuItem) {
         let notes = storage.getAllTrash()
-        for note in notes {
-            _ = note.removeFile()
+        storage.removeNotes(notes: notes, completely: true) { _ in
+            let removed = notes.filter { note in !self.storage.noteList.contains { $0 === note } }
+            self.notesTableView.removeRows(notes: removed)
+            if let current = self.editor.note, removed.contains(where: { $0 === current }) { self.editor.clear() }
+            for note in removed { self.closeAllOpenedWindows(where: note) }
         }
         
         NSSound(named: "Pop")?.play()
     }
         
     @IBAction func lockAll(_ sender: Any) {
-        let notes = storage.noteList.filter { $0.isUnlocked() }
+        let notes = storage.noteList.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
         var failures = 0
         for note in notes {
             if note.lock() {
@@ -1177,7 +1180,7 @@ class ViewController: EditorViewController,
             notesTableView.enableLockedProject()
         }
         if failures > 0 {
-            showProtectionFailure("Some notes could not be saved and locked. They remain unlocked so your working content is preserved. Resolve the storage problem and retry before closing the app.")
+            showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry before closing the app.")
         }
         if let window = notesTableView.window, window == view.window {
             window.makeFirstResponder(notesTableView)
@@ -1208,9 +1211,9 @@ class ViewController: EditorViewController,
         rowUpdaterTimer = Timer.scheduledTimer(timeInterval: 1.2, target: self, selector: #selector(updateTableViews), userInfo: nil, repeats: false)
     }
 
-    public func removeForever() {
+    public func removeForever(notes requestedNotes: [Note]? = nil) {
         guard let vc = ViewController.shared() else { return }
-        guard let notes = vc.notesTableView.getSelectedNotes() else { return }
+        guard let notes = requestedNotes ?? vc.notesTableView.getSelectedNotes() else { return }
         guard let window = MainWindowController.shared() else { return }
 
         vc.alert = NSAlert()
@@ -1219,17 +1222,19 @@ class ViewController: EditorViewController,
 
         alert.messageText = String(format: NSLocalizedString("Are you sure you want to irretrievably delete %d note(s)?", comment: ""), notes.count)
 
-        alert.informativeText = NSLocalizedString("This action cannot be undone.", comment: "")
+        alert.informativeText = "This action cannot be undone. Shared attachments, local history and backups are kept."
         alert.addButton(withTitle: NSLocalizedString("Remove note(s)", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
         alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
             if returnCode == NSApplication.ModalResponse.alertFirstButtonReturn {
                 let selectedRow = vc.notesTableView.selectedRowIndexes.min()
-                vc.editor.clear()
                 vc.storage.removeNotes(notes: notes, completely: true) { _ in
                     DispatchQueue.main.async {
-                        vc.notesTableView.removeRows(notes: notes)
-                        if let i = selectedRow, i > -1 {
+                        let removed = notes.filter { note in !vc.storage.noteList.contains { $0 === note } }
+                        vc.notesTableView.removeRows(notes: removed)
+                        if let current = vc.editor.note, removed.contains(where: { $0 === current }) { vc.editor.clear() }
+                        for note in removed { vc.closeAllOpenedWindows(where: note) }
+                        if !removed.isEmpty, let i = selectedRow, i > -1 {
                             vc.notesTableView.selectRow(i)
                         }
                     }

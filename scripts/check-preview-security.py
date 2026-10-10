@@ -16,6 +16,16 @@ import WebKit
 func expect(_ condition: @autoclosure () -> Bool, _ message: String) {
     if !condition() { fatalError(message) }
 }
+func excludedFromBackup(_ directory: URL) throws -> Bool {
+    let command = Process()
+    let output = Pipe()
+    command.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
+    command.arguments = ["isexcluded", directory.path]
+    command.standardOutput = output
+    try command.run()
+    command.waitUntilExit()
+    return command.terminationStatus == 0 && String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?.contains("[Excluded]") == true
+}
 let fm = FileManager.default
 let fixture = fm.temporaryDirectory.appendingPathComponent("consolinotes-security-fixture-" + UUID().uuidString)
 let notes = fixture.appendingPathComponent("notes")
@@ -37,6 +47,8 @@ let secondStage = try LocalPreviewSecurity.makeDirectory()
 expect(stage != secondStage, "Every document needs isolated staging")
 let permission = try fm.attributesOfItem(atPath: stage.path)[.posixPermissions] as? NSNumber
 expect(permission?.intValue == 0o700, "Preview staging must be private")
+expect(stage.pathExtension == "noindex", "Preview staging must exclude Spotlight indexing")
+expect(try! excludedFromBackup(stage), "Preview staging must be excluded from backup")
 
 let html = renderMarkdownHTML(markdown: "# Fixture\n\n<script>window.auditMarker=1</script>\n\n<img src=x onerror=alert(1)>\n\n[x](javascript:alert%281%29)\n\n{{TOC}}\n\n```js\n<script>inert code</script>\n{{TOC}}\n```\n\n- [ ] task\n\n| A | B |\n|---|---|\n| a | b |\n")!
 expect(!html.contains("<script>"), "Raw scripts survived renderer")
@@ -99,6 +111,7 @@ def main():
         subprocess.run([
             "swiftc", "-module-cache-path", str(directory / "modules"),
             "-Xcc", "-fmodule-map-file=" + str(MODULES / "libcmark_gfm.modulemap"),
+            str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"),
             str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(ROOT / "FSNotesCore/Business/Markdown.swift"),
             str(source), str(CMARK), "-o", str(executable)
         ], check=True, cwd=ROOT)

@@ -69,7 +69,7 @@ extension ViewController {
                     title = NSLocalizedString("Inbox", comment: "")
                 }
                 
-                menuItem.title =  String(format: NSLocalizedString("Commit & Push “%@”", comment: "Menu Library"), title)
+                menuItem.title = String(format: NSLocalizedString("Save Local Snapshot of “%@”", comment: "Menu Library"), title)
                 return true
             }
             
@@ -131,6 +131,11 @@ extension ViewController {
             }
             return greaterThanZero
             
+        case "\(menuId).upgradeEncryption":
+            menuItem.title = "Upgrade Encryption…"
+            let selected = evc.getSelectedNotes() ?? []
+            return !isFirstSidebar && selected.count == 1 && selected.first?.usesLegacyEncryption == true
+
         case "\(menuId).decrypt":
             
             // sidebar

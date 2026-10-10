@@ -125,45 +125,40 @@ extension Index {
         }
     }
 
-    static var count = 0
-
-    static let gitIndexCallback: git_index_matched_path_cb = { path, match, payload in
-        let newPath: String = git_string_converter(path!)
-
-        if newPath.startsWith(string: ".Trash") {
+    private static let gitIndexCallback: git_index_matched_path_cb = { path, _, payload in
+        guard let path = path, let payload = payload else { return -1 }
+        let relativePath = String(cString: path)
+        if relativePath == ".Trash" || relativePath.hasPrefix(".Trash/") {
             return 1
         }
-
-        count += 1
+        payload.assumingMemoryBound(to: Int.self).pointee += 1
         return 0
     }
-    
-    public func add(path: String) -> Bool {
-        var dirPointer = UnsafeMutablePointer<Int8>(mutating: (path as NSString).utf8String)
-        var paths = withUnsafeMutablePointer(to: &dirPointer) {
-            git_strarray(strings: $0, count: 1)
+
+    /// Stage local files while preserving this Index's ownership until deinit.
+    /// A failed native write must propagate to the caller instead of looking like
+    /// a successful empty change set.
+    public func add(path: String) throws -> Bool {
+        guard let index = idx.pointee else {
+            throw GitError.notFound(ref: "index")
         }
-        
-        idx.pointee.flatMap { index in
-            defer { git_index_free(index) }
-            let addResult = git_index_add_all(index, &paths, 0, Index.gitIndexCallback, nil)
-            guard addResult == GIT_OK.rawValue else {
-                print("git_index_add_all \(addResult)")
-                return
-            }
-            // write index to disk
-            let writeResult = git_index_write(index)
-            guard writeResult == GIT_OK.rawValue else {
-                print("git_index_write \(writeResult)")
-                return
+        var matchedCount = 0
+        try path.withCString { cPath in
+            var pathPointer: UnsafeMutablePointer<CChar>? = UnsafeMutablePointer(mutating: cPath)
+            try withUnsafeMutablePointer(to: &pathPointer) { pointer in
+                var paths = git_strarray(strings: pointer, count: 1)
+                try withUnsafeMutablePointer(to: &matchedCount) { count in
+                    let result = git_index_add_all(index, &paths, 0, Index.gitIndexCallback, count)
+                    if result != GIT_OK.rawValue {
+                        throw gitUnknownError("Unable to stage local history", code: result)
+                    }
+                }
             }
         }
-
-        let success = Index.count > 0
-
-        // reset
-        Index.count = 0
-
-        return success
+        let result = git_index_write(index)
+        if result != GIT_OK.rawValue {
+            throw gitUnknownError("Unable to save local history index", code: result)
+        }
+        return matchedCount > 0
     }
 }

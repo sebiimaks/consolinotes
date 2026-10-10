@@ -9,8 +9,15 @@
 import Cocoa
 
 class MasterPasswordViewController: NSViewController {
+    private var isSaving = false
+
     override func viewDidAppear() {
+        super.viewDidAppear()
+        title = "Saved Unlock Password"
         hint.stringValue = UserDefaultsManagement.masterPasswordHint
+        currentPassword.placeholderString = "Blank for first secure save"
+        currentPassword.toolTip = "Enter the current securely saved password when replacing it. Earlier versions' saved passwords are not read."
+        hint.toolTip = "Hints are stored in plain text. Do not put a password or other sensitive information here."
     }
 
     @IBOutlet weak var hint: NSTextField!
@@ -23,27 +30,15 @@ class MasterPasswordViewController: NSViewController {
 
 
     @IBAction func close(_ sender: Any) {
+        guard !isSaving else { return }
+        clearPasswordFields()
         dismiss(self)
     }
 
     @IBAction func change(_ sender: Any) {
-        var password = String()
+        guard !isSaving else { return }
 
-        do {
-            password = try KeychainConfiguration.readMasterPassword()
-        } catch KeychainPasswordItem.KeychainError.noPassword {
-            // No stored convenience password yet.
-        } catch {
-            showKeychainFailure()
-            return
-        }
-        
-        if password.count > 0, currentPassword.stringValue != password {
-            wrongCurrentPassword()
-            return
-        }
-
-        if newPassword.stringValue != repeatedPassword.stringValue {
+        if !newPassword.stringValue.utf8.elementsEqual(repeatedPassword.stringValue.utf8) {
             wrongRepeatAlert()
             return
         }
@@ -53,36 +48,63 @@ class MasterPasswordViewController: NSViewController {
             return
         }
 
-        if password != newPassword.stringValue,
-           Storage.shared().noteList.contains(where: { $0.isEncrypted() }) {
-            let alert = NSAlert()
-            alert.alertStyle = .warning
-            alert.messageText = "Update the saved unlock password?"
-            alert.informativeText = "This changes only the password saved in Keychain. Existing encrypted notes keep their current passwords. Keep those passwords so you can still unlock the notes."
-            alert.addButton(withTitle: "Update Saved Password")
-            alert.addButton(withTitle: "Cancel")
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Save an unlock password on this Mac?"
+        alert.informativeText = "macOS authentication will protect this device-only saved password. After verification, consolinotes removes its older saved copy. Existing encrypted notes keep their current passwords; keep those passwords so you can still open the notes. Any password hint is stored in plain text."
+        alert.addButton(withTitle: "Save Password")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let password = newPassword.stringValue
+        let current = currentPassword.stringValue
+        let savedHint = hint.stringValue
+        let button = sender as? NSButton
+        isSaving = true
+        button?.isEnabled = false
+        // SecItem calls may display authentication UI and must not block the main thread.
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Result { try KeychainConfiguration.saveMasterPassword(password, currentPassword: current) }
+            DispatchQueue.main.async {
+                self.isSaving = false
+                button?.isEnabled = true
+                switch result {
+                case .failure(KeychainPasswordItem.KeychainError.incorrectCurrentPassword):
+                    self.wrongCurrentPassword()
+                case .failure(let error):
+                    if !KeychainConfiguration.isAuthenticationCancelled(error) { self.showKeychainFailure(error) }
+                case .success(let saved):
+                    if case .savedLegacyCleanupFailed = saved {
+                        let alert = NSAlert()
+                        alert.alertStyle = .warning
+                        alert.messageText = "Saved securely; older copy remains"
+                        alert.informativeText = "The protected password was saved and verified, but Keychain did not allow removal of consolinotes' older saved copy. You can retry saving or remove the old consolinotes / Master Password item in Keychain Access. The FSNotes application's item is unchanged."
+                        alert.runModal()
+                    }
+                    UserDefaultsManagement.masterPasswordHint = savedHint
+                    self.clearPasswordFields()
+                    self.dismiss(self)
+                }
+            }
         }
-
-        let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
-        do {
-            try item.savePassword(newPassword.stringValue)
-        } catch {
-            showKeychainFailure()
-            return
-        }
-
-        UserDefaultsManagement.masterPasswordHint = hint.stringValue
-
-        dismiss(self)
     }
 
-    private func showKeychainFailure() {
+    private func showKeychainFailure(_ error: Error) {
         let alert = NSAlert()
         alert.alertStyle = .critical
-        alert.messageText = "The saved password could not be accessed"
-        alert.informativeText = "Keychain did not allow the operation. No password change has been completed."
+        alert.messageText = "The protected password could not be verified"
+        if KeychainConfiguration.isMissingEntitlement(error) {
+            alert.informativeText = "This local build cannot use protected saved passwords. Enter each note's password manually. No unprotected replacement is saved, and encrypted note passwords are unchanged."
+        } else {
+            alert.informativeText = "macOS could not complete authenticated Keychain access. No unprotected replacement is saved, and encrypted note passwords are unchanged. You can still enter a note's password manually. If a save had already completed, the protected copy may remain."
+        }
         alert.runModal()
+    }
+
+    private func clearPasswordFields() {
+        currentPassword.stringValue = ""
+        newPassword.stringValue = ""
+        repeatedPassword.stringValue = ""
     }
 
     private func wrongRepeatAlert() {

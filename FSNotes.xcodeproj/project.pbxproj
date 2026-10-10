@@ -260,7 +260,9 @@
 		79E63F6288ACA00050A3FF0A /* libgit2-source.tar.gz in Resources */ = {isa = PBXBuildFile; fileRef = D28F54CB5ACAB77605A7D02D /* libgit2-source.tar.gz */; };
 		CC1100000000000000000002 /* LegacyNetworkCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1100000000000000000001 /* LegacyNetworkCleanup.swift */; };
 		CC1100000000000000000004 /* LocalPreviewSecurity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1100000000000000000003 /* LocalPreviewSecurity.swift */; };
-		CC1100000000000000000006 /* CSSH in Frameworks */ = {isa = PBXBuildFile; productRef = CC1100000000000000000005 /* CSSH */; };
+		CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000001 /* EncryptedNoteCodec.swift */; };
+		CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000003 /* PrivateWorkingDirectory.swift */; };
+		CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000005 /* PrivateNoteArchive.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -543,6 +545,9 @@
 		D28F54CB5ACAB77605A7D02D /* libgit2-source.tar.gz */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Resources/libgit2-source.tar.gz"; sourceTree = SOURCE_ROOT; };
 		CC1100000000000000000001 /* LegacyNetworkCleanup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyNetworkCleanup.swift; sourceTree = "<group>"; };
 		CC1100000000000000000003 /* LocalPreviewSecurity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPreviewSecurity.swift; sourceTree = "<group>"; };
+		CC1200000000000000000001 /* EncryptedNoteCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptedNoteCodec.swift; sourceTree = "<group>"; };
+		CC1200000000000000000003 /* PrivateWorkingDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateWorkingDirectory.swift; sourceTree = "<group>"; };
+		CC1200000000000000000005 /* PrivateNoteArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateNoteArchive.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -554,7 +559,6 @@
 				11E000000000000000000002 /* RNCryptor in Frameworks */,
 				11E000000000000000000003 /* ZipArchive in Frameworks */,
 				D70F830628CE8596004818C5 /* Cgit2 in Frameworks */,
-				CC1100000000000000000006 /* CSSH in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -644,6 +648,9 @@
 			isa = PBXGroup;
 			children = (
 				CC1100000000000000000003 /* LocalPreviewSecurity.swift */,
+				CC1200000000000000000001 /* EncryptedNoteCodec.swift */,
+				CC1200000000000000000003 /* PrivateWorkingDirectory.swift */,
+				CC1200000000000000000005 /* PrivateNoteArchive.swift */,
 				CC1100000000000000000001 /* LegacyNetworkCleanup.swift */,
 				D7C52B8028C7A8C2001B2065 /* Cgit2 */,
 				11D943172E643ECF0010CC2B /* SwiftHighlighter */,
@@ -1108,7 +1115,6 @@
 				11D000000000000000000002 /* RNCryptor */,
 				11D000000000000000000003 /* ZipArchive */,
 				D70F830528CE8596004818C5 /* Cgit2 */,
-				CC1100000000000000000005 /* CSSH */,
 			);
 			productName = FSNotes;
 			productReference = D7793C6F1F211C6000CA39B7 /* consolinotes.app */;
@@ -1175,8 +1181,7 @@
 				11C000000000000000000001 /* XCRemoteSwiftPackageReference "libcmark_gfm" */,
 				11C000000000000000000002 /* XCRemoteSwiftPackageReference "RNCryptor" */,
 				11C000000000000000000003 /* XCRemoteSwiftPackageReference "ZipArchive" */,
-				D7B4CC5428C7B8860046A25F /* XCRemoteSwiftPackageReference "swift-cgit2" */,
-				CC1100000000000000000007 /* XCRemoteSwiftPackageReference "Libssh2Prebuild" */,
+				D7B4CC5428C7B8860046A25F /* XCLocalSwiftPackageReference "Vendor/LocalGit2" */,
 			);
 			productRefGroup = D7793C701F211C6000CA39B7 /* Products */;
 			projectDirPath = "";
@@ -1418,6 +1423,9 @@
 				D73BCCD728EB5EC4008B3BBC /* Statuses.swift in Sources */,
 				D72DAF0829B27D75001243BB /* ProjectSettings.swift in Sources */,
 				CC1100000000000000000004 /* LocalPreviewSecurity.swift in Sources */,
+				CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */,
+				CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */,
+				CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */,
 				CC1100000000000000000002 /* LegacyNetworkCleanup.swift in Sources */,
 				D7F5C0F5223ED5620038F172 /* PreferencesEditorViewController.swift in Sources */,
 				D738356D2242871400B260DD /* MasterPasswordViewController.swift in Sources */,
@@ -1621,8 +1629,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 1.1.0;
-				CURRENT_PROJECT_VERSION = 7;
+				MARKETING_VERSION = 1.2.0;
+				CURRENT_PROJECT_VERSION = 8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;
@@ -1662,8 +1670,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				ONLY_ACTIVE_ARCH = YES;
-				MARKETING_VERSION = 1.1.0;
-				CURRENT_PROJECT_VERSION = 7;
+				MARKETING_VERSION = 1.2.0;
+				CURRENT_PROJECT_VERSION = 8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;
@@ -1699,6 +1707,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		D7B4CC5428C7B8860046A25F /* XCLocalSwiftPackageReference "Vendor/LocalGit2" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Vendor/LocalGit2;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		11C000000000000000000001 /* XCRemoteSwiftPackageReference "libcmark_gfm" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1732,19 +1747,6 @@
 				minimumVersion = 2.2.0;
 			};
 		};
-		D7B4CC5428C7B8860046A25F /* XCRemoteSwiftPackageReference "swift-cgit2" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/glushchenko/swift-cgit2";
-			requirement = {
-				kind = exactVersion;
-				version = 1.2.2;
-			};
-		};
-		CC1100000000000000000007 /* XCRemoteSwiftPackageReference "Libssh2Prebuild" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/glushchenko/Libssh2Prebuild.git";
-			requirement = {kind = exactVersion; version = "1.11.0-OpenSSL-1-1-1u"; };
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1770,13 +1772,8 @@
 		};
 		D70F830528CE8596004818C5 /* Cgit2 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D7B4CC5428C7B8860046A25F /* XCRemoteSwiftPackageReference "swift-cgit2" */;
+			package = D7B4CC5428C7B8860046A25F /* XCLocalSwiftPackageReference "Vendor/LocalGit2" */;
 			productName = Cgit2;
-		};
-		CC1100000000000000000005 /* CSSH */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CC1100000000000000000007 /* XCRemoteSwiftPackageReference "Libssh2Prebuild" */;
-			productName = CSSH;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

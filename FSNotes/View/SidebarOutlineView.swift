@@ -268,10 +268,12 @@ class SidebarOutlineView: NSOutlineView,
             }
 
             if project.isTrash {
-                vc.editor.clear()
                 vc.storage.removeNotes(notes: notes) { _ in
                     DispatchQueue.main.async {
-                        vc.notesTableView.removeRows(notes: notes)
+                        let removed = notes.filter { note in !vc.storage.noteList.contains { $0 === note } }
+                        vc.notesTableView.removeRows(notes: removed)
+                        if let current = vc.editor.note, removed.contains(where: { $0 === current }) { vc.editor.clear() }
+                        for note in removed { vc.closeAllOpenedWindows(where: note) }
                     }
                 }
             } else {
@@ -930,7 +932,7 @@ class SidebarOutlineView: NSOutlineView,
             editor.editorViewController?.refillEditArea()
         }
         if projects.contains(where: { !$0.isLocked() }) {
-            vc.showProtectionFailure("Some notes could not be saved and locked. Their folders remain unlocked so your working content is preserved. Resolve the storage problem and retry.")
+            vc.showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry.")
         }
     }
 
