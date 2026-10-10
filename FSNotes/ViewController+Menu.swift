@@ -233,19 +233,6 @@ extension ViewController {
             menuItem.title = NSLocalizedString("Copy Title", comment: "File Menu")
             return isOne && (isFirstResponder || isOpenedWindow || isFirstEditor)
             
-        case "\(menuId).uploadOverSSH":
-            if let note = notes?.first, note.uploadPath != nil {
-                menuItem.title = NSLocalizedString("Update Web Page", comment: "File Menu")
-            } else {
-                menuItem.title = NSLocalizedString("Create Web Page", comment: "File Menu")
-            }
-            return isOne && (isFirstResponder || isOpenedWindow || isFirstEditor)
-            
-        case "\(menuId).removeOverSSH":
-            menuItem.title = NSLocalizedString("Delete Web Page", comment: "File Menu")
-            if let note = notes?.first {
-                return (isFirstResponder || isOpenedWindow || isFirstEditor) && isOne && !note.isEncrypted() && note.uploadPath != nil
-            }
         default:
             return false
         }

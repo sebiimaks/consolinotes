@@ -35,7 +35,6 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     // git
     public var snapshotsTimer = Timer()
     public var lastSnapshot: Int?
-    public var pullTimer = Timer()
     
     public var encPassword: NSSecureTextField?
     public var encVerifyPassword: NSSecureTextField?
@@ -391,7 +390,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         // Encrypt plain
         getMasterPassword(forEncrypt: true) { password in
             for note in notes {
-                if !note.isEncrypted(), note.encrypt(password: password) {
+                guard !note.isEncrypted() else { continue }
+                if note.encrypt(password: password) {
                     note.password = nil
                     
                     DispatchQueue.main.async {
@@ -399,8 +399,9 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                         
                         ViewController.shared()?.focusTable()
                         ViewController.shared()?.notesTableView.reloadRow(note: note)
+                        ViewController.shared()?.sidebarOutlineView.reloadTags()
                     }
-                }
+                } else { note.presentSaveFailure() }
             }
         }
     }
@@ -1143,13 +1144,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             let context = LAContext()
             context.localizedFallbackTitle = NSLocalizedString("Enter Master Password", comment: "")
 
-            var passwordExist = false
-            do {
-                let password = try KeychainConfiguration.readMasterPassword()
-                passwordExist = password.count > 0
-            } catch {/*_*/}
-            
-            guard passwordExist && context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else {
+            // Never retrieve a saved secret just to decide whether to show authentication.
+            guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else {
                 masterPasswordPrompt(validation: forEncrypt, completion: completion)
                 return
             }
@@ -1170,17 +1166,16 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                     return
                 }
 
-                do {
-                    let password = try KeychainConfiguration.readMasterPassword()
-
-                    completion(password)
-                    return
-                } catch {
-                    print("Keychain error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    do {
+                        let password = try KeychainConfiguration.readMasterPassword()
+                        completion(password)
+                        return
+                    } catch {
+                        // Fall back to an explicitly entered password.
+                        self.masterPasswordPrompt(validation: forEncrypt, completion: completion)
+                    }
                 }
-
-                // No password in keychain
-                self.masterPasswordPrompt(validation: forEncrypt, completion: completion)
             }
         } else {
             
@@ -1323,29 +1318,30 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
 
     public func lockUnlocked(notes: [Note]) -> [Note] {
-        var notes = notes
-        var isFirst = true
-
-        for note in notes {
-            if note.isUnlocked() && note.isEncrypted() {
-                if note.lock() && isFirst {
-                    reloadAllOpenedWindows(note: note)
-                }
-
-                removeTags(note: note)
-                notes.removeAll { $0 === note }
-            }
-
-            isFirst = false
-            ViewController.shared()?.notesTableView.reloadRow(note: note)
+        var remaining = notes
+        var failures = 0
+        for note in notes where note.isUnlocked() {
+            if note.lock() {
+                remaining.removeAll { $0 === note }
+                reloadAllOpenedWindows(note: note)
+                ViewController.shared()?.notesTableView.reloadRow(note: note)
+            } else { failures += 1 }
         }
-        
-        // Focus notes list if active main window
-        if let vc = view.window?.contentViewController as? ViewController, let mainWindow = view.window {
-            mainWindow.makeFirstResponder(vc.notesTableView)
+        ViewController.shared()?.sidebarOutlineView.reloadTags()
+        if failures > 0 {
+            showProtectionFailure("Some notes could not be saved and locked. They remain unlocked so your working content is preserved. Resolve the storage problem and try again.")
         }
+        return remaining
+    }
 
-        return notes
+    public func showProtectionFailure(_ message: String) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = "Protection operation incomplete"
+            alert.informativeText = message
+            alert.runModal()
+        }
     }
 
     public func decryptUnlocked(notes: [Note]) -> [Note] {
@@ -1476,9 +1472,17 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
         let note = Note(name: name, project: project)
         note.content = NSMutableAttributedString(string: text)
-        if note.save() {
-            Storage.shared().add(note)
+        if project.isEncrypted {
+            guard let password = project.password, note.encrypt(password: password) else {
+                showProtectionFailure("The encrypted note could not be created. No plaintext note was created in the folder. Resolve the storage problem and try again.")
+                return nil
+            }
+            _ = note.unLock(password: password)
+        } else if !note.save() {
+            note.presentSaveFailure()
+            return nil
         }
+        Storage.shared().add(note)
 
         _ = note.scanContentTags()
 
@@ -1515,15 +1519,6 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             }
         }
         
-        // Project encrypted and unlocked – encrypt by default
-        if let password = project.password {
-            if note.encrypt(password: password) {
-                if note.unLock(password: password) {
-                    note.password = password
-                }
-            }
-        }
-
         return note
     }
 }

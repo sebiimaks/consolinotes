@@ -19,7 +19,7 @@ class PreferencesSecurityViewController: NSViewController {
 
     override func viewDidLoad() {
         lockOnSleep.state = UserDefaultsManagement.lockOnSleep ? .on : .off
-        lockOnScreenActivated.state = UserDefaultsManagement.lockOnSleep ? .on : .off
+        lockOnScreenActivated.state = UserDefaultsManagement.lockOnScreenActivated ? .on : .off
         lockWhenFastUser.state = UserDefaultsManagement.lockOnUserSwitch ? .on : .off
         
         allowTouchID.state = UserDefaultsManagement.allowTouchID ? .on : .off

@@ -752,7 +752,6 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         }
 
         undoManager?.removeAllActions(withTarget: self)
-        registerHandoff(note: note)
 
         // resets timer if editor refilled 
         viewDelegate?.breakUndoTimer.invalidate()
@@ -1316,28 +1315,18 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         return super.performDragOperation(sender)
     }
 
-    func fetchDataFromURL(url: URL, completion: @escaping (Data?, Error?) -> Void) {
-        let session = URLSession.shared
-
-        let task = session.dataTask(with: url) { (data, response, error) in
-            if let error = error {
-                completion(nil, error)
-                return
-            }
-
-            completion(data, nil)
+    func readLocalAttachment(url: URL, completion: @escaping (Data?, Error?) -> Void) {
+        guard url.isFileURL else {
+            completion(nil, CocoaError(.fileReadUnsupportedScheme))
+            return
         }
-
-        task.resume()
-    }
-
-    
-    func getHTMLTitle(from data: Data) -> String? {
-        guard let htmlString = String(data: data, encoding: .utf8) else {
-            return nil
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        do {
+            completion(try Data(contentsOf: url), nil)
+        } catch {
+            completion(nil, error)
         }
-        
-        return extractTitle(from: htmlString)
     }
 
     func getSearchText() -> String {
@@ -1904,46 +1893,12 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         return menu
     }
 
-    /**
-     Handoff methods
-     */
-    override func updateUserActivityState(_ userActivity: NSUserActivity) {
-        guard let note = self.note else { return }
-
-        let position =
-            window?.firstResponder == self ? selectedRange().location : -1
-        let state = editorViewController?.vcEditor?.preview == true ? "preview" : "editor"
-        let data =
-            [
-                "note-file-name": note.name,
-                "position": String(position),
-                "state": state
-            ]
-
-        userActivity.addUserInfoEntries(from: data)
-    }
-
     override func resignFirstResponder() -> Bool {
-        userActivity?.needsSave = true
-
         DispatchQueue.main.async { self.invalidateCursorLine() }
 
         return super.resignFirstResponder()
     }
 
-    public func registerHandoff(note: Note) {
-        self.userActivity?.invalidate()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let updateDict:  [String: String] = ["note-file-name": note.name]
-            let activity = NSUserActivity(activityType: "io.github.sebiimaks.consolinotes.open-note")
-            activity.isEligibleForHandoff = true
-            activity.userInfo = updateDict
-            activity.title = NSLocalizedString("Open note", comment: "Document opened")
-            self.userActivity = activity
-            self.userActivity?.becomeCurrent()
-        }
-    }
     
     public func changePreviewState(_ state: Bool) {
         preview = state

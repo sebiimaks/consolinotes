@@ -22,14 +22,12 @@ extension AppDelegate {
     
     enum FSNotesRoutes: String {
         case find = "find"
-        case new = "new"
         case open = "open"
     }
     
     enum NvALTRoutes: String {
         case find = "find"
         case blank = ""
-        case make = "make"
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -107,8 +105,6 @@ extension AppDelegate {
         switch directive {
         case FSNotesRoutes.find.rawValue:
             RouteFSNotesFind(url)
-        case FSNotesRoutes.new.rawValue:
-            RouteFSNotesNew(url)
         case FSNotesRoutes.open.rawValue:
             RouteFSNotesOpen(url)
         default:
@@ -117,7 +113,8 @@ extension AppDelegate {
     }
     
     /// Handles URLs with the tag consolinotes://open/?tag=test (or fsnotes://)
-    /// Handles URLs with the tag consolinotes://open/?title=Open+Or+Create+If+Not+Exist
+    /// Note links only navigate. URL parameters never create or modify notes.
+    /// Handles URLs with the tag consolinotes://open/?title=Existing+Note
     ///
     func RouteFSNotesOpen(_ url: URL) {
         guard let vc = ViewController.shared() else { return }
@@ -129,16 +126,6 @@ extension AppDelegate {
         
         if let title = url["title"]?.removingPercentEncoding {
             if let note = Storage.shared().getBy(titleOrName: title) {
-                if let txt = url["txt"] {
-                    
-                    // Append txt
-                    note.append(string: NSMutableAttributedString(string: txt + "\n\n"))
-                    _ = note.save()
-                    
-                    // Set last range
-                    note.setSelectedRange(range: NSRange(location: note.content.length, length: 0))
-                }
-                
                 // Reset UI and focus
                 vc.cleanSearchAndEditArea(shouldBecomeFirstResponder: false, completion: { () -> Void in
                     vc.notesTableView.selectRowAndSidebarItem(note: note)
@@ -147,9 +134,8 @@ extension AppDelegate {
                     vc.notesTableView.saveNavigationHistory(note: note)
                 })
                 
-            // Create NEW
             } else {
-                RouteFSNotesNew(url)
+                search(query: title)
             }
         }
     }
@@ -211,44 +197,6 @@ extension AppDelegate {
         }
     }
     
-    /// Handles URLs with the following paths:
-    ///   - consolinotes://new/?title=URI-escaped-title&html=URI-escaped-HTML-data
-    ///   - consolinotes://new/?title=URI-escaped-title&txt=URI-escaped-plain-text
-    ///   - consolinotes://new/?txt=URI-escaped-plain-text
-    ///
-    /// The three possible parameters (title, txt, html) are all optional.
-    ///
-    func RouteFSNotesNew(_ url: URL) {
-        let newWindow = url["open"] != nil
-        let folderName = url["folder"]
-                
-        var title = ""
-        var body = ""
-        
-        if let titleParam = url["title"] {
-            title = titleParam
-        }
-        
-        if let txtParam = url["txt"] {
-            body = txtParam
-        } else if let htmlParam = url["html"] {
-            body = htmlParam
-        }
-        
-        guard let vc = ViewController.shared() else {
-            self.newName = title
-            self.newContent = body
-            self.newWindow = newWindow
-            self.folderName = folderName
-            return
-        }
-        
-        guard let note = vc.createNote(name: title, content: body, folderName: folderName, openInNewWindow: newWindow),
-              newWindow else { return }
-        
-        vc.openInNewWindow(note: note)
-    }
-
     // MARK: - nvALT routes, for compatibility
     
     func NvALTRouter(_ url: URL) {
@@ -257,8 +205,6 @@ extension AppDelegate {
         switch directive {
         case NvALTRoutes.find.rawValue:
             RouteNvAltFind(url)
-        case NvALTRoutes.make.rawValue:
-            RouteNvAltMake(url)
         default:
             RouteNvAltBlank(url)
             break
@@ -284,45 +230,4 @@ extension AppDelegate {
         RouteFSNotesFind(newURL)
     }
     
-    /// Handle URLs in the format:
-    ///
-    ///   - nv://make/?title=URI-escaped-title&html=URI-escaped-HTML-data&tags=URI-escaped-tag-string
-    ///   - nv://make/?title=URI-escaped-title&txt=URI-escaped-plain-text
-    ///   - nv://make/?txt=URI-escaped-plain-text
-    ///
-    /// The four possible parameters (title, txt, html and tags) are all optional.
-    ///
-    func RouteNvAltMake(_ url: URL) {
-        let newWindow = url["open"] != nil
-        
-        var title = ""
-        var body = ""
-        
-        if let titleParam = url["title"] {
-            title = titleParam
-        }
-        
-        if let txtParam = url["txt"] {
-            body = txtParam
-        }
-        else if let htmlParam = url["html"] {
-            body = htmlParam
-        }
-        
-        if let tagsParam = url["tags"] {
-            body = body.appending("\n\nnvALT tags: \(tagsParam)")
-        }
-        
-        guard let vc = ViewController.shared() else {
-            self.newName = title
-            self.newContent = body
-            self.newWindow = newWindow
-            return
-        }
-        
-        guard let note = vc.createNote(name: title, content: body, openInNewWindow: newWindow),
-              newWindow else { return }
-        
-        vc.openInNewWindow(note: note)
-    }
 }

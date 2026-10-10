@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import Git
 import Cgit2
 
 extension EditorViewController {
@@ -16,8 +15,8 @@ extension EditorViewController {
         guard let gitProject = getGitProject() else {
             let alert = NSAlert()
             alert.alertStyle = .critical
-            alert.informativeText = NSLocalizedString("Please init git repository before (Preferences -> Git -> Init/commit)", comment: "")
-            alert.messageText = NSLocalizedString("Repository not found", comment: "")
+            alert.informativeText = NSLocalizedString("Enable Local History in Preferences before saving a snapshot.", comment: "")
+            alert.messageText = NSLocalizedString("Local history is not enabled", comment: "")
             alert.runModal()
             return
         }
@@ -30,7 +29,7 @@ extension EditorViewController {
             }
             
             let alert = NSAlert()
-            alert.messageText = NSLocalizedString("Commit message:", comment: "")
+            alert.messageText = NSLocalizedString("Snapshot message:", comment: "")
             alert.accessoryView = field
             alert.alertStyle = .informational
             alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
@@ -80,7 +79,7 @@ extension EditorViewController {
                     let alert = NSAlert()
                     alert.alertStyle = .critical
                     alert.informativeText = message
-                    alert.messageText = NSLocalizedString("Git error", comment: "")
+                    alert.messageText = NSLocalizedString("Local history error", comment: "")
                     alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in }
                 }
             }
@@ -123,11 +122,8 @@ extension EditorViewController {
             }
         }
 
-        guard UserDefaultsManagement.snapshotsInterval != 0 && (
-            hour == UserDefaultsManagement.snapshotsInterval || (
-                hour != 0 && hour % UserDefaultsManagement.snapshotsInterval == 0
-            )
-        ) else { return }
+        let interval = UserDefaultsManagement.snapshotsInterval
+        guard interval > 0, hour % interval == 0 else { return }
 
         guard UserDefaultsManagement.snapshotsIntervalMinutes == minute else { return }
         
@@ -147,8 +143,6 @@ extension EditorViewController {
                 do {
                     if project.hasRepository()  {
                         try project.commit()
-                        try project.pull()
-                        try project.push()
                     }
                 } catch {
                     print(error)
@@ -157,57 +151,16 @@ extension EditorViewController {
         })
     }
     
-    @IBAction private func pull(_ sender: Any) {
-
-        // Restart queue if operation stucked more then 2 minutes
-        if let date = ViewController.gitQueueOperationDate {
-            let diff = Int(Date().timeIntervalSince1970) - Int(date.timeIntervalSince1970)
-            let isBusy = ViewController.gitQueueBusy
-
-            if diff > 120 && !isBusy {
-
-                ViewController.gitQueue = OperationQueue()
-                ViewController.gitQueue.maxConcurrentOperationCount = 1
-
-                print("Git queue restart")
-            } else {
-                print("Git pull skipped")
-                return
-            }
-        }
-
-        ViewController.gitQueue.addOperation({
-            ViewController.gitQueueOperationDate = Date()
-
-            defer {
-                ViewController.gitQueueOperationDate = nil
-            }
-
-            Storage.shared().pullAll()
-        })
-    }
 
     public func scheduleSnapshots() {
-        guard !UserDefaultsManagement.backupManually else { return }
-
         DispatchQueue.main.async {
             self.snapshotsTimer.invalidate()
+            guard !UserDefaultsManagement.backupManually else { return }
             self.snapshotsTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.makeFullSnapshot), userInfo: nil, repeats: true)
         }
     }
     
-    public func schedulePull() {
-        guard !UserDefaultsManagement.backupManually else { return }
-
-        let interval = UserDefaultsManagement.pullInterval
-        
-        pullTimer.invalidate()
-        pullTimer = Timer.scheduledTimer(timeInterval: TimeInterval(interval), target: self, selector: #selector(pull), userInfo: nil, repeats: true)
-    }
     
-    public func stopPull() {
-        pullTimer.invalidate()
-    }
     
     public func getGitProject() -> Project? {
         guard let vc = ViewController.shared() else { return nil }

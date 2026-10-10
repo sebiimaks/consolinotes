@@ -10,16 +10,12 @@ import Foundation
 
 public enum RepositoryAction: Int, CaseIterable {
     case initCommit
-    case clonePush
     case commit
-    case pullPush
 
     var title: String {
         switch self {
-        case .initCommit: return "Init/commit"
-        case .clonePush: return "Clone/push"
-        case .pullPush: return "Pull/push"
-        case .commit: return "Add/commit"
+        case .initCommit: return "Enable Local History"
+        case .commit: return "Save Local Snapshot"
         }
     }
 }

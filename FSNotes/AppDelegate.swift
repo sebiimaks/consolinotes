@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import UserNotifications
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -49,6 +48,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        LocalPreviewSecurity.removeAbandonedStaging()
+        do {
+            try LegacyNetworkCleanup.run()
+        } catch {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Some saved connection settings could not be removed"
+            alert.informativeText = "Sync and publishing are disabled. consolinotes will retry removing its old saved credentials next time it opens. Your notes and original key files are unchanged."
+            alert.runModal()
+        }
+
         // Ensure the font panel is closed when the app starts, in case it was
         // left open when the app quit.
         NSFontManager.shared.fontPanel(false)?.orderOut(self)
@@ -78,12 +88,50 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return true
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // A failed encrypted write must never be followed by deletion of its
+        // only recoverable plaintext. All note writes are synchronous.
+        guard let storage = Storage.instance else { return .terminateNow }
+        defer {
+            for project in storage.getProjects() where project.isEncrypted {
+                if storage.getNotesBy(project: project).allSatisfy({ !$0.isUnlocked() }) {
+                    project.password = nil
+                }
+            }
+            ViewController.shared()?.sidebarOutlineView.reloadTags()
+            ViewController.shared()?.sidebarOutlineView.reloadData()
+        }
+        for note in storage.noteList {
+            if note.isUnlocked() {
+                guard note.lock() else {
+                    showTerminationSaveFailure()
+                    return .terminateCancel
+                }
+                // Quit can still be cancelled by a later note. Clear every
+                // editor for notes that have already locked successfully.
+                ViewController.shared()?.reloadAllOpenedWindows(note: note)
+                ViewController.shared()?.notesTableView.reloadRow(note: note)
+            } else if !note.isEncryptedAndLocked(), note.lastWriteError != nil, !note.save() {
+                showTerminationSaveFailure()
+                return .terminateCancel
+            }
+        }
+        return .terminateNow
+    }
+
+    private func showTerminationSaveFailure() {
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = "consolinotes cannot quit safely yet"
+        alert.informativeText = "A note could not be saved. The app will stay open so you can retry saving or export your changes."
+        alert.runModal()
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         UserDefaultsManagement.crashedLastTime = false
+        MPreviewView.purgeSensitivePreviews()
         
         AppDelegate.saveWindowsState()
-        
-        Storage.shared().saveUploadPaths()
         
         let webkitPreview = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("wkPreview")
         try? FileManager.default.removeItem(at: webkitPreview)
@@ -91,12 +139,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let printDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Print")
         try? FileManager.default.removeItem(at: printDir)
 
-        let encryption = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Encryption")
-        try? FileManager.default.removeItem(at: encryption)
+        // Note.lock removes only successfully saved unlocked bundles. Preserve
+        // any recovery files left by an earlier failure or interrupted session.
 
         var temporary = URL(fileURLWithPath: NSTemporaryDirectory())
         temporary.appendPathComponent("ThumbnailsBig")
         try? FileManager.default.removeItem(at: temporary)
+
+        let thumbnails = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MainNotesList")
+        try? FileManager.default.removeItem(at: thumbnails)
 
         let storyboard = NSStoryboard(name: "Main", bundle: nil)
         guard let mainWC = storyboard.instantiateController(withIdentifier: "MainWindowController") as? MainWindowController else {
@@ -441,18 +492,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    func application(_ application: NSApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([NSUserActivityRestoring]) -> Void) -> Bool {
-
-        ViewController.shared()?.restoreUserActivityState(userActivity)
-
-        return true
-    }
-
-    func application(_ application: NSApplication, willContinueUserActivityWithType userActivityType: String) -> Bool {
-
-        return true
-    }
-    
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         return true
     }

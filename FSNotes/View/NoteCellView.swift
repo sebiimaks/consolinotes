@@ -206,11 +206,8 @@ class NoteCellView: NSTableCellView {
 
     func renderPin() {
         if let value = objectValue, let note = value as? Note  {
-            // Terminal glyphs instead of icons: ↗ published, ◆/◇ encrypted, ★ pinned.
-            if note.isPublished() {
-                pin.image = TUITheme.glyph("↗", color: TUITheme.cyan, size: 14)
-                pin.isHidden = false
-            } else if note.isEncrypted() {
+            // Terminal glyphs: ◆/◇ encrypted, ★ pinned.
+            if note.isEncrypted() {
                 pin.image = TUITheme.glyph(note.isUnlocked() ? "◇" : "◆", color: TUITheme.magenta, size: 14)
                 pin.isHidden = false
             } else {
@@ -228,6 +225,7 @@ class NoteCellView: NSTableCellView {
     }
 
     public func getPreviewImage(imageUrl: URL, note: Note) -> Image? {
+        guard imageUrl.isFileURL, !note.isEncryptedAndLocked() else { return nil }
         let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MainNotesList")
 
         if !FileManager.default.fileExists(atPath: tempURL.path) {

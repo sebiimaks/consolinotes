@@ -22,9 +22,9 @@ struct KeychainConfiguration {
 
         do {
             return try item.readPassword()
-        } catch {
+        } catch KeychainPasswordItem.KeychainError.noPassword {
             let legacy = KeychainPasswordItem(service: legacyServiceName, account: masterPasswordAccount)
-            guard let password = try? legacy.readPassword() else { throw error }
+            let password = try legacy.readPassword()
 
             try? item.savePassword(password)
             return password

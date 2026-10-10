@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the app and web acknowledgements from checked-in license texts."""
+"""Generate the app and local-preview acknowledgements from checked-in license texts."""
 
 import argparse
 import json
@@ -26,7 +26,7 @@ def components():
             entry["text"] = source.read_text().strip()
             if not entry["text"]:
                 raise ValueError(f"Empty license: {source}")
-            entry.setdefault("used_for", "Native app" if "/native/" in manifest else "Preview and web publishing")
+            entry.setdefault("used_for", "Native app" if "/native/" in manifest else "Local preview")
             result.append(entry)
     return result
 
@@ -59,7 +59,7 @@ def generate():
             notice += entry["notes"].strip() + "\n\n"
         notice += "````text\n" + entry["text"] + "\n````\n"
     license_text = (ROOT / "LICENSE").read_bytes()
-    # Hosted publishing sends a standalone page without our sidecar files.
+    # Local HTML exports may be separated from their bundled sidecar files.
     # Preserve notices for inline FSNotes JavaScript and injected theme CSS.
     template_path = ROOT / "Resources/MPreview.bundle/index.html"
     template = template_path.read_text()

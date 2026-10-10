@@ -31,8 +31,11 @@ class MasterPasswordViewController: NSViewController {
 
         do {
             password = try KeychainConfiguration.readMasterPassword()
+        } catch KeychainPasswordItem.KeychainError.noPassword {
+            // No stored convenience password yet.
         } catch {
-            print(error)
+            showKeychainFailure()
+            return
         }
         
         if password.count > 0, currentPassword.stringValue != password {
@@ -50,16 +53,36 @@ class MasterPasswordViewController: NSViewController {
             return
         }
 
+        if password != newPassword.stringValue,
+           Storage.shared().noteList.contains(where: { $0.isEncrypted() }) {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Update the saved unlock password?"
+            alert.informativeText = "This changes only the password saved in Keychain. Existing encrypted notes keep their current passwords. Keep those passwords so you can still unlock the notes."
+            alert.addButton(withTitle: "Update Saved Password")
+            alert.addButton(withTitle: "Cancel")
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+        }
+
         let item = KeychainPasswordItem(service: KeychainConfiguration.serviceName, account: "Master Password")
         do {
             try item.savePassword(newPassword.stringValue)
         } catch {
-            print("Master password saving error: \(error)")
+            showKeychainFailure()
+            return
         }
 
         UserDefaultsManagement.masterPasswordHint = hint.stringValue
 
         dismiss(self)
+    }
+
+    private func showKeychainFailure() {
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = "The saved password could not be accessed"
+        alert.informativeText = "Keychain did not allow the operation. No password change has been completed."
+        alert.runModal()
     }
 
     private func wrongRepeatAlert() {

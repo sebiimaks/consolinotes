@@ -53,22 +53,8 @@ final class ProgressDelegate {
         return 0
     }
 
-    static let fetchProgressCallback: git_transfer_progress_cb = { stats, payload in
-        if let stats = stats {
-            AppDelegate.gitProgress?.log(current: Int(stats.pointee.received_objects), total: Int(stats.pointee.total_objects), action: "fetch")
-        }
-        return 0
-    }
     
-    static let pushProgressCallback: git_push_transfer_progress_cb = { current, total, bytes, payload in
-        AppDelegate.gitProgress?.log(current: Int(current), total: Int(total), action: "push")
-        return 0
-    }
     
-    static let packBuilderCallback: git_packbuilder_progress = { stage, current, total, payload in
-        AppDelegate.gitProgress?.log(current: Int(current), total: Int(total), action: "pack")
-        return 0
-    }
 
     static let checkoutProgressCallback: git_checkout_progress_cb = { path, completed, total, payload in
         AppDelegate.gitProgress?.log(current: Int(completed), total: Int(total), action: "checkout")

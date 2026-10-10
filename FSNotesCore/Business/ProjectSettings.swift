@@ -18,14 +18,7 @@ public class ProjectSettings: NSObject, NSSecureCoding {
     public var showNestedFoldersContent: Bool = true
     public var firstLineAsTitle: Bool?
     public var priority: Int = 0
-    public var gitAutoPull: Bool = false
-    public var gitOrigin: String?
-    public var gitPrivateKey: Data?
-    public var gitPublicKey: Data?
-    public var gitPrivateKeyPassphrase: String?
     public var notesPreview = [String]()
-    // Note IDs from FSNotes' publishing service. consolinotes doesn't use them, but keeps them when saving settings.
-    public var notesAPI: [String: String]?
 
     public override init() {/*_*/}
     
@@ -47,31 +40,11 @@ public class ProjectSettings: NSObject, NSSecureCoding {
         }
 
         priority = aDecoder.decodeInteger(forKey: "priority")
-        gitAutoPull =  aDecoder.decodeBool(forKey: "gitAutoPull")
-
-        if let value = aDecoder.decodeObject(of: NSString.self, forKey: "gitOrigin") as? String {
-            gitOrigin = value
-        }
-
-        if let value = aDecoder.decodeObject(of: NSData.self, forKey: "gitPrivateKey") as? Data {
-            gitPrivateKey = value
-        }
-
-        if let value = aDecoder.decodeObject(of: NSData.self, forKey: "gitPublicKey") as? Data {
-            gitPublicKey = value
-        }
-
-        if let value = aDecoder.decodeObject(of: NSString.self, forKey: "gitPrivateKeyPassphrase") as? String {
-            gitPrivateKeyPassphrase = value
-        }
 
         if let value = aDecoder.decodeObject(of: [NSArray.self, NSString.self], forKey: "notesPreview") as? [String] {
             notesPreview = value
         }
 
-        if let value = aDecoder.decodeObject(of: [NSDictionary.self, NSString.self], forKey: "notesAPI") as? [String: String] {
-            notesAPI = value
-        }
     }
 
     public func encode(with aCoder: NSCoder) {
@@ -86,38 +59,9 @@ public class ProjectSettings: NSObject, NSSecureCoding {
         }
 
         aCoder.encode(priority, forKey: "priority")
-        aCoder.encode(gitAutoPull, forKey: "gitAutoPull")
-
-        if let gitOrigin = gitOrigin {
-            aCoder.encode(gitOrigin, forKey: "gitOrigin")
-        }
-        
-        if let gitPrivateKey = gitPrivateKey {
-            aCoder.encode(gitPrivateKey, forKey: "gitPrivateKey")
-        }
-
-        if let gitPublicKey = gitPublicKey {
-            aCoder.encode(gitPublicKey, forKey: "gitPublicKey")
-        }
-        
-        if let gitPrivateKeyPassphrase = gitPrivateKeyPassphrase {
-            aCoder.encode(gitPrivateKeyPassphrase, forKey: "gitPrivateKeyPassphrase")
-        }
 
         aCoder.encode(notesPreview, forKey: "notesPreview")
 
-        if let notesAPI = self.notesAPI {
-            aCoder.encode(notesAPI, forKey: "notesAPI")
-        }
-    }
-
-    public func setOrigin(_ origin: String?) {
-        if let origin = origin, origin.count > 0 {
-            gitOrigin = origin
-            return
-        }
-
-        gitOrigin = nil
     }
 
     public func isFirstLineAsTitle() -> Bool {

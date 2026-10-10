@@ -6,6 +6,7 @@
 //  Copyright © 2019 Oleksandr Glushchenko. All rights reserved.
 //
 
+import Foundation
 import libcmark_gfm
 
 /// Replaces Markdown horizontal-rule lines without touching fenced code blocks.
@@ -34,7 +35,7 @@ func replaceHorizontalRulesOutsideCodeBlocks(in markdown: String) -> String {
         // Keep the existing behavior for a standalone `---` line, including
         // its requirement for a following newline, but only outside code.
         if fenceLength == nil && line == "---" && index > 0 && index < lines.count - 1 {
-            result.append("<hr>")
+            result.append("***")
         } else {
             result.append(line)
         }
@@ -44,7 +45,11 @@ func replaceHorizontalRulesOutsideCodeBlocks(in markdown: String) -> String {
 }
 
 func renderMarkdownHTML(markdown: String) -> String? {
-    let markdown = markdown.replacingOccurrences(of: "{{TOC}}", with: "<div id=\"toc\"></div>")
+    guard markdown.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes else {
+        return "<p>Preview unavailable: this note exceeds the 2 MB preview limit.</p>"
+    }
+    let tocMarker = "CONSOLINOTESTOC" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    let markdown = markdown.replacingOccurrences(of: "{{TOC}}", with: tocMarker)
         
     cmark_gfm_core_extensions_ensure_registered()
     
@@ -69,7 +74,11 @@ func renderMarkdownHTML(markdown: String) -> String? {
 
     cmark_parser_feed(parser, markdown, markdown.utf8.count)
     guard let node = cmark_parser_finish(parser) else { return nil }
-    return String(cString: cmark_render_html(node, CMARK_OPT_HARDBREAKS | CMARK_OPT_UNSAFE, nil))
+    defer { cmark_node_free(node) }
+    guard let rendered = cmark_render_html(node, CMARK_OPT_HARDBREAKS, nil) else { return nil }
+    defer { free(rendered) }
+    return String(cString: rendered).replacingOccurrences(of: "<p>" + tocMarker + "</p>", with: "<div id=\"toc\"></div>")
+        .replacingOccurrences(of: tocMarker, with: "{{TOC}}")
 }
 
 func generateAlphabeticalString(length: Int) -> String {

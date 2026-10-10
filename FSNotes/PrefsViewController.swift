@@ -16,7 +16,6 @@ class PrefsViewController: NSTabViewController  {
     @IBOutlet weak var editorTabViewItem: NSTabViewItem!
     @IBOutlet weak var securityTabViewItem: NSTabViewItem!
     @IBOutlet weak var gitTabViewItem: NSTabViewItem!
-    @IBOutlet weak var webTabViewItem: NSTabViewItem!
     @IBOutlet weak var advancedTabViewItem: NSTabViewItem!
 
     override func viewDidLoad() {
@@ -28,17 +27,15 @@ class PrefsViewController: NSTabViewController  {
             let library = NSImage.init(systemSymbolName: "sidebar.left", accessibilityDescription: nil)
             let editor = NSImage.init(systemSymbolName: "doc.richtext", accessibilityDescription: nil)
             let security = NSImage.init(systemSymbolName: "lock", accessibilityDescription: nil)
-            let git = NSImage.init(systemSymbolName: "arrow.triangle.pull", accessibilityDescription: nil)
-            let web = NSImage.init(systemSymbolName: "globe", accessibilityDescription: nil)
+            let git = NSImage.init(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: nil)
             let advanced = NSImage.init(systemSymbolName: "slider.vertical.3", accessibilityDescription: nil)
 
-            if let general = general, let library = library, let editor = editor, let security = security, let git = git, let web = web, let advanced = advanced {
+            if let general = general, let library = library, let editor = editor, let security = security, let git = git, let advanced = advanced {
                 generalTabViewItem.image = general
                 libraryTabViewItem.image = library
                 editorTabViewItem.image = editor
                 securityTabViewItem.image = security
                 gitTabViewItem.image = git
-                webTabViewItem.image = web
                 advancedTabViewItem.image = advanced
             }
         }

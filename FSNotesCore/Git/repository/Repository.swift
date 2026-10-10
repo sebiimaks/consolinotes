@@ -38,9 +38,6 @@ public class Repository {
         Tags(repository: self)
     } ()
     
-    lazy public private(set) var remotes : Remotes = {
-        Remotes(repository: self)
-    } ()
     
     /// Constructor with repository manager and libgit2 repository
     ///
@@ -114,13 +111,6 @@ public class Repository {
         }
     }
     
-    public func addRemoteOrigin(path: String) {
-        let result = git_remote_set_url(self.pointer.pointee, "origin", path)
-        
-        if result != GIT_OK.rawValue {
-            print("Remote origin error")
-        }
-    }
     
     public func setWorkTree(path: String) {
         var configPointer: OpaquePointer? = nil

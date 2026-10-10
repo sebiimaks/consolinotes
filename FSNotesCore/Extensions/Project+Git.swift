@@ -9,13 +9,6 @@
 import Foundation
 
 extension Project {
-    public func getGitOrigin() -> String? {
-        if let origin = settings.gitOrigin, origin.count > 0 {
-            return origin
-        }
-
-        return nil
-    }
 
     public func getRepositoryUrl() -> URL {
         if UserDefaultsManagement.separateRepo {
@@ -51,10 +44,10 @@ extension Project {
         let repoURL = getRepositoryUrl()
 
         // Prepare temporary dir
-        let tempURL = UserDefaultsManagement.gitStorage!.appendingPathComponent("tmp")
-
-        try? FileManager.default.removeItem(at: tempURL)
-        try? FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
+        let tempURL = UserDefaultsManagement.gitStorage!.appendingPathComponent("local-history-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: tempURL) }
 
         // Init
         let signature = getSign()
@@ -67,40 +60,8 @@ extension Project {
         let dotGit = tempURL.appendingPathComponent(".git")
 
         if FileManager.default.directoryExists(atUrl: dotGit) {
-            try? FileManager.default.moveItem(at: dotGit, to: repoURL)
+            try FileManager.default.moveItem(at: dotGit, to: repoURL)
         }
-    }
-
-    public func cloneRepository() throws -> Repository? {
-        let repositoryManager = RepositoryManager()
-        let repoURL = getRepositoryUrl()
-
-        // Prepare temporary dir
-        guard let tempURL = UserDefaultsManagement.gitStorage?.appendingPathComponent("tmp") else { return nil }
-
-        try? FileManager.default.removeItem(at: tempURL)
-        try? FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
-
-        // Clone
-        if let originString = getGitOrigin(), let origin = URL(string: originString) {
-            let repository = try repositoryManager.cloneRepository(from: origin, at: tempURL, authentication: getAuthHandler())
-
-            if isUseWorkTree() {
-                repository.setWorkTree(path: url.path)
-            }
-
-            let dotGit = tempURL.appendingPathComponent(".git")
-
-            if FileManager.default.directoryExists(atUrl: dotGit) {
-                try? FileManager.default.moveItem(at: dotGit, to: repoURL)
-
-                return try repositoryManager.openRepository(at: repoURL)
-            }
-
-            return nil
-        }
-
-        return nil
     }
 
     public func getRepository() throws -> Repository {
@@ -112,56 +73,6 @@ extension Project {
 
     public func useSeparateRepo() -> Bool {
         return UserDefaultsManagement.separateRepo
-    }
-
-    public func getAuthHandler() -> SshKeyHandler? {
-        var rsa: URL?
-
-        if let rsaURL = installSSHKey() {
-            rsa = rsaURL
-        }
-
-        guard let rsaURL = rsa else { return nil }
-
-        let passphrase = settings.gitPrivateKeyPassphrase ?? ""
-        let sshKeyDelegate = StaticSshKeyDelegate(privateUrl: rsaURL, passphrase: passphrase)
-        let handler = SshKeyHandler(sshKeyDelegate: sshKeyDelegate)
-
-        return handler
-    }
-
-    public func getSSHKeyUrl() -> URL? {
-        let keyName = getSettingsKey()
-
-        return storage
-            .getGitKeysDir()?
-            .appendingPathComponent(keyName)
-    }
-
-    public func removeSSHKey() {
-        guard let url = getSSHKeyUrl() else { return }
-
-        try? FileManager.default.removeItem(at: url)
-        try? FileManager.default.removeItem(at: url.appendingPathExtension("pub"))
-    }
-
-    public func installSSHKey() -> URL? {
-        guard let url = getSSHKeyUrl() else { return nil }
-
-        if let key = settings.gitPrivateKey {
-            do {
-                try key.write(to: url)
-
-                if let publicKey = settings.gitPublicKey {
-                    let publicKeyUrl = url.appendingPathExtension("pub")
-                    try publicKey.write(to: publicKeyUrl)
-                }
-
-                return url
-            } catch {/*_*/}
-        }
-
-        return nil
     }
 
     public func getSign() -> Signature {
@@ -225,60 +136,8 @@ extension Project {
         return nil
     }
 
-    public func push(progress: GitProgress? = nil) throws {
-        guard let origin = getGitOrigin() else { return }
-
-        let repository = try getRepository()
-        repository.addRemoteOrigin(path: origin)
-
-        let handler = getAuthHandler()
-        let localBranch = try repository.currentBranch()
-        try repository.remotes.get(remoteName: "origin").push(local: localBranch, authentication: handler)
-
-        if let progress = progress {
-            progress.log(message: "\(label) – successful push 👌")
-        }
-    }
-
-    public func pull(progress: GitProgress? = nil) throws {
-        guard let origin = getGitOrigin() else { return }
-
-        let repository = try getRepository()
-        repository.addRemoteOrigin(path: origin)
-
-        if isUseWorkTree() {
-            repository.setWorkTree(path: url.path)
-        }
-
-        let authHandler = getAuthHandler()
-        let sign = getSign()
-
-        let remote = repository.remotes
-        let remoteBranch = try remote.get(remoteName: "origin")
-
-        do {
-            try remoteBranch.pull(signature: sign, authentication: authHandler, project: self)
-        } catch GitError.uncommittedConflict {
-            try commit()
-            try remoteBranch.pull(signature: sign, authentication: authHandler, project: self)
-            try push()
-        }
-
-        if let progress = progress {
-            progress.log(message: "\(label) – successful git pull 👌")
-        }
-    }
-
     public func isUseWorkTree() -> Bool {
         return !UserDefaultsManagement.separateRepo
-    }
-
-    public func isGitOriginExist() -> Bool {
-        if let origin = settings.gitOrigin, origin.count > 0 {
-            return true
-        }
-
-        return false
     }
 
     public func removeRepository(progress: GitProgress? = nil) {
@@ -352,108 +211,23 @@ extension Project {
     }
 
     public func getRepositoryState() -> RepositoryAction {
-        if hasRepository() {
-            if settings.gitOrigin != nil {
-                return .pullPush
-            } else {
-                return .commit
-            }
-        } else {
-            if settings.gitOrigin != nil {
-                return .clonePush
-            } else {
-                return .initCommit
-            }
-        }
+        return hasRepository() ? .commit : .initCommit
     }
 
     public func gitDo(_ action: RepositoryAction, progress: GitProgress? = nil) -> String? {
-        var message: String?
-
         do {
-            switch action {
-            case .initCommit:
-                try initBareRepository()
-                try commit(message: nil, progress: progress)
-            case .clonePush:
-                removeCommitsCache()
-                message = clonePush(progress: progress)
-            case .commit:
-                try commit(message: nil, progress: progress)
-            case .pullPush:
-                do {
-                    try pull(progress: progress)
-                    try push(progress: progress)
-                } catch GitError.notFound(let ref) {
-                    progress?.log(message: "\(ref) not found, push trying ...")
-
-                    try push(progress: progress)
-                }
-            }
+            if action == .initCommit { try initBareRepository() }
+            try commit(message: nil, progress: progress)
+            return nil
+        } catch GitError.noAddedFiles {
+            return nil
         } catch {
-            if let error = error as? GitError {
-                message = error.associatedValue()
-            } else {
-                message = error.localizedDescription
-            }
+            return (error as? GitError)?.associatedValue() ?? error.localizedDescription
         }
-
-        return message
     }
 
-    private func clonePush(progress: GitProgress? = nil) -> String? {
-        var message: String?
-
-        do {
-            if let repo = try cloneRepository(), let local = getLocalBranch(repository: repo) {
-                try repo.head().checkout(branch: local, type: .force)
-                cacheHistory(progress: progress)
-            } else {
-                do {
-                    try commit(message: nil, progress: progress)
-                    try push(progress: progress)
-                } catch {
-                    message = error.localizedDescription
-                }
-            }
-        } catch GitError.unknownError(let errorMessage, _, let desc) {
-            message = errorMessage + " – " + desc
-        } catch GitError.notFound(let ref) {
-
-            // Empty repository – commit and push
-            if ref.hasPrefix("refs/heads/") {
-                do {
-                    try commit(message: nil, progress: progress)
-                    try push(progress: progress)
-                } catch {
-                    message = error.localizedDescription
-                }
-            }
-        } catch {
-            message = error.localizedDescription
-        }
-
-        return message
-    }
-
+    /// Local history only. Existing remote configuration is never used.
     public func saveRevision(commitMessage: String? = nil) throws {
         try commit(message: commitMessage)
-        
-        // No hands – no mults
-        guard getGitOrigin() != nil else { return }
-
-        do {
-            try pull()
-        } catch GitError.notFound(let ref) {
-            let repository = try getRepository()
-            let branch = try repository.currentBranch()
-
-            // The current branch has not been pushed to origin yet.
-            guard ref == "origin/\(branch.shortName)" else {
-                throw GitError.notFound(ref: ref)
-            }
-        }
-
-        try push()
     }
 }

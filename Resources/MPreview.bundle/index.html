@@ -61,412 +61,85 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 CONSOLINOTES-LICENSE-END -->
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>{TITLE}</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="{WEB_PATH}apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="{WEB_PATH}favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="{WEB_PATH}favicon-16x16.png">
-    <meta name="keywords" content="FSNotes, Markdown, Sharing, Web, Hosting, Textbundle">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta charset="utf-8">
-    <meta name="publisher" content="fsnot.es">
-    <meta name="author" content="fsnot.es">
-    <meta name="robots" content="index,follow">
-    <meta name="viewport" content="initial-scale=1.0" />
-    <link charset="utf-8" href="{WEB_PATH}main.css?v=1.0.7" rel="stylesheet">
-    
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{NONCE}' 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; media-src 'none'">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="initial-scale=1.0">
+    <title>{TITLE}</title>
+    <link href="main.css" rel="stylesheet">
     {INLINE_CSS}
     {THEME_CSS}
     {MATH_JAX_JS}
-    
     <style>
-        code {
-          white-space: pre-wrap !important;
-          overflow-x: hidden;
-        }
-
-        pre {
-          overflow-x: hidden;
-        }
+        code { white-space: pre-wrap !important; overflow-x: hidden; }
+        pre { overflow-x: hidden; }
+        .blocked-attachment { opacity: .7; font-size: .9em; }
+        .preview-toc ul { list-style-type: none; }
     </style>
-    
-    <script charset="utf-8" src="{WEB_PATH}js/highlight.min.js" type="text/javascript"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-    <script async src="{WEB_PATH}js/mermaid.min.js"></script>
-    
-    <script>
-        (function () {
-            if (window.__scrollObserverInstalled) return;
-            window.__scrollObserverInstalled = true;
-
-            let ticking = false;
-
-            function reportScroll() {
-                if (ticking) return;
-                ticking = true;
-
-                requestAnimationFrame(() => {
-                    const x = window.scrollX || document.documentElement.scrollLeft;
-                    const y = window.scrollY || document.documentElement.scrollTop;
-
-                    window.webkit.messageHandlers.scrollPosition.postMessage({ x, y });
-                    ticking = false;
-                });
-            }
-
-            window.addEventListener('scroll', reportScroll, { passive: true });
-        })();
-        
+    <script nonce="{NONCE}" defer src="js/highlight.min.js"></script>
+    <script nonce="{NONCE}" defer src="js/mermaid.min.js"></script>
+    <script nonce="{NONCE}">
+        const previewTheme = '{FSNOTES_THEME}';
+        function switchToDarkMode() { document.body.classList.add('darkmode'); }
+        function switchToLightMode() { document.body.classList.remove('darkmode'); }
         function getElementsByText(str, tag = 'h1') {
-            return Array.prototype.slice.call(document.getElementsByTagName(tag)).filter(el => el.textContent.trim() === str.trim());
+            return Array.from(document.getElementsByTagName(tag)).filter(el => el.textContent.trim() === str.trim());
         }
-
-        function getSelectionAndSendMessage() {
-            var txt = document.getSelection().toString();
-            if ({FSNOTES_PREVIEW}) {
-                window.webkit.messageHandlers.newSelectionDetected.postMessage(txt);
-            }
-        }
-        
-        var darkModeStylesNodeID = "darkModeStyles";
-
-        // A named theme (consolinotes on macOS) styles both appearances itself,
-        // so dark mode only toggles a class instead of the generic overrides.
-        var previewTheme = '{FSNOTES_THEME}';
-
-        function setThemeAppearance(dark) {
-            if (document.body) {
-                document.body.classList.toggle('darkmode', dark);
-            }
-        }
-
-        function addStyleString(str, nodeID) {
-            var node = document.createElement('style');
-            node.id = nodeID;
-            node.innerHTML = str;
-
-            document.getElementsByTagName('head')[0].appendChild(node);
-        }
-
-        function switchToDarkMode(background) {
-            if (previewTheme) {
-                setThemeAppearance(true);
-                return;
-            }
-
-            var darkModeStyleElement = document.getElementById(darkModeStylesNodeID);
-            if (darkModeStyleElement == null) {
-                var darkModeStyles = "* { color: white; } body { background: " + background + "; } a { color: #98e7a7 } table { border-color: red } table td, table th { background: #908D8D; border-color: black; } table td, table th, table td *, table th * { color: white }; input[type='checkbox] { accent-color: white }";
-                addStyleString(darkModeStyles, darkModeStylesNodeID);
-            }
-        }
-
-        function switchToLightMode() {
-            if (previewTheme) {
-                setThemeAppearance(false);
-                return;
-            }
-
-            var darkModeStyleElement = document.getElementById(darkModeStylesNodeID);
-            if (darkModeStyleElement != null) {
-                darkModeStyleElement.parentElement.removeChild(darkModeStyleElement);
-            }
-        }
-        
-        function getElementsByTextContent(elText) {
-            var allSpans = document.querySelectorAll('h1, h2, h3, h4, h5, h6')
-            for (var i = 0; i < allSpans.length; i++) {
-                var spanText = allSpans[i].innerHTML;
-                if(spanText == elText ){
-                    return allSpans[i];
-                }
-            }
-        }
-
-        if ('{FSNOTES_APPEARANCE}' == 'darkmode') {
-            switchToDarkMode('#2a2b2e');
-        }
-        
-        document.onmouseup = getSelectionAndSendMessage;
-        document.onkeyup = getSelectionAndSendMessage;
-        document.oncontextmenu = getSelectionAndSendMessage;
-    </script>
-    
-    <script>
-        let loadCodeActions = () => {
-            var preList = document.getElementsByTagName("code"),
-                length = preList.length,
-                i = 0;
-
-            for (i; i < length; i++) {
-                if (preList[i].classList.contains('language-mermaid')) {
-                    continue;
-                }
-
-                preList[i].addEventListener("mouseenter", function(event) {
-                    if ({FSNOTES_PREVIEW}) {
-                        window.webkit.messageHandlers.mouse.postMessage('enter')
-                    }
-                });
-
-                preList[i].addEventListener("mouseleave", function(event) {
-                    if ({FSNOTES_PREVIEW}) {
-                        window.webkit.messageHandlers.mouse.postMessage('leave')
-                    }
-                });
-
-                preList[i].addEventListener("click", function(event) {
-                    let target = event.target
-                    while (target && target.nodeName !== "CODE") {
-                        target = target.parentElement
-                    }
-
-                    if ({FSNOTES_PREVIEW}) {
-                        window.webkit.messageHandlers.clipboard.postMessage(target.innerText);
-                    } else {
-                        navigator.clipboard.writeText(target.innerText);
-                    }
-
-                    target.style.background = "#9c9c9c"
-                    setTimeout(function() {
-                        if (null == document.getElementById("darkModeStyles")) {
-                            target.style.background = "#f5f5f5";
-                        } else {
-                            target.style.background = "#454545";
-                        }
-                    }, 150)
-                });
-            }
-        }
-        
-        let loadAHover = () => {
-            var aList = document.getElementsByTagName("a"),
-                aLength = aList.length,
-                j = 0;
-
-            for (j; j < aLength; j++) {
-                aList[j].addEventListener("mouseenter", function(event) {
-                    if ({FSNOTES_PREVIEW}) {
-                        window.webkit.messageHandlers.mouse.postMessage('enter')
-                    }
-                });
-
-                aList[j].addEventListener("mouseleave", function(event) {
-                    if ({FSNOTES_PREVIEW}) {
-                        window.webkit.messageHandlers.mouse.postMessage('leave')
-                    }
-                });
-            }
-        }
-        
-        let loadListStyle = () => {
-            var liList = document.getElementsByTagName("li"),
-                length = liList.length,
-                i = 0;
-
-            for (i; i < length; i++) {
-                if (liList[i].parentNode.tagName == "UL" && liList[i].parentNode.classList.contains('cb')) {
-                    if (liList[i].querySelectorAll('input').length == 0) {
-                        liList[i].style.listStyleType = "disc"
-                    }
-                }
-            }
-        }
-        
-        let loadCheckboxStyle = () => {
-            var preList = document.getElementsByTagName("input"),
-                length = preList.length,
-                i = 0;
-
-            for (i; i < length; i++) {
-                preList[i].disabled = true;
-
-                if (preList[i].parentNode.tagName == "P" && preList[i].parentNode.parentNode.tagName == "LI") {
-                    preList[i].parentNode.parentNode.parentNode.classList.add('cb')
-                    continue;
-                }
-
-                if (preList[i].parentNode.tagName != "LI") {
-                    continue;
-                }
-
-                preList[i].parentNode.parentNode.classList.add('cb')
-            }
-        }
-        
-        let addCheckboxEvent = (element) => {
-            if (element.parentNode.nodeName == 'LI') {
-                element.parentNode.classList.remove('strike');
-            }
-
-            let id = element.dataset.checkbox;
-            
-            if ({FSNOTES_PREVIEW}) {
-                window.webkit.messageHandlers.checkbox.postMessage(id);
-            }
-
-            let input = document.createElement("input");
-            input.type = "checkbox";
-            input.dataset.checkbox = id;
-
-            if (!element.hasAttribute('checked')) {
-                input.defaultChecked = true;
-
-                if (element.parentNode.nodeName == 'LI') {
-                    element.parentNode.classList.add('strike');
-                }
-            }
-
-            element.parentNode.replaceChild(input, element);
-
-            input.addEventListener("click", function(event) {
-                addCheckboxEvent(input);
+        function loadTOC() {
+            const toc = document.getElementById('toc');
+            const list = document.createElement('ul');
+            list.className = 'preview-toc';
+            document.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((heading, index) => {
+                heading.id = 'heading-' + index;
+                if (!toc) return;
+                const item = document.createElement('li');
+                item.style.marginLeft = (Number(heading.tagName.substring(1)) - 1) + 'em';
+                const link = document.createElement('a');
+                link.href = '#' + heading.id;
+                link.textContent = heading.textContent;
+                item.appendChild(link);
+                list.appendChild(item);
             });
-        };
-        
-        let addLocalAHrefEvent = () => {
-            var aList = document.getElementsByTagName("A"),
-                length = aList.length,
-                i = 0;
-
-            for (i; i < length; i++) {
-                aList[i].addEventListener("click", function(event) {
-                    var url = event.target.getAttribute("href");
-                    window.webkit.messageHandlers.open.postMessage(url);
-                });
-            }
-        };
-        
-        let loadCheckboxActions = () => {
-            var inputs = document.querySelectorAll('input[type=checkbox]'),
-                length = inputs.length,
-                i = 0;
-                
-            for (i; i < length; i++) {
-                if (inputs[i].parentNode.nodeName == "LI" && inputs[i].hasAttribute('checked')) {
-                    inputs[i].parentNode.classList.add("strike");
-                }
-
-                inputs[i].disabled = false
-                inputs[i].dataset.checkbox = i
-                inputs[i].addEventListener("click", function(event) {
-                    let element = event.target;
-                    addCheckboxEvent(element);
-                });
-            }
+            if (toc) toc.appendChild(list);
         }
-        
-        let loadTOC = () => {
-            var toc = "";
-            var level = 0;
-
-            document.getElementById("preview").innerHTML =
-                document.getElementById("preview").innerHTML.replace(
-                    /<h([\d])>([^<]+)<\/h([\d])>/gi,
-                    function (str, openLevel, titleText, closeLevel) {
-                        if (openLevel != closeLevel) {
-                            return str;
-                        }
-
-                        if (openLevel > level) {
-                            toc += (new Array(openLevel - level + 1)).join("<ul>");
-                        } else if (openLevel < level) {
-                            toc += (new Array(level - openLevel + 1)).join("</ul>");
-                        }
-
-                        level = parseInt(openLevel);
-
-                        var anchor = encodeURIComponent(titleText.replace(/ /g, "_"));
-                        toc += "<li><a href=\"#" + anchor + "\">" + titleText
-                            + "</a></li>";
-
-                        return "<h" + openLevel + " id=\"" + anchor + "\">"
-                            + titleText + "</h" + closeLevel + ">";
-                    }
-                );
-
-            if (level) {
-                toc += (new Array(level + 1)).join("</ul>");
-            }
-
-            var tocEl = document.getElementById("toc")
-            if (tocEl != null) {
-                document.getElementById("toc").innerHTML += toc;
-            }
-        }
-        
-        let loadMemaid = () => {
-            let mermaidTheme = 'default';
-            if ('{FSNOTES_APPEARANCE}' == 'darkmode') {
-                mermaidTheme = 'dark';
-            }
-
-            var config = {
-                startOnLoad: true,
-                theme: mermaidTheme,
-                flowchart: {
-                    useMaxWidth: true,
-                    htmlLabels: true
-                }
-            };
-
-            if (previewTheme == 'consolinotes') {
-                // Read the palette from consolinotes.css so diagrams follow the same colours.
-                let css = getComputedStyle(document.body);
-                let color = (name) => css.getPropertyValue(name).trim();
-
+        function loadMermaid() {
+            if (typeof mermaid === 'undefined') return;
+            const dark = document.body.classList.contains('darkmode');
+            const config = {startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default', flowchart: {useMaxWidth: true, htmlLabels: false}};
+            if (previewTheme === 'consolinotes') {
+                const css = getComputedStyle(document.body);
+                const color = name => css.getPropertyValue(name).trim();
                 config.theme = 'base';
                 config.themeVariables = {
-                    darkMode: '{FSNOTES_APPEARANCE}' == 'darkmode',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    background: color('--cn-bg'),
-                    primaryColor: color('--cn-bar'),
-                    primaryTextColor: color('--cn-bright'),
-                    primaryBorderColor: color('--cn-accent'),
-                    secondaryColor: color('--cn-code'),
-                    tertiaryColor: color('--cn-bg'),
-                    lineColor: color('--cn-accent'),
-                    textColor: color('--cn-fg'),
-                    noteBkgColor: color('--cn-code'),
-                    noteTextColor: color('--cn-fg'),
-                    noteBorderColor: color('--cn-yellow')
+                    darkMode: dark, fontFamily: "'JetBrains Mono', monospace",
+                    background: color('--cn-bg'), primaryColor: color('--cn-bar'),
+                    primaryTextColor: color('--cn-bright'), primaryBorderColor: color('--cn-accent'),
+                    secondaryColor: color('--cn-code'), tertiaryColor: color('--cn-bg'),
+                    lineColor: color('--cn-accent'), textColor: color('--cn-fg'),
+                    noteBkgColor: color('--cn-code'), noteTextColor: color('--cn-fg'), noteBorderColor: color('--cn-yellow')
                 };
             }
-
             mermaid.initialize(config);
-            window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
-        };
-
-        let loadAttachments = () => {
-            var items = document.querySelectorAll('.attachment'),
-                length = items.length,
-                i = 0;
-
-            for (i; i < length; i++) {
-                items[i].addEventListener("click", function(event) {
-                    let url = event.target.dataset.url;
-                    window.webkit.messageHandlers.quicklook.postMessage(url);
-                });
+            mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTOC();
+            document.querySelectorAll('li input[type=checkbox]').forEach(box => {
+                const item = box.closest('li');
+                item.closest('ul,ol').classList.add('cb');
+                item.classList.toggle('strike', box.checked);
+                box.addEventListener('change', () => item.classList.toggle('strike', box.checked));
+            });
+            if (typeof hljs !== 'undefined') {
+                document.querySelectorAll('pre code:not(.language-mermaid)').forEach(code => hljs.highlightBlock(code));
             }
-        };
-
-        window.onload = function () {
-            loadTOC()
-            loadCheckboxStyle()
-            loadCheckboxActions()
-            loadListStyle()
-            loadAHover()
-            loadCodeActions()
-            loadMemaid()
-            loadAttachments()
-            addLocalAHrefEvent()
-        };
+            loadMermaid();
+        });
     </script>
 </head>
-
 <body class="{FSNOTES_APPEARANCE} {FSNOTES_PLATFORM} {FSNOTES_THEME}" id="preview">
     {NOTE_BODY}
 </body>
-
 </html>

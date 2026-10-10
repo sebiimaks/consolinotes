@@ -123,10 +123,7 @@ class MPreviewContainerView: NSView {
             return
         }
         
-        let escapedText = searchText
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\'")
-            .replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedText = LocalPreviewSecurity.javaScriptString(searchText)
         
         let jsCode = """
         (function() {
@@ -136,7 +133,7 @@ class MPreviewContainerView: NSView {
                 parent.normalize();
             });
             
-            var searchText = '\(escapedText)';
+            var searchText = \(escapedText);
             if (searchText.length === 0) return 0;
             
             var escapedSearch = searchText.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');

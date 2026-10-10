@@ -162,6 +162,7 @@ extension NoteAttachment {
     }
 
     private static func loadImage(from url: URL, size: CGSize) -> PlatformImage? {
+        guard url.isFileURL else { return nil }
         if url.isVideo {
             return generateVideoThumbnail(from: url, size: size)
         }
