@@ -1,88 +1,81 @@
 import Cocoa
 
-class FileWatcher{
-  let filePaths: [String]  // -- paths to watch - works on folders and file paths
-  
-  var callback : ((_ fileWatcherEvent:FileWatcherEvent) -> Void)?
-  var queue    : DispatchQueue?
+final class FileWatcher {
+    let filePaths: [String]
+    var callback: ((FileWatcherEvent) -> Void)?
+    var queue: DispatchQueue?
+    private var streamRef: FSEventStreamRef?
+    private let streams: Streams
+    private final class Context {
+        weak var watcher: FileWatcher?
+        init(_ watcher: FileWatcher) { self.watcher = watcher }
+    }
+    deinit { stop() }
 
-  private var streamRef  : FSEventStreamRef?
-  private var hasStarted : Bool { return streamRef != nil }
-  
-  init(_ paths:[String]) { self.filePaths = paths }
-  
-  /**
-   * Start listening for FSEvents
-   */
-  func start() {
-    guard !hasStarted else { return } // -- make sure we are not already listening!
-    
-    var context = FSEventStreamContext(
-      version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
-      retain: retainCallback, release: releaseCallback,
-      copyDescription:nil
-    )
-    
-    streamRef = FSEventStreamCreate(
-      kCFAllocatorDefault, eventCallback, &context,
-      filePaths as CFArray,FSEventStreamEventId(kFSEventStreamEventIdSinceNow), 0,
-      UInt32(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents)
-    )
-    
-    selectStreamScheduler()
-    FSEventStreamStart(streamRef!)
-  }
-  
-  /**
-   * Stop listening for FSEvents
-   */
-  func stop() {
-    guard hasStarted else { return } // -- make sure we are indeed listening!
-    
-    FSEventStreamStop(streamRef!)
-    FSEventStreamInvalidate(streamRef!)
-    FSEventStreamRelease(streamRef!)
-    
-    streamRef = nil
-  }
-  
-  private let eventCallback:FSEventStreamCallback = {(
-      streamRef, clientCallBackInfo, numEvents, eventPaths, eventFlags, eventIds
-    ) in
-    let fileSystemWatcher = Unmanaged<FileWatcher>.fromOpaque(clientCallBackInfo!).takeUnretainedValue()
-    let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as! [String]
-    
-    for index in 0..<numEvents {
-        fileSystemWatcher.callback?(FileWatcherEvent(eventIds[index], paths[index], eventFlags[index]))
+    // Injectable creation/start boundaries let regression tests exercise actual
+    // stream ownership and failure cleanup without exhausting system resources.
+    struct Streams {
+        var create: (FSEventStreamCallback, UnsafeMutablePointer<FSEventStreamContext>, CFArray) -> FSEventStreamRef?
+        var start: (FSEventStreamRef) -> Bool
+        static let system = Streams(create: { callback, context, paths in
+            FSEventStreamCreate(kCFAllocatorDefault, callback, context, paths,
+                FSEventStreamEventId(kFSEventStreamEventIdSinceNow), 0,
+                UInt32(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents))
+        }, start: { FSEventStreamStart($0) })
     }
-  }
-  
-  private let retainCallback:CFAllocatorRetainCallBack = {(info:UnsafeRawPointer?) in
-    _ = Unmanaged<FileWatcher>.fromOpaque(info!).retain()
-    return info
-  }
-  
-  private let releaseCallback:CFAllocatorReleaseCallBack = {(info:UnsafeRawPointer?) in
-    Unmanaged<FileWatcher>.fromOpaque(info!).release()
-  }
-  
-  private func selectStreamScheduler() {
-    guard let streamRef = streamRef else { return }
-      
-    if let queue = queue {
-      FSEventStreamSetDispatchQueue(streamRef, queue)
-    } else {
-      FSEventStreamScheduleWithRunLoop(
-        streamRef, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue
-      )
+
+    init(_ paths: [String], streams: Streams = .system) {
+        filePaths = Array(Set(paths.filter { !$0.isEmpty })).sorted()
+        self.streams = streams
     }
-  }
+
+    @discardableResult
+    func start() -> Bool {
+        guard streamRef == nil else { return true }
+        guard !filePaths.isEmpty else { return false }
+        let owner = Context(self)
+        var context = FSEventStreamContext(version: 0,
+            info: Unmanaged.passUnretained(owner).toOpaque(),
+            retain: Self.retainCallback, release: Self.releaseCallback, copyDescription: nil)
+        guard let stream = streams.create(Self.eventCallback, &context, filePaths as CFArray) else { return false }
+        if let queue = queue { FSEventStreamSetDispatchQueue(stream, queue) }
+        else { FSEventStreamSetDispatchQueue(stream, .main) }
+        guard streams.start(stream) else {
+            FSEventStreamInvalidate(stream)
+            FSEventStreamRelease(stream)
+            return false
+        }
+        streamRef = stream
+        return true
+    }
+
+    func stop() {
+        guard let stream = streamRef else { return }
+        streamRef = nil
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+    }
+
+    private static let eventCallback: FSEventStreamCallback = { _, info, count, eventPaths, flags, ids in
+        guard let info = info,
+              let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String],
+              paths.count >= count else { return }
+        guard let watcher = Unmanaged<Context>.fromOpaque(info).takeUnretainedValue().watcher else { return }
+        for index in 0..<count { watcher.callback?(FileWatcherEvent(ids[index], paths[index], flags[index])) }
+    }
+    private static let retainCallback: CFAllocatorRetainCallBack = { info in
+        if let info = info { _ = Unmanaged<Context>.fromOpaque(info).retain() }
+        return info
+    }
+    private static let releaseCallback: CFAllocatorReleaseCallBack = { info in
+        if let info = info { Unmanaged<Context>.fromOpaque(info).release() }
+    }
 }
 
 extension FileWatcher {
-  convenience init(_ paths:[String], _ callback: @escaping ((_ fileWatcherEvent:FileWatcherEvent) -> Void)) {
-    self.init(paths)
-    self.callback = callback
-  }
+    convenience init(_ paths: [String], _ callback: @escaping (FileWatcherEvent) -> Void) {
+        self.init(paths)
+        self.callback = callback
+    }
 }
-

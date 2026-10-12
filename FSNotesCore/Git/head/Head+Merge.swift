@@ -66,11 +66,11 @@ extension Head {
         }
         
         /*
-        print("GIT_MERGE_ANALYSIS_NONE : \(analysis.rawValue & GIT_MERGE_ANALYSIS_NONE.rawValue)")
-        print("GIT_MERGE_ANALYSIS_NORMAL : \(analysis.rawValue & GIT_MERGE_ANALYSIS_NORMAL.rawValue)")
-        print("GIT_MERGE_ANALYSIS_UP_TO_DATE : \(analysis.rawValue & GIT_MERGE_ANALYSIS_UP_TO_DATE.rawValue)")
-        print("GIT_MERGE_ANALYSIS_FASTFORWARD : \(analysis.rawValue & GIT_MERGE_ANALYSIS_FASTFORWARD.rawValue)")
-        print("GIT_MERGE_ANALYSIS_UNBORN : \(analysis.rawValue & GIT_MERGE_ANALYSIS_UNBORN.rawValue)")
+        PrivacyLog.record("head-merge.event-69")
+        PrivacyLog.record("head-merge.event-70")
+        PrivacyLog.record("head-merge.event-71")
+        PrivacyLog.record("head-merge.event-72")
+        PrivacyLog.record("head-merge.event-73")
         */
         
         // Test up to date
@@ -214,7 +214,7 @@ extension Head {
             do {
                 return try resolveConflicts(annotatedCommit: annotatedCommit, signature: signature)
             } catch {
-                print("Automatic conflict resolution failed")
+                PrivacyLog.record("head-merge.event-217")
             }
             
             return false

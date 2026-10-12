@@ -3,15 +3,46 @@
 import Foundation
 import Darwin
 
-/// Plaintext working copies are still needed by the TextBundle/archive pipeline.
-/// This limits incidental access and indexing; it does not encrypt working files.
+/// Restrictive filesystem helpers for ordinary files, explicit plaintext exports,
+/// and recovery of working copies left by older builds. Normal encrypted editing is in memory.
 enum PrivateWorkingDirectory {
     enum ProtectionError: Error {
-        case unsafeEntry
+        case unsafeEntry, oversizedFile, cancelled
     }
 
-    static func makeEncryptionDirectory(in temporary: URL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)) throws -> URL {
-        let root = temporary.appendingPathComponent("ConsolinotesEncryption.noindex", isDirectory: true)
+    /// Check the opened descriptor before allocating, and cap every read in case
+    /// another writer grows the file after fstat. Links and special files are refused.
+    static func readBoundedFile(_ url: URL, maximumBytes: UInt64,
+                                isCancelled: () -> Bool = { false }) throws -> Data {
+        let fd = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw ProtectionError.unsafeEntry }
+        let file = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        defer { try? file.close() }
+        var status = stat()
+        guard fstat(fd, &status) == 0, (status.st_mode & S_IFMT) == S_IFREG,
+              status.st_size >= 0 else { throw ProtectionError.unsafeEntry }
+        guard UInt64(status.st_size) <= maximumBytes else { throw ProtectionError.oversizedFile }
+        var data = Data()
+        while true {
+            if isCancelled() { throw ProtectionError.cancelled }
+            let remaining = maximumBytes - UInt64(data.count)
+            // Read one byte past the budget only to detect a file that grew.
+            let next = try file.read(upToCount: Int(min(64 * 1024, remaining + 1))) ?? Data()
+            guard UInt64(next.count) <= remaining else { throw ProtectionError.oversizedFile }
+            if next.isEmpty { return data }
+            data.append(next)
+        }
+    }
+
+    static func makeEncryptionDirectory(in temporary: URL? = nil) throws -> URL {
+        let root: URL
+        if let temporary = temporary {
+            root = temporary.appendingPathComponent("ConsolinotesEncryption.noindex", isDirectory: true)
+        } else {
+            // Recovery must survive temporary-directory housekeeping after a crash.
+            let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            root = support.appendingPathComponent("ConsolinotesEncryption.noindex", isDirectory: true)
+        }
         if !FileManager.default.fileExists(atPath: root.path) {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         }

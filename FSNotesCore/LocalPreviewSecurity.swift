@@ -7,15 +7,17 @@ import Darwin
 /// Only generated documents and explicitly resolved local attachments enter a preview.
 enum LocalPreviewSecurity {
     static let maximumMarkdownBytes = 2 * 1024 * 1024
+    static let maximumRenderSeconds: TimeInterval = 10
     private static let maximumAssetBytes = 25 * 1024 * 1024
     private static let mutex = NSLock()
     private static var directories = Set<URL>()
     private static var attachments = [URL: [String: URL]]()
-    private static let rasterExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "tif", "tiff", "bmp"]
+    static let rasterExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "tif", "tiff", "bmp"]
     private static let cleanupAtFirstUse: Void = { removeAbandonedStaging() }()
 
     static func configuration() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
+        configuration.setURLSchemeHandler(MemoryPreview(), forURLScheme: MemoryPreview.scheme)
         configuration.websiteDataStore = .nonPersistent()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
@@ -28,16 +30,27 @@ enum LocalPreviewSecurity {
         [
           {"trigger":{"url-filter":".*"},"action":{"type":"block"}},
           {"trigger":{"url-filter":"^file://"},"action":{"type":"ignore-previous-rules"}},
+          {"trigger":{"url-filter":"^consolinotes-preview://"},"action":{"type":"ignore-previous-rules"}},
           {"trigger":{"url-filter":"^data:"},"action":{"type":"ignore-previous-rules"}}
         ]
         """
-        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "consolinotes-local-preview-v1", encodedContentRuleList: rules) { [weak webView] list, _ in
+        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "consolinotes-local-preview-v2", encodedContentRuleList: rules) { [weak webView] list, _ in
             guard let webView = webView, let list = list else {
                 completion(false)
                 return
             }
             webView.configuration.userContentController.add(list)
             completion(true)
+        }
+    }
+
+    static func load(_ url: URL, in view: WKWebView) {
+        if url.scheme == MemoryPreview.scheme,
+           let handler = view.configuration.urlSchemeHandler(forURLScheme: MemoryPreview.scheme) as? MemoryPreview {
+            handler.allowedHost = url.host
+            view.load(URLRequest(url: url))
+        } else if url.isFileURL {
+            view.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         }
     }
 
@@ -74,6 +87,7 @@ enum LocalPreviewSecurity {
 
     static func remove(_ directory: URL?) {
         guard let directory = directory else { return }
+        if directory.scheme == MemoryPreview.scheme { MemoryPreview.remove(directory); return }
         mutex.lock()
         let owned = directories.remove(directory) != nil
         attachments.removeValue(forKey: directory)
@@ -82,6 +96,7 @@ enum LocalPreviewSecurity {
     }
 
     static func purge() {
+        MemoryPreview.purge()
         mutex.lock()
         let owned = directories
         directories.removeAll()
@@ -104,7 +119,7 @@ enum LocalPreviewSecurity {
         return String(array.dropFirst().dropLast())
     }
 
-    private static func decodeAttribute(_ value: String) -> String {
+    static func decodeAttribute(_ value: String) -> String {
         var result = value
         let entities = ["&quot;": "\"", "&#39;": "'", "&apos;": "'", "&lt;": "<", "&gt;": ">"]
         for (entity, replacement) in entities { result = result.replacingOccurrences(of: entity, with: replacement) }

@@ -1,3 +1,5 @@
+LICENSE:
+
 Copyright 2018-2021 Observable, Inc.
 Copyright 2021 Mapbox
 

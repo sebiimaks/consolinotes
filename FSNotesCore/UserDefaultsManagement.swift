@@ -206,109 +206,51 @@ public class UserDefaultsManagement {
         }
     }
     
-    /// Default storage: ~/Documents/consolinotes. The first request sets the folder up.
-    static var localDocumentsContainer: URL? {
-        get {
-            _ = consolinotesDocumentsPrepared
-            return defaultLocalDocuments
-        }
+    /// The selected private library, prepared explicitly before Storage starts.
+    static var localDocumentsContainer: URL? { privateLibraryURL }
+    static var defaultLocalDocuments: URL? { privateLibraryURL }
+
+    static var privateLibraryURL: URL? {
+        get { shared?.url(forKey: "privateLibraryURL") }
+        set { shared?.set(newValue, forKey: "privateLibraryURL") }
     }
 
-    /// ~/Documents/consolinotes once it exists, otherwise the sandbox's own Documents folder, without creating anything.
-    static var defaultLocalDocuments: URL? {
-        if let folder = consolinotesDocuments, FileManager.default.fileExists(atPath: folder.path) {
-            return folder
-        }
-
-        return sandboxDocuments
+    static var librarySetupVersion: Int {
+        get { shared?.integer(forKey: "librarySetupVersion") ?? 0 }
+        set { shared?.set(newValue, forKey: "librarySetupVersion") }
     }
 
-    /// ~/Documents/consolinotes in the real home folder. The entitlements grant the sandbox access to this folder only.
-    private static var consolinotesDocuments: URL? {
-        guard let home = getpwuid(getuid())?.pointee.pw_dir else { return nil }
-
-        return URL(fileURLWithPath: String(cString: home), isDirectory: true)
-            .appendingPathComponent("Documents", isDirectory: true)
-            .appendingPathComponent("consolinotes", isDirectory: true)
+    static var privateLibraryBackupIncluded: Bool {
+        get { shared?.bool(forKey: "privateLibraryBackupIncluded") ?? false }
+        set { shared?.set(newValue, forKey: "privateLibraryBackupIncluded") }
     }
 
-    /// Documents inside the app's sandbox container, where earlier builds kept notes by default.
-    private static var sandboxDocuments: URL? {
-        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-    }
-
-    private static let consolinotesDocumentsPrepared: Bool = prepareConsolinotesDocuments()
-
-    /// Creates ~/Documents/consolinotes and moves in notes that earlier builds kept in the sandbox.
-    /// Runs only while the folder doesn't exist, so notes move once and are never overwritten.
-    private static func prepareConsolinotesDocuments() -> Bool {
-        let fileManager = FileManager.default
-
-        guard let destination = consolinotesDocuments else { return false }
-        guard !fileManager.fileExists(atPath: destination.path) else { return true }
-
-        do {
-            try fileManager.createDirectory(at: destination, withIntermediateDirectories: false)
-        } catch {
-            print("Creating \(destination.path) failed, keeping notes in the sandbox: \(error)")
-            return false
-        }
-
-        guard let source = sandboxDocuments,
-              let items = try? fileManager.contentsOfDirectory(at: source, includingPropertiesForKeys: nil) else { return true }
-
-        // projects.state is app state, not notes, so it stays in the sandbox.
-        let notes = items.filter { !["projects.state", ".DS_Store"].contains($0.lastPathComponent) }
-
-        for item in notes {
-            do {
-                try fileManager.moveItem(at: item, to: destination.appendingPathComponent(item.lastPathComponent))
-            } catch {
-                print("Moving \(item.lastPathComponent) to \(destination.path) failed: \(error)")
-            }
-        }
-
-        // The cached sidebar tree lists the old locations.
-        if !notes.isEmpty, let caches = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first {
-            try? fileManager.removeItem(at: caches.appendingPathComponent("sidebarTree"))
-        }
-
-        return true
-    }
-    
+    /// Do not probe access here or silently replace a missing library. Startup
+    /// resolves its bookmark and asks for access before any notes are loaded.
     static var customStoragePath: String? {
-        get {
-            if let storagePath = shared?.object(forKey: Constants.StoragePathKey) as? String {
-                if FileManager.default.isWritableFile(atPath: storagePath) {
-                    storageType = .custom
-                    return storagePath
-                } else {
-                    print("Storage path not accessible, settings resetted to default")
-                }
-            }
-            
-            return nil
-        }
-        
-        set {
-            shared?.set(newValue, forKey: Constants.StoragePathKey)
-        }
+        get { shared?.string(forKey: Constants.StoragePathKey) }
+        set { shared?.set(newValue, forKey: Constants.StoragePathKey) }
     }
-    
-    static var storagePath: String? {
-        get {
-            if let customStoragePath = self.customStoragePath {
-                return customStoragePath
-            }
 
-            if let localDocumentsContainer = localDocumentsContainer {
-                storageType = .local
-                return localDocumentsContainer.path
-            }
-
-            return nil
-        }
+    static var configuredStorageURL: URL? {
+        if let path = customStoragePath { return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL }
+        return privateLibraryURL
     }
+
+    static var hasPreviousLibraryConfiguration: Bool {
+        guard let preferences = shared else { return false }
+        return [Constants.StoragePathKey, Constants.StorageType, Constants.CrashedLastTime,
+                Constants.IsFirstLaunch, Constants.Welcome, Constants.LastSelectedPath]
+            .contains { preferences.object(forKey: $0) != nil }
+    }
+
+    static var legacyDocumentsURL: URL? {
+        guard let home = getpwuid(getuid())?.pointee.pw_dir else { return nil }
+        return URL(fileURLWithPath: String(cString: home), isDirectory: true)
+            .appendingPathComponent("Documents/consolinotes", isDirectory: true)
+    }
+
+    static var storagePath: String? { configuredStorageURL?.path }
 
     public static var storageType: StorageType {
         get {
@@ -1268,16 +1210,16 @@ public class UserDefaultsManagement {
         }
     }
 
+    // Search history is session-only. Remove earlier builds' persisted queries on access.
+    private static var sessionRecentSearches: [String]?
     static var recentSearches: [String]? {
         get {
-            if let value = shared?.array(forKey: Constants.RecentSearches) as? [String] {
-                return value
-            }
-
-            return nil
+            shared?.removeObject(forKey: Constants.RecentSearches)
+            return sessionRecentSearches
         }
         set {
-            shared?.set(newValue, forKey: Constants.RecentSearches)
+            shared?.removeObject(forKey: Constants.RecentSearches)
+            sessionRecentSearches = newValue
         }
     }
 

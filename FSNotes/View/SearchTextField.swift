@@ -26,6 +26,25 @@ class SearchTextField: NSSearchField, NSSearchFieldDelegate {
 
     public var searchesMenu: NSMenu? = nil
 
+    public func clearPrivateState() {
+        filterQueue.cancelAllOperations()
+        stringValue = ""
+        searchQuery = ""
+        lastQuery = ""
+        lastSearchQuery = ""
+        lastQueryLength = 0
+        UserDefaultsManagement.recentSearches = nil
+        searchesMenu = generateRecentMenu()
+        LocalFindState.query = ""
+    }
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        recentsAutosaveName = nil
+        maximumRecents = 0
+        _ = UserDefaultsManagement.recentSearches
+    }
+
     public func generateRecentMenu() -> NSMenu {
         let recentsTitle = NSLocalizedString("Recents", comment: "")
         let menu = NSMenu(title: recentsTitle)
@@ -301,9 +320,7 @@ class SearchTextField: NSSearchField, NSSearchFieldDelegate {
     // Used in NSTextFinder cmd-f | cmd-g
 
     private func savePasteboard(value: String) {
-        let pb = NSPasteboard(name: NSPasteboard.Name.find)
-        pb.declareTypes([.textFinderOptions, .string], owner: nil)
-        pb.setString(value, forType: NSPasteboard.PasteboardType.string)
+        LocalFindState.query = value
     }
 
     private func getSearchTextExceptCompletion() -> String? {

@@ -1,0 +1,23 @@
+{
+  "name": "consolinotes-preview-build",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "mermaid": "12.1.0",
+    "highlight.js": "11.12.0",
+    "mathjax": "3.2.2",
+    "js-yaml": "4.3.2",
+    "fastdom": "1.0.12"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "dompurify": "3.4.16",
+    "katex": "0.18.2"
+  }
+}

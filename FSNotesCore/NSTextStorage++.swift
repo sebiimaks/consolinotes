@@ -207,7 +207,7 @@ extension NSTextStorage {
             self.endEditing()
             
         } catch {
-            print(error)
+            PrivacyLog.record("nstextstorage--.event-210")
         }
     }
 

@@ -61,6 +61,8 @@ class NoteViewController: EditorViewController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        PrivacyLockCoordinator.shared.closing(notification.object as? NSWindow)
+        Self.cancelPasswordRequests()
         AppDelegate.noteWindows.removeAll(where: { ($0.contentViewController as? NoteViewController)?.editor.note === editor.note  })
         ViewController.refreshVimTabLines()
     }
@@ -128,7 +130,13 @@ class NoteViewController: EditorViewController, NSWindowDelegate {
     /// Recounts the note off the main thread, then redraws the statusline, command line and tabs.
     override func updateVimChrome() {
         let note = editor.note
-        let content = note?.content.string ?? ""
+        if note?.isEncryptedAndLocked() == true {
+            vimInfoGeneration += 1
+            vimBufferInfo = nil
+            applyVimChrome(note: note)
+            return
+        }
+        let content = note?.isEncryptedAndLocked() == false ? note?.content.string ?? "" : ""
         let selection = editor.selectedRange()
 
         vimInfoGeneration += 1
@@ -143,7 +151,7 @@ class NoteViewController: EditorViewController, NSWindowDelegate {
             DispatchQueue.main.async {
                 guard let self = self, generation == self.vimInfoGeneration else { return }
 
-                self.vimBufferInfo = info
+                self.vimBufferInfo = note?.isEncryptedAndLocked() == true ? nil : info
                 self.applyVimChrome(note: note)
             }
         }

@@ -23,6 +23,7 @@ final class MPreviewFindPanel: NSVisualEffectView, NSSearchFieldDelegate {
 
     public var panelHeightConstraint: NSLayoutConstraint!
     private var containerHeightConstraint: NSLayoutConstraint!
+    private var presentationGeneration: UInt64 = 0
 
     // MARK: Callbacks
 
@@ -76,6 +77,8 @@ final class MPreviewFindPanel: NSVisualEffectView, NSSearchFieldDelegate {
         // Search field
         searchField.placeholderString = NSLocalizedString("Search", comment: "")
         searchField.delegate = self
+        searchField.recentsAutosaveName = nil
+        searchField.maximumRecents = 0
         prepare(searchField)
 
         // Buttons
@@ -142,22 +145,28 @@ final class MPreviewFindPanel: NSVisualEffectView, NSSearchFieldDelegate {
     // MARK: Public API
 
     func show() {
+        presentationGeneration &+= 1
+        let generation = presentationGeneration
         isHidden = false
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.25
             panelHeightConstraint.animator().constant = 36
             alphaValue = 1
         } completionHandler: {
+            guard generation == self.presentationGeneration, !self.isHidden else { return }
             self.window?.makeFirstResponder(self.searchField)
         }
     }
 
     func hide() {
+        presentationGeneration &+= 1
+        let generation = presentationGeneration
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.25
             panelHeightConstraint.animator().constant = 0
             alphaValue = 0
         } completionHandler: {
+            guard generation == self.presentationGeneration else { return }
             self.isHidden = true
         }
     }
@@ -167,8 +176,19 @@ final class MPreviewFindPanel: NSVisualEffectView, NSSearchFieldDelegate {
     }
 
     func clear() {
+        searchField.currentEditor()?.string = ""
         searchField.stringValue = ""
         statusLabel.stringValue = ""
+    }
+
+    func clearAndHide() {
+        presentationGeneration &+= 1
+        clear()
+        if searchField.currentEditor() != nil { window?.makeFirstResponder(nil) }
+        isHidden = true
+        alphaValue = 0
+        panelHeightConstraint.constant = 0
+        superview?.layoutSubtreeIfNeeded()
     }
 
     // MARK: Actions

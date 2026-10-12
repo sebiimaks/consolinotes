@@ -1,15 +1,6 @@
 {
   "pins": [
     {
-      "identity": "libcmark_gfm",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/glushchenko/libcmark_gfm",
-      "state": {
-        "branch": "master",
-        "revision": "ff574996495573b179a7e27dd5b9a4605f0e9841"
-      }
-    },
-    {
       "identity": "rncryptor",
       "kind": "remoteSourceControl",
       "location": "https://github.com/RNCryptor/RNCryptor.git",

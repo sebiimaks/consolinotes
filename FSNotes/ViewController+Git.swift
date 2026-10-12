@@ -145,7 +145,7 @@ extension EditorViewController {
                         try project.commit()
                     }
                 } catch {
-                    print(error)
+                    PrivacyLog.record("viewcontroller-git.event-148")
                 }
             }
         })

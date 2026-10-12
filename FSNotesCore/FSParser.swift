@@ -146,8 +146,8 @@ public struct FSParserRegex {
         // should be valid, so this probably means that a pattern
         // valid for .NET Regex is not valid for NSRegularExpression.
         if regexp == nil {
-            if let error = error {
-                print("Regular expression error: \(error.userInfo)")
+            if error != nil {
+                PrivacyLog.record("fsparser.event-150")
             }
             assert(regexp != nil)
         }

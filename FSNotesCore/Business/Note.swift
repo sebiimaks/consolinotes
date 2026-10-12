@@ -47,11 +47,34 @@ public class Note: NSObject  {
     public var attachments: [URL]?
     public var isParsed = false
 
-    private var decryptedTemporarySrc: URL?
+    private var privacyShielded = false
+    public var isPrivacyShielded: Bool {
+        get { writeLock.lock(); defer { writeLock.unlock() }; return privacyShielded }
+        set {
+            writeLock.lock()
+            defer { writeLock.unlock() }
+            privacyShielded = newValue
+            if newValue {
+                title = ""
+                preview = ""
+                tags.removeAll()
+                imageUrl = nil
+                attachments = nil
+                cacheHash = nil
+                isParsed = false
+            }
+        }
+    }
+    private var memoryWorkspace: MemoryNoteWorkspace?
     private var encryptionSession: EncryptedNoteCodec.Session?
-    private var plaintextCleanupPending = false
-    private var retainedPlaintextDirectories = Set<URL>()
-    public var hasPendingPlaintextCleanup: Bool { plaintextCleanupPending || !retainedPlaintextDirectories.isEmpty }
+    private var encryptedJournal: EncryptedNoteJournal?
+    public var hasMemoryWorkspace: Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        return memoryWorkspace != nil
+    }
+    // Legacy plaintext recovery is owned by the explicit recovery inventory.
+    public var hasPendingPlaintextCleanup: Bool { false }
     private let writeLock = NSRecursiveLock()
     public private(set) var lastWriteError: String?
     private var saveFailurePresented = false
@@ -163,7 +186,7 @@ public class Note: NSObject  {
                 return fileSize
             }
         } catch {
-            print("Error retrieving file size: \(error.localizedDescription)")
+            PrivacyLog.record("note.operation")
         }
         return nil
     }
@@ -190,15 +213,12 @@ public class Note: NSObject  {
         )
     }
 
-    /// Important for decrypted temporary containers
+    /// The on-disk URL always denotes the original note. Decrypted bodies and
+    /// assets have no filesystem location.
     public func getURL() -> URL {
-        if !plaintextCleanupPending, let url = self.decryptedTemporarySrc {
-            return url
-        }
-
-        return self.url
+        url
     }
-    
+
     public func loadProject() {
         let sharedStorage = Storage.shared()
         
@@ -208,6 +228,7 @@ public class Note: NSObject  {
     }
 
     public func forceLoad(skipCreateDate: Bool = false, loadTags: Bool = true) {
+        guard !isPrivacyShielded else { return }
         invalidateCache()
         load(tags: loadTags)
 
@@ -235,7 +256,7 @@ public class Note: NSObject  {
             }
             return true
         } catch {
-            print(error)
+            PrivacyLog.record("note.operation")
             return false
         }
     }
@@ -260,7 +281,7 @@ public class Note: NSObject  {
     
     private func readTitleAndPreview() -> (String?, String?) {
         guard let fileHandle = FileHandle(forReadingAtPath: url.path) else {
-            print("Can not open the file.")
+            PrivacyLog.record("note.operation")
             return (nil, nil)
         }
         defer { fileHandle.closeFile() }
@@ -296,7 +317,8 @@ public class Note: NSObject  {
     }
 
     public func uiLoad() {
-        if let size = fileSize(atPath: self.url.path), size > 100000 {
+        guard !isEncryptedAndLocked() else { return }
+        if !hasMemoryWorkspace, let size = fileSize(atPath: self.url.path), size > 100000 {
             loadFileName()
             
             let data = readTitleAndPreview()
@@ -315,6 +337,7 @@ public class Note: NSObject  {
     }
     
     func load(tags: Bool = true) {
+        guard !isPrivacyShielded else { return }
 
         if let attributedString = getContent() {
             cacheHash = nil
@@ -332,6 +355,7 @@ public class Note: NSObject  {
     }
 
     func reload() -> Bool {
+        guard !isPrivacyShielded else { return false }
         guard let modifiedAt = getFileModifiedDate() else { return false }
                         
         if (modifiedAt != modifiedLocalAt) {
@@ -403,7 +427,7 @@ public class Note: NSObject  {
 
                 return attr[FileAttributeKey.modificationDate] as? Date
             } catch {
-                print("Note modification date load error: \(error.localizedDescription)")
+                PrivacyLog.record("note.operation")
             }
         }
 
@@ -440,7 +464,7 @@ public class Note: NSObject  {
 
                 return attr[FileAttributeKey.creationDate] as? Date
             } catch {
-                print("Note creation date load error: \(error.localizedDescription)")
+                PrivacyLog.record("note.operation")
             }
         }
 
@@ -476,9 +500,9 @@ public class Note: NSObject  {
                 addPin()
             }
 
-            print("File moved from \"\(url.deletingPathExtension().lastPathComponent)\" to \"\(destination.deletingPathExtension().lastPathComponent)\"")
+            PrivacyLog.record("note.operation")
         } catch {
-            Swift.print(error)
+            PrivacyLog.record("note.operation")
             return false
         }
 
@@ -673,6 +697,7 @@ public class Note: NSObject  {
     }
         
     public func getPreviewLabel(with text: String? = nil) -> String {
+        guard !isEncryptedAndLocked() else { return "" }
         var preview: String = ""
         let content = text ?? self.content.string
         let length = text?.count ?? self.content.string.count
@@ -736,6 +761,15 @@ public class Note: NSObject  {
     }
     
     func getContent() -> NSMutableAttributedString? {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isPrivacyShielded else { return nil }
+        if let workspace = memoryWorkspace {
+            if let body = String(data: workspace.body, encoding: .utf8) { return NSMutableAttributedString(string: body) }
+            var converted: NSString?
+            _ = NSString.stringEncoding(for: workspace.body, encodingOptions: nil, convertedString: &converted, usedLossyConversion: nil)
+            return converted.map { NSMutableAttributedString(string: $0 as String) }
+        }
         guard container != .encryptedTextPack, let url = getContentFileURL() else { return nil }
 
         do {
@@ -849,6 +883,7 @@ public class Note: NSObject  {
     }
     
     func getPrettifiedContent() -> String {
+        guard !isEncryptedAndLocked() else { return "" }
         let mutable = NotesTextProcessor.convertAppTags(in: self.content.unloadAttachments(), codeBlockRanges: codeBlockRangesCache)
         let content = NotesTextProcessor.convertAppLinks(in: mutable, codeBlockRanges: codeBlockRangesCache)
         let result = cleanMetaData(content: content.string)
@@ -895,7 +930,7 @@ public class Note: NSObject  {
                             }
                         }
                     } catch {
-                        print("TB loading error \(error)")
+                        PrivacyLog.record("note.operation")
                     }
                 }
             }
@@ -914,6 +949,7 @@ public class Note: NSObject  {
     }
 
     private func loadTitle() {
+        guard !isPrivacyShielded else { return }
         if !project.settings.isFirstLineAsTitle() {
             title = url
                 .deletingPathExtension()
@@ -960,19 +996,22 @@ public class Note: NSObject  {
             let alert = NSAlert()
             alert.alertStyle = .critical
             alert.messageText = "The note could not be saved safely"
-            alert.informativeText = (self.lastWriteError ?? "The operation failed.") +
-                " Your working content has been kept. Resolve the storage problem and try again before closing the app."
+            // A queued failure alert can appear after a privacy lock. Never
+            // render raw filesystem errors, which may include note/asset names.
+            alert.informativeText = "Your working content has been kept. Check available disk space and folder permissions, then try again before closing the app. A protected note remains hidden until you enter its password."
             alert.runModal()
             self.saveFailurePresented = false
         }
     }
 
     public func replace(tag: String, with string: String) {
+        guard !isEncryptedAndLocked() else { return }
         content.replaceTag(name: tag, with: string)
         _ = save()
     }
 
     public func delete(tag: String) {
+        guard !isEncryptedAndLocked() else { return }
         content.replaceTag(name: tag, with: "")
         _ = save()
     }
@@ -980,7 +1019,6 @@ public class Note: NSObject  {
     public func save() -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
-        if plaintextCleanupPending { return lock() }
         let attributedString = self.content.unloadAttachments()
 
         return write(attributedString: attributedString)
@@ -990,13 +1028,22 @@ public class Note: NSObject  {
         writeLock.lock()
         defer { writeLock.unlock() }
 
-        guard !isEncryptedAndLocked() else {
+        guard container != .encryptedTextPack || isUnlocked() else {
             lastWriteError = "Unlock the note before saving changes."
             return false
         }
+        if let workspace = memoryWorkspace {
+            do {
+                try workspace.setBody(Data(attributedString.string.utf8))
+                try writeEncrypted()
+                isLoaded = true
+                lastWriteError = nil
+                return true
+            } catch { lastWriteError = error.localizedDescription; return false }
+        }
         let url = getURL()
         let attributes = getFileAttributes()
-        
+
         do {
             let fileWrapper = getFileWrapper(attributedString: attributedString)
 
@@ -1024,9 +1071,6 @@ public class Note: NSObject  {
             try fileWrapper.write(to: dst, options: .atomic, originalContentsURL: originalContentsURL)
             try FileManager.default.setAttributes(attributes, ofItemAtPath: dst.path)
 
-            if decryptedTemporarySrc != nil {
-                try writeEncrypted()
-            }
             isLoaded = true
             lastWriteError = nil
         } catch {
@@ -1049,7 +1093,7 @@ public class Note: NSObject  {
     }
 
     public func getContentFileURL() -> URL? {
-        guard !plaintextCleanupPending else { return nil }
+        guard !hasMemoryWorkspace else { return nil }
         var url = getURL()
 
         if isTextBundle() {
@@ -1135,13 +1179,20 @@ public class Note: NSObject  {
                 }
             }
         } catch {
-            print(error)
+            PrivacyLog.record("note.operation")
         }
 
         return wrapper
     }
     
     private func writeTextBundleInfo(url: URL) {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        if let workspace = memoryWorkspace {
+            guard !isPrivacyShielded else { return }
+            try? workspace.setMetadata(Data(getTextBundleJsonInfo().utf8))
+            return
+        }
         let url = url.appendingPathComponent("info.json")
         let info = getTextBundleJsonInfo()
 
@@ -1201,7 +1252,7 @@ public class Note: NSObject  {
     }
     
     public func contains<S: StringProtocol>(terms: [S]) -> Bool {
-        return name.localizedStandardContains(terms) || content.string.localizedStandardContains(terms)
+        return name.localizedStandardContains(terms) || (!isEncryptedAndLocked() && content.string.localizedStandardContains(terms))
     }
 
     public func loadTags() {
@@ -1211,6 +1262,7 @@ public class Note: NSObject  {
     }
     
     public func scanContentTags() -> ([String], [String]) {
+        guard !isEncryptedAndLocked() else { return ([], []) }
         if !isLoaded {
             cacheCodeBlocks()
         }
@@ -1268,7 +1320,7 @@ public class Note: NSObject  {
                 }
             )
         } catch {
-            print("Tags parsing: \(error)")
+            PrivacyLog.record("note.operation")
         }
 
         if tags.contains("notags") {
@@ -1310,7 +1362,19 @@ public class Note: NSObject  {
     }
     
     public func getAttachmentFileUrl(name: String) -> URL? {
+        writeLock.lock()
+        defer { writeLock.unlock() }
         guard !isEncryptedAndLocked() else { return nil }
+        if let workspace = memoryWorkspace {
+            let path = name.hasPrefix("/i/") ? String(name.dropFirst()) : name
+            guard MemoryNoteArchive.safePath(path) else { return nil }
+            if let existing = workspace.url(for: path) { return existing }
+            if path.hasPrefix("i/") || path.hasPrefix("files/"),
+               let legacy = LocalPreviewSecurity.attachmentURL(path, root: project.url),
+               let data = try? PrivateWorkingDirectory.readBoundedFile(legacy, maximumBytes: PrivateNoteArchive.maximumExpandedBytes),
+               (try? workspace.set(data, at: path)) != nil { return workspace.url(for: path) }
+            return nil
+        }
         var path = name
         // Older encrypted notes can refer to the project's shared i/ directory.
         // Keep that relative convention without accepting arbitrary absolute paths.
@@ -1347,6 +1411,7 @@ public class Note: NSObject  {
     }
 
     public func loadPreviewInfo() {
+        guard !isEncryptedAndLocked() else { return }
         guard !isParsed || title.isEmpty && (imageUrl?.isEmpty ?? true) else { return }
         
         defer {
@@ -1380,6 +1445,7 @@ public class Note: NSObject  {
     }
 
     public func getImagesFromContent() -> [URL] {
+        guard !isEncryptedAndLocked() else { return [] }
         var urls = [URL]()
 
         let range = NSRange(location: 0, length: content.length)
@@ -1535,7 +1601,7 @@ public class Note: NSObject  {
                 attributedString.replaceCharacters(in: range, with: replace)
             }
         } catch {
-            print("Enc error: \(error)")
+            PrivacyLog.record("note.operation")
         }
     }
 
@@ -1609,105 +1675,168 @@ public class Note: NSObject  {
             container = .textBundleV2
             return true
         } catch {
-            print("Can not load TextBundle: \(error)")
+            PrivacyLog.record("note.operation")
         }
 
         return false
     }
 
     private func commitEncrypted(_ data: Data, to destination: URL) throws {
-        try data.write(to: destination, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
-        let file = try FileHandle(forWritingTo: destination)
-        defer { try? file.close() }
-        try file.synchronize()
+        try EncryptedNoteJournal.atomicWrite(data, to: destination, replacing: true)
     }
 
     private func writeEncrypted() throws {
-        guard let baseTextPack = decryptedTemporarySrc, let session = encryptionSession else {
-            throw PersistenceError.missingPassword
-        }
-        try PrivateWorkingDirectory.protectTree(baseTextPack)
-        try PrivateNoteArchive.validateSourceDirectory(baseTextPack)
-        let textPackURL = baseTextPack.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".textpack")
-        defer { try? FileManager.default.removeItem(at: textPackURL) }
-        guard SSZipArchive.createZipFile(atPath: textPackURL.path, withContentsOfDirectory: baseTextPack.path) else {
-            throw PersistenceError.archiveFailed
-        }
-        try PrivateWorkingDirectory.protectFile(textPackURL)
-        let data = try Data(contentsOf: textPackURL)
-        let encryptedData = try EncryptedNoteCodec.seal(data, session: session)
-        try commitEncrypted(encryptedData, to: url)
-        var attributes = getFileAttributes()
-        attributes[.posixPermissions] = 0o600
-        try FileManager.default.setAttributes(attributes, ofItemAtPath: url.path)
+        guard let workspace = memoryWorkspace, let session = encryptionSession else { throw PersistenceError.missingPassword }
+        let archive = try MemoryNoteArchive.encode(workspace.entries)
+        let encrypted = try EncryptedNoteCodec.seal(archive, session: session)
+        // A failed external-library save must leave an encrypted recovery copy.
+        // If journaling itself fails, a successful original save is still safe.
+        do {
+            if encryptedJournal == nil { encryptedJournal = try EncryptedNoteJournal() }
+            try encryptedJournal?.write(encrypted)
+        } catch { PrivacyLog.record("encrypted-journal.write-failed") }
+        try commitEncrypted(encrypted, to: url)
+        try? encryptedJournal?.clearCommittedSnapshot()
     }
 
     public func unLock(password: String, reload: Bool = false) -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
-        if isUnlocked() && !reload { return true }
-        // External updates must not replace local edits whose encrypted save failed.
-        if reload && lastWriteError != nil && !plaintextCleanupPending { return false }
-        let previousTemporary = decryptedTemporarySrc
-        let previousCleanupPending = plaintextCleanupPending
-        let previousSession = encryptionSession
-        let previousContainer = container
-        let previousType = type
-        guard let directory = Storage.shared().makeTempEncryptionDirectory() else { return false }
-        var keepDirectory = false
-        defer { if !keepDirectory { try? FileManager.default.removeItem(at: directory) } }
+        if reload && (isPrivacyShielded || lastWriteError != nil) { return false }
+        if isUnlocked() && !reload { return !isPrivacyShielded || verifyAndRevealRetainedContent(password: password) }
+        let isCancelled = PrivateNoteArchive.cancellationCheck()
         do {
-            let data = try Data(contentsOf: url)
-            let temporaryTextPack = directory.appendingPathComponent("note.textpack")
-            let temporaryTextBundle = directory.appendingPathComponent("note.textbundle")
-            let opened = try EncryptedNoteCodec.open(data, password: password)
-            try opened.data.write(to: temporaryTextPack, options: .atomic)
-            try PrivateWorkingDirectory.protectFile(temporaryTextPack)
-            guard PrivateNoteArchive.extract(temporaryTextPack, to: temporaryTextBundle) else {
-                throw PersistenceError.invalidBundle
-            }
-            try PrivateWorkingDirectory.protectTree(temporaryTextBundle)
-            try FileManager.default.removeItem(at: temporaryTextPack)
-            decryptedTemporarySrc = temporaryTextBundle
-            plaintextCleanupPending = false
-            guard loadTextBundle(), let decodedContent = getContent() else {
-                throw PersistenceError.invalidBundle
-            }
-            // Fully read the incoming body before touching the previous working copy.
-            let loadedContent = decodedContent.loadAttachments(self)
-            self.password = password
+            let encrypted = try PrivateWorkingDirectory.readBoundedFile(url, maximumBytes: PrivateNoteArchive.maximumCiphertextBytes, isCancelled: isCancelled)
+            let opened = try EncryptedNoteCodec.open(encrypted, password: password)
+            guard !isCancelled() else { throw PrivateNoteArchive.ArchiveError.cancelled }
+            let entries = try MemoryNoteArchive.decode(opened.data, isCancelled: isCancelled)
+            let workspace = try MemoryNoteWorkspace(entries: entries)
+            let incoming = Note(url: url, with: project)
+            incoming.memoryWorkspace = workspace
+            incoming.container = .textBundleV2
+            incoming.type = .withUTI(rawValue: workspace.typeIdentifier)
+            guard let decoded = incoming.getContent() else { throw PersistenceError.invalidBundle }
+            let loaded = decoded.loadAttachments(incoming)
+            guard !isCancelled() else { throw PrivateNoteArchive.ArchiveError.cancelled }
+            memoryWorkspace = workspace
             encryptionSession = opened.session
+            self.password = password
+            isPrivacyShielded = false
+            container = incoming.container
+            type = incoming.type
+            imageUrl = incoming.imageUrl
+            attachments = incoming.attachments
             invalidateCache()
-            content = loadedContent
+            content = loaded
             isLoaded = true
             loadFileName()
             loadPreviewInfo()
             loadTitle()
             lastWriteError = nil
-            keepDirectory = true
-            // The new working copy is now authoritative. An old-directory
-            // cleanup failure must never roll back to a partially deleted copy.
-            if let previous = previousTemporary {
-                let oldDirectory = previous.deletingLastPathComponent()
-                do {
-                    try removePlaintextWorkingDirectory(oldDirectory)
-                    retainedPlaintextDirectories.remove(oldDirectory)
-                } catch {
-                    retainedPlaintextDirectories.insert(oldDirectory)
-                    presentCleanupWarning()
+            return true
+        } catch { lastWriteError = error.localizedDescription; return false }
+    }
+
+    /// Authenticates actual stored bytes, with no model mutation, decompression,
+    /// or plaintext filesystem output. Retained in-memory state is not proof.
+    public func verifyEncryptionPassword(_ password: String) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard isEncrypted() else { return false }
+        guard let encrypted = try? PrivateWorkingDirectory.readBoundedFile(url, maximumBytes: PrivateNoteArchive.maximumCiphertextBytes) else { return false }
+        return (try? EncryptedNoteCodec.open(encrypted, password: password)) != nil
+    }
+
+    /// Rotation authenticates a complete staged ciphertext before publishing it.
+    /// A cancelled or failed pre-publication operation leaves the old password
+    /// and on-disk note intact. The caller separately verifies recovery access.
+    @discardableResult
+    public func rotateEncryptionSecret(to newSecret: String, isCancelled: @escaping () -> Bool = { false }) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isPrivacyShielded, let workspace = memoryWorkspace, !newSecret.isEmpty,
+              !isCancelled() else { return false }
+        let lifecycleCancelled = PrivateNoteArchive.cancellationCheck()
+        let cancelled = { isCancelled() || lifecycleCancelled() }
+        guard save() else { return false }
+        do {
+            let archive = try MemoryNoteArchive.encode(workspace.entries, isCancelled: cancelled)
+            let session = try EncryptedNoteCodec.makeSession(password: newSecret)
+            let encrypted = try EncryptedNoteCodec.seal(archive, session: session)
+            // A durable copy under the already verified recovery secret must
+            // precede publication, including the rare rename/fsync ambiguity.
+            let candidateJournal = try EncryptedNoteJournal()
+            try candidateJournal.write(encrypted)
+            var published = false
+            var durabilityConfirmed = true
+            defer {
+                if !published { try? candidateJournal.closeAndRemove() }
+            }
+            do {
+                try EncryptedNoteJournal.atomicWrite(encrypted, to: url, replacing: true, isCancelled: cancelled) { persisted in
+                    let verified = try EncryptedNoteCodec.open(persisted, password: newSecret)
+                    guard verified.data == archive else { throw PersistenceError.invalidBundle }
+                    _ = try MemoryNoteWorkspace(entries: MemoryNoteArchive.decode(verified.data, isCancelled: cancelled))
                 }
+            } catch EncryptedNoteJournal.PublicationError.durabilityUnconfirmed {
+                // Rename already published verified ciphertext. Keep the new
+                // session rather than restoring a now-invalid old password.
+                PrivacyLog.record("encrypted-rotation.durability-unconfirmed")
+                durabilityConfirmed = false
+            }
+            published = true
+            encryptionSession = session
+            password = newSecret
+            try? encryptedJournal?.closeAndRemove()
+            if durabilityConfirmed {
+                try? candidateJournal.closeAndRemove()
+                encryptedJournal = nil
+                lastWriteError = nil
+            } else {
+                encryptedJournal = candidateJournal
+                lastWriteError = "The new secret is active, but the final storage confirmation failed. An encrypted recovery snapshot has been kept under the new secret. Keep the app open and retry saving; after an interruption, use Recover Interrupted Notes with the new recovery password."
             }
             return true
-        } catch {
-            decryptedTemporarySrc = previousTemporary
-            plaintextCleanupPending = previousCleanupPending
-            encryptionSession = previousSession
-            container = previousContainer
-            type = previousType
-            lastWriteError = error.localizedDescription
-            return false
-        }
+        } catch { lastWriteError = "The note password could not be changed. The existing password still applies."; return false }
+    }
+
+    @discardableResult
+    public func rotateEncryptionPassword(to newSecret: String) -> Bool {
+        rotateEncryptionSecret(to: newSecret)
+    }
+
+    public func memoryAttachmentData(for attachment: URL) -> Data? {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isEncryptedAndLocked() else { return nil }
+        return memoryWorkspace?.attachmentData(for: attachment)
+    }
+
+    public func memoryAttachmentSnapshot() -> [String: Data]? {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isEncryptedAndLocked() else { return nil }
+        return memoryWorkspace?.attachments
+    }
+
+    @discardableResult
+    public func removeMemoryAttachment(at attachment: URL) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isEncryptedAndLocked(), let workspace = memoryWorkspace, let path = workspace.path(for: attachment) else { return false }
+        return workspace.remove(at: path)
+    }
+
+    /// Only an explicit export action may materialize an unlocked bundle.
+    public func exportMemoryBundle(to destination: URL) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard !isEncryptedAndLocked(), let workspace = memoryWorkspace else { return false }
+        do {
+            try workspace.setBody(Data(content.unloadAttachments().string.utf8))
+            try workspace.exportPlaintext(to: destination)
+            return true
+        } catch { lastWriteError = error.localizedDescription; return false }
     }
 
     public func unEncrypt(password: String) -> Bool {
@@ -1718,28 +1847,18 @@ public class Note: NSObject  {
     public func unEncryptUnlocked() -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
-        guard !plaintextCleanupPending, let source = decryptedTemporarySrc else { return false }
+        guard !isPrivacyShielded, let workspace = memoryWorkspace else { return false }
         let original = url
         let destination = project.url.appendingPathComponent(url.deletingPathExtension().lastPathComponent + ".textbundle")
         do {
             guard !FileManager.default.fileExists(atPath: destination.path) else { throw PersistenceError.destinationExists }
             guard save() else { return false }
-            // Keep the ciphertext until a complete plaintext copy exists.
-            try FileManager.default.copyItem(at: source, to: destination)
+            try workspace.exportPlaintext(to: destination)
             do { try FileManager.default.removeItem(at: original) }
-            catch {
-                try? FileManager.default.removeItem(at: destination)
-                throw error
-            }
-            let cleanupDirectories = retainedPlaintextDirectories.union([source.deletingLastPathComponent()])
-            for directory in cleanupDirectories {
-                do { try removePlaintextWorkingDirectory(directory) }
-                catch { presentCleanupWarning() }
-            }
-            // The user deliberately converted this note to a complete
-            // plaintext copy. Cleanup warnings do not turn it into a locked note.
-            retainedPlaintextDirectories.removeAll()
-            decryptedTemporarySrc = nil
+            catch { try? FileManager.default.removeItem(at: destination); throw error }
+            try? encryptedJournal?.closeAndRemove()
+            encryptedJournal = nil
+            memoryWorkspace = nil
             encryptionSession = nil
             password = nil
             url = destination
@@ -1749,110 +1868,96 @@ public class Note: NSObject  {
             parseURL()
             lastWriteError = nil
             return true
-        } catch {
-            lastWriteError = error.localizedDescription
-            return false
-        }
+        } catch { lastWriteError = error.localizedDescription; return false }
     }
 
-    private func makeEncryptionBundle(in directory: URL) throws -> URL {
-        let temporaryProject = Project(storage: project.storage, url: directory)
-        let temporaryNote = Note(name: "note", project: temporaryProject, type: type, cont: .textBundleV2)
-        temporaryNote.originalExtension = url.pathExtension
-        let body = content.unloadAttachments()
-        let assets = temporaryNote.url.appendingPathComponent("assets")
-        guard temporaryNote.write(attributedString: body) else { throw PersistenceError.invalidBundle }
-        var copied = [URL: String]()
-        for attachment in content.getImagesAndFiles() {
-            let name: String
-            if let existing = copied[attachment.url] { name = existing }
-            else {
-                try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-                name = UUID().uuidString + "." + attachment.url.pathExtension
-                try FileManager.default.copyItem(at: attachment.url, to: assets.appendingPathComponent(name))
-                copied[attachment.url] = name
-            }
-            let find = "](" + attachment.path + ")"
-            body.mutableString.replaceOccurrences(of: find, with: "](assets/" + name + ")", options: [], range: NSRange(location: 0, length: body.length))
+    private func makeMemoryEncryptionWorkspace() throws -> MemoryNoteWorkspace {
+        var entries = MemoryNoteArchive.Entries()
+        var remaining = PrivateNoteArchive.maximumExpandedBytes
+        func readSource(_ source: URL) throws -> Data {
+            let data = try PrivateWorkingDirectory.readBoundedFile(source, maximumBytes: remaining)
+            remaining -= UInt64(data.count)
+            return data
         }
-        guard temporaryNote.write(attributedString: body), temporaryNote.loadTextBundle(),
-              temporaryNote.getContent() != nil else { throw PersistenceError.invalidBundle }
-        try PrivateWorkingDirectory.protectTree(temporaryNote.url)
-        return temporaryNote.url
+        if isTextBundle(), FileManager.default.fileExists(atPath: url.path) {
+            try PrivateNoteArchive.validateSourceDirectory(url)
+            guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isRegularFileKey]) else { throw PersistenceError.invalidBundle }
+            for case let file as URL in enumerator {
+                let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+                if attributes[.type] as? FileAttributeType == .typeRegular {
+                    let relative = String(file.path.dropFirst(url.path.count + 1))
+                    entries[relative] = try readSource(file)
+                }
+            }
+        }
+        let metadata: [String: Any] = ["version": 2, "type": type.uti, "transient": true,
+            "creatorIdentifier": "io.github.sebiimaks.consolinotes", "flatExtension": originalExtension ?? url.pathExtension]
+        entries["info.json"] = try JSONSerialization.data(withJSONObject: metadata, options: [.sortedKeys])
+        let mapped = NSMutableAttributedString(attributedString: content)
+        var copied = [URL: String]()
+        var failure: Error?
+        content.enumerateAttribute(.attachment, in: NSRange(location: 0, length: content.length)) { _, range, _ in
+            guard let attachment = content.getMeta(at: range.location), failure == nil else { return }
+            do {
+                let path: String
+                if let existing = copied[attachment.url] { path = existing }
+                else if attachment.url.isFileURL, attachment.url.path.hasPrefix(url.path + "/"),
+                        entries[String(attachment.url.path.dropFirst(url.path.count + 1))] != nil {
+                    path = String(attachment.url.path.dropFirst(url.path.count + 1))
+                    copied[attachment.url] = path
+                } else {
+                    path = "assets/" + UUID().uuidString + "." + attachment.url.pathExtension
+                    entries[path] = try readSource(attachment.url)
+                    copied[attachment.url] = path
+                }
+                mapped.addAttribute(.attachmentPath, value: path, range: range)
+            } catch { failure = error }
+        }
+        if let failure = failure { throw failure }
+        let bodyPath = "text." + type.getExtension(for: .textBundleV2)
+        entries[bodyPath] = Data(mapped.unloadAttachments().string.utf8)
+        return try MemoryNoteWorkspace(entries: entries, preferredExtension: type.getExtension(for: .textBundleV2))
     }
 
     private func removePlaintextSource(at source: URL) throws {
         try FileManager.default.removeItem(at: source)
     }
 
-    private func presentCleanupWarning() {
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.alertStyle = .warning
-            alert.messageText = "Note saved; cleanup incomplete"
-            alert.informativeText = "The note was saved successfully, but temporary plaintext files could not be removed. Temporary copies may remain until they are cleaned up."
-            alert.runModal()
-        }
-    }
-
     public func encrypt(password: String) -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
         guard !isEncrypted(), !password.isEmpty else { return false }
-        guard let directory = Storage.shared().makeTempEncryptionDirectory() else { return false }
-        defer { try? FileManager.default.removeItem(at: directory) }
         let original = url
         let destination = project.url.appendingPathComponent(url.deletingPathExtension().lastPathComponent + ".etp")
         do {
             guard !FileManager.default.fileExists(atPath: destination.path) else { throw PersistenceError.destinationExists }
-            // Cached notes may have metadata only. Never replace an existing
-            // body with the empty in-memory placeholder during folder encryption.
             if !isLoaded && FileManager.default.fileExists(atPath: original.path) {
                 guard let loaded = getContent() else { throw PersistenceError.invalidBundle }
                 content = loaded.loadAttachments(self)
                 isLoaded = true
             }
-            let source: URL
-            if isTextBundle() && FileManager.default.fileExists(atPath: original.path) {
-                guard save() else { return false }
-                source = original
-            } else {
-                source = try makeEncryptionBundle(in: directory)
-            }
-            let archive = directory.appendingPathComponent("note.textpack")
-            try PrivateNoteArchive.validateSourceDirectory(source)
-            guard SSZipArchive.createZipFile(atPath: archive.path, withContentsOfDirectory: source.path) else {
-                throw PersistenceError.archiveFailed
-            }
-            try PrivateWorkingDirectory.protectFile(archive)
-            let data = try Data(contentsOf: archive)
+            let workspace = try makeMemoryEncryptionWorkspace()
+            let archive = try MemoryNoteArchive.encode(workspace.entries)
             let session = try EncryptedNoteCodec.makeSession(password: password)
-            let encrypted = try EncryptedNoteCodec.seal(data, session: session)
-            try commitEncrypted(encrypted, to: destination)
-            do {
-                if FileManager.default.fileExists(atPath: original.path) { try removePlaintextSource(at: original) }
-            } catch {
-                // Removing a directory may fail after deleting some children.
-                // The committed ciphertext may now be the only complete copy.
-                lastWriteError = "The encrypted copy was saved, but the original plaintext could not be fully removed. The encrypted copy has been preserved; this conversion is incomplete. " + error.localizedDescription
+            let encrypted = try EncryptedNoteCodec.seal(archive, session: session)
+            try EncryptedNoteJournal.atomicWrite(encrypted, to: destination, replacing: false)
+            do { if FileManager.default.fileExists(atPath: original.path) { try removePlaintextSource(at: original) } }
+            catch {
+                lastWriteError = "The encrypted copy was saved, but the original plaintext could not be fully removed. Both locations have been preserved for recovery."
                 return false
             }
             url = destination
             container = .encryptedTextPack
             self.password = nil
+            memoryWorkspace = nil
             encryptionSession = nil
             cleanOut()
             parseURL()
             project.removeCache()
             purgeSensitiveDerivedData()
             lastWriteError = nil
-            do { try FileManager.default.removeItem(at: directory) }
-            catch { presentCleanupWarning() }
             return true
-        } catch {
-            lastWriteError = error.localizedDescription
-            return false
-        }
+        } catch { lastWriteError = error.localizedDescription; return false }
     }
 
     public func encryptAndUnlock(password: String) {
@@ -1877,13 +1982,38 @@ public class Note: NSObject  {
         MPreviewView.purgeSensitivePreviews()
         for name in ["MainNotesList", "ThumbnailsBig", "Preview"] {
             let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(name)
-            try? FileManager.default.removeItem(at: directory)
+            try? EncryptedNoteRecovery.remove(directory)
         }
     }
 
-    public func isUnlocked() -> Bool { decryptedTemporarySrc != nil && !plaintextCleanupPending }
-    public func isEncrypted() -> Bool { container == .encryptedTextPack || isUnlocked() }
-    public func isEncryptedAndLocked() -> Bool { container == .encryptedTextPack && !isUnlocked() }
+    public func isUnlocked() -> Bool {
+        hasMemoryWorkspace
+    }
+    public func isEncrypted() -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        return container == .encryptedTextPack || memoryWorkspace != nil
+    }
+    public func isEncryptedAndLocked() -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        return privacyShielded || (container == .encryptedTextPack && memoryWorkspace == nil)
+    }
+
+    /// Failed persistence retains the working copy, but revealing it again must
+    /// prove knowledge of its existing password. No disk reload can erase edits.
+    public func verifyAndRevealRetainedContent(password: String) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        guard isPrivacyShielded, isUnlocked(), let retained = self.password,
+              retained.utf8.elementsEqual(password.utf8) else { return false }
+        isPrivacyShielded = false
+        attachments = content.getImagesAndFiles().map { $0.url }.filter { !$0.isImage && !$0.isVideo }
+        loadPreviewInfo()
+        loadTitle()
+        loadTags()
+        return true
+    }
 
     public var usesLegacyEncryption: Bool { encryptionSession?.format == .legacy }
 
@@ -1892,7 +2022,7 @@ public class Note: NSObject  {
     public func upgradeEncryption(password: String) -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
-        guard isUnlocked(), let previous = encryptionSession, previous.format == .legacy,
+        guard !isPrivacyShielded, isUnlocked(), let previous = encryptionSession, previous.format == .legacy,
               let currentPassword = self.password, currentPassword.utf8.elementsEqual(password.utf8) else {
             lastWriteError = "Unlock this legacy note with its existing password before upgrading encryption."
             return false
@@ -1915,53 +2045,23 @@ public class Note: NSObject  {
     public func lock() -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
-        guard let temporaryURL = decryptedTemporarySrc else { return false }
-        // Once ciphertext was committed, a failed recursive cleanup may leave
-        // an incomplete bundle. Subsequent attempts must only retry cleanup.
-        if plaintextCleanupPending {
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                lastWriteError = "The encrypted file is missing. Remaining working files have been retained for recovery."
-                return false
-            }
-        } else {
-            guard save() else { return false }
-        }
-        retainedPlaintextDirectories.insert(temporaryURL.deletingLastPathComponent())
-        do {
-            for directory in Array(retainedPlaintextDirectories) {
-                try removePlaintextWorkingDirectory(directory)
-                retainedPlaintextDirectories.remove(directory)
-            }
-            decryptedTemporarySrc = nil
-            plaintextCleanupPending = false
-            encryptionSession = nil
-            password = nil
-            container = .encryptedTextPack
-            cleanOut()
-            parseURL()
-            project.removeCache()
-            purgeSensitiveDerivedData()
-            lastWriteError = nil
-            return true
-        } catch {
-            plaintextCleanupPending = true
-            encryptionSession = nil
-            password = nil
-            container = .encryptedTextPack
-            cleanOut()
-            parseURL()
-            project.removeCache()
-            purgeSensitiveDerivedData()
-            refreshEditorsAfterRemovalLock()
-            lastWriteError = "The encrypted note was saved, but temporary plaintext cleanup is incomplete. Retry locking or quitting to finish cleanup. " + error.localizedDescription
-            return false
-        }
-    }
-
-    private func removePlaintextWorkingDirectory(_ directory: URL) throws {
-        if FileManager.default.fileExists(atPath: directory.path) {
-            try FileManager.default.removeItem(at: directory)
-        }
+        guard memoryWorkspace != nil else { return false }
+        guard save() else { return false }
+        // Any leftover journal is authenticated ciphertext, so cleanup failure
+        // never requires retaining plaintext or blocking the privacy lock.
+        try? encryptedJournal?.closeAndRemove()
+        encryptedJournal = nil
+        memoryWorkspace = nil
+        isPrivacyShielded = false
+        encryptionSession = nil
+        password = nil
+        container = .encryptedTextPack
+        cleanOut()
+        parseURL()
+        project.removeCache()
+        purgeSensitiveDerivedData()
+        lastWriteError = nil
+        return true
     }
 
     public func showIconInList() -> Bool {
@@ -1979,7 +2079,7 @@ public class Note: NSObject  {
     }
 
     public func getTitle() -> String? {
-        if isEncrypted() && !isUnlocked() {
+        if isEncryptedAndLocked() {
             return getFileName()
         }
 
@@ -2126,6 +2226,7 @@ public class Note: NSObject  {
     }
 
     public func getAutoRenameTitle() -> String? {
+        guard !isEncryptedAndLocked() else { return nil }
         if UserDefaultsManagement.naming != .autoRename && UserDefaultsManagement.naming != .autoRenameNew {
             return nil
         }
@@ -2183,6 +2284,7 @@ public class Note: NSObject  {
     }
 
     public func cacheCodeBlocks() {
+        guard !isEncryptedAndLocked() else { return }
         let ranges = CodeBlockDetector.shared.findCodeBlocks(in: content)
         codeBlockRangesCache = ranges
     }
@@ -2200,7 +2302,22 @@ public class Note: NSObject  {
     }
 
     public func save(data: Data, preferredName: String? = nil) -> (String, URL)? {
+        writeLock.lock()
+        defer { writeLock.unlock() }
         guard !isEncryptedAndLocked() else { return nil }
+        if let workspace = memoryWorkspace {
+            let requested = (preferredName ?? UUID().uuidString) as NSString
+            var name = requested.lastPathComponent
+            guard !name.isEmpty, name != ".", name != "..", !name.contains(":"), !name.contains("\\") else { return nil }
+            while workspace.entries["assets/" + name] != nil {
+                name = UUID().uuidString + (requested.pathExtension.isEmpty ? "" : "." + requested.pathExtension)
+            }
+            let path = "assets/" + name
+            do { try workspace.set(data, at: path) }
+            catch { lastWriteError = error.localizedDescription; return nil }
+            guard let attachment = workspace.url(for: path) else { return nil }
+            return (path, attachment)
+        }
         // Get attach dir
         let attachDir = getAttachDirectory(data: data)
 
@@ -2217,7 +2334,7 @@ public class Note: NSObject  {
             try data.write(to: fileUrl, options: .atomic)
             if isEncrypted() { try PrivateWorkingDirectory.protectTree(getURL()) }
         } catch {
-            print("Attachment error: \(error)")
+            PrivacyLog.record("note.operation")
             return nil
         }
 
@@ -2263,6 +2380,7 @@ public class Note: NSObject  {
     }
 
     public func cache() {
+        guard !isEncryptedAndLocked() else { return }
         if cacheLock { return }
 
         let hash = content.string.fnv1a
@@ -2272,7 +2390,7 @@ public class Note: NSObject  {
             NotesTextProcessor.highlight(attributedString: copy)
             cacheCodeBlocks()
 
-            if content.string.fnv1a == copy.string.fnv1a {
+            if !isEncryptedAndLocked(), content.string.fnv1a == copy.string.fnv1a {
                 content = copy
                 cacheHash = hash
             }

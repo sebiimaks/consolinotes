@@ -119,7 +119,7 @@ public class Repository {
         
         result = git_config_set_string(configPointer, "core.worktree", path);
         if result != GIT_OK.rawValue {
-            print("Core config error")
+            PrivacyLog.record("repository.event-122")
         }
     }
     

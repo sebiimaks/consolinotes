@@ -137,7 +137,7 @@ int history_test_isolate_config(const char *path) {
     run(['xcrun', 'lipo', '-create', work / 'isolate-arm64.o', work / 'isolate-x86_64.o', '-output', work / 'isolate.o'])
     (module / 'module.modulemap').write_text('module CgitTestConfig { header "isolate.h" export * }\n' + 'module Cgit2 { header "' + str(HEADERS / 'git2.h') + '"\nheader "' + str(HEADERS / 'git2/sys/transport.h') + '"\nexport * }\n')
     (work / 'main.swift').write_text(FIXTURE)
-    sources = sorted((ROOT / 'FSNotesCore/Git').rglob('*.swift'))
+    sources = sorted((ROOT / 'FSNotesCore/Git').rglob('*.swift')) + [ROOT / 'FSNotesCore/PrivacyLog.swift']
     compile_args = ['xcrun', 'swiftc', '-swift-version', '5', '-O', '-target', platform.machine() + '-apple-macosx12.4', '-I', module, '-I', HEADERS, '-module-cache-path', work / 'cache', *sources, work / 'main.swift', work / 'isolate.o', '-Xlinker', '-force_load', '-Xlinker', LIBRARY, '-lz', '-liconv', '-o', work / 'history-tests']
     run(compile_args)
     run([work / 'history-tests', work], env=env)

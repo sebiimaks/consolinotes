@@ -28,7 +28,11 @@ final class Audit: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         view.navigationDelegate = self
         LocalPreviewSecurity.prepare(view) { ready in
             guard ready else { self.fail("Offline resource rules did not compile"); return }
-            self.view.loadFileURL(self.index, allowingReadAccessTo: self.index.deletingLastPathComponent())
+            if CommandLine.arguments.contains("--memory") {
+                guard let url = MemoryPreview.create(rendered: "", assets: [:], attachmentURL: { _ in nil }, printing: false,
+                    template: { _ in try String(contentsOf: self.index, encoding: .utf8) }) else { self.fail("Memory document creation failed"); return }
+                LocalPreviewSecurity.load(url, in: self.view)
+            } else { LocalPreviewSecurity.load(self.index, in: self.view) }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 30) { if !self.finished { self.fail("Timed out loading WebKit fixture") } }
     }
@@ -40,14 +44,19 @@ final class Audit: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
                 bridgeHidden: !(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.auditBridge),
                 toc: !!document.querySelector('#toc a'), highlighted: !!document.querySelector('code.hljs'),
                 diagram: !!document.querySelector('svg'), math: !!document.querySelector('mjx-container'),
-                fetchBlocked: window.auditFetchBlocked === true})
+                stylesheet: getComputedStyle(document.body).paddingTop === '15px',
+                mathFonts: document.fonts.status === 'loaded' && Array.from(document.fonts).some(face => face.family.includes('MJXTEX') && face.status === 'loaded'),
+                fetchBlocked: window.auditFetchBlocked === true, finished: window.consolinotesPreviewReady === true,
+                bounded: document.querySelectorAll('code.language-mermaid').length === 4 &&
+                    document.querySelectorAll('code.language-mermaid')[2].textContent.includes('preview limit') &&
+                    document.querySelectorAll('code.language-mermaid')[3].textContent.includes('embedded configuration')})
             """) { result, error in
                 guard error == nil, let string = result as? String, let data = string.data(using: .utf8),
                       let values = (try? JSONSerialization.jsonObject(with: data)) as? [String: Bool] else { self.fail("Unable to inspect fixture"); return }
-                let expected = ["trusted": true, "untrusted": CommandLine.arguments.contains("--without-csp"), "bridgeHidden": true, "toc": true, "highlighted": true, "diagram": true, "math": true, "fetchBlocked": true]
+                let expected = ["trusted": true, "untrusted": CommandLine.arguments.contains("--without-csp"), "bridgeHidden": true, "toc": true, "highlighted": true, "diagram": true, "math": true, "stylesheet": true, "mathFonts": true, "fetchBlocked": true, "finished": true, "bounded": true]
                 guard values == expected else { self.fail("Unexpected WebKit fixture result: " + string); return }
                 self.finished = true
-                print("PASS: local template/TOC/highlight/Mermaid/math; script policy; isolated bridge; offline fetch blocked")
+                print("PASS: local template/TOC/highlight/Mermaid/math/CSS/bundled fonts; script policy; isolated bridge; offline fetch blocked")
                 exit(0)
             }
         }
@@ -82,19 +91,26 @@ def main():
             shutil.copytree(ROOT / "Resources/MPreview.bundle", page)
             nonce = "ConsolinotesSyntheticNonce0123456789"
             body = '<div id="toc"></div><h1>Fixture</h1><pre><code class="language-swift">let answer = 42</code></pre><pre><code class="language-mermaid">graph TD; A--&gt;B;</code></pre><p>\\(x^2\\)</p>'
+            # Previously unbounded Gantt excludes-all-days input; plus app budgets
+            # and disabled note-controlled Mermaid configuration.
+            body += '<pre><code class="language-mermaid">gantt\n dateFormat YYYY-MM-DD\n excludes monday,tuesday,wednesday,thursday,friday,saturday,sunday\n section Fixture\n Task :2026-01-01,1d</code></pre>'
+            body += '<pre><code class="language-mermaid">graph TD;' + ' ' * 16385 + '</code></pre>'
+            body += '<pre><code class="language-mermaid">%%{init: {"securityLevel":"loose"}}%%\ngraph TD; A--&gt;B;</code></pre>'
             body += '<script>window.auditUntrusted=true</script><img src="' + endpoint + '/image"><iframe src="' + endpoint + '/frame"></iframe>'
             body += '<style>body {background-image:url("' + endpoint + '/css")}</style>'
             body += '<script nonce="' + nonce + '">window.auditTrusted=true;fetch(' + json.dumps(endpoint + '/fetch') + ').catch(()=>window.auditFetchBlocked=true);</script>'
             template = (page / "index.html").read_text()
-            values = {"{TITLE}": "Synthetic security fixture", "{INLINE_CSS}": "", "{THEME_CSS}": "", "{MATH_JAX_JS}": '<script nonce="{NONCE}" defer src="js/tex-mml-chtml.js"></script>', "{FSNOTES_THEME}": "", "{FSNOTES_APPEARANCE}": "", "{FSNOTES_PLATFORM}": "macos", "{NONCE}": nonce}
+            values = {"{TITLE}": "Synthetic security fixture", "{INLINE_CSS}": "", "{THEME_CSS}": "", "{MATH_JAX_JS}": '<script nonce="{NONCE}" src="js/mathjax-config.js"></script><script nonce="{NONCE}" defer src="js/mathjax/tex-mml-chtml.js"></script>', "{FSNOTES_THEME}": "", "{FSNOTES_APPEARANCE}": "", "{FSNOTES_PLATFORM}": "macos", "{NONCE}": nonce}
             for token, value in values.items():
                 template = template.replace(token, value)
             (page / "index.html").write_text(template.replace("{NOTE_BODY}", body))
+            shutil.copytree(ROOT / "Resources/MPreview.bundle", directory / "MPreview.bundle")
             source = directory / "main.swift"
             source.write_text(SWIFT)
             executable = directory / "webkit-tests"
-            subprocess.run(["swiftc", "-module-cache-path", str(directory / "modules"), str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(source), "-o", str(executable)], check=True)
+            subprocess.run(["swiftc", "-module-cache-path", str(directory / "modules"), str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(ROOT / "FSNotesCore/MemoryPreview.swift"), str(source), "-o", str(executable)], check=True)
             subprocess.run([str(executable), str(page / "index.html")], check=True, timeout=40)
+            subprocess.run([str(executable), str(page / "index.html"), "--memory"], check=True, timeout=40)
             # Independently verify the WebKit resource rules; do not rely solely on CSP.
             without_csp = re.sub(r'    <meta http-equiv="Content-Security-Policy"[^>]*>\n', '', (page / "index.html").read_text())
             (page / "without-csp.html").write_text(without_csp)

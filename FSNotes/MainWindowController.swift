@@ -24,6 +24,11 @@ class MainWindowController: NSWindowController, NSWindowDelegate {
         self.windowFrameAutosaveName = "myMainWindow"
     }
     
+    func windowWillClose(_ notification: Notification) {
+        PrivacyLockCoordinator.shared.closing(notification.object as? NSWindow)
+        EditorViewController.cancelPasswordRequests()
+    }
+
     func windowDidResize(_ notification: Notification) {
         refreshEditArea()
     }

@@ -16,7 +16,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     public var note: Note?
     public var viewDelegate: ViewController?
     
-    let storage = Storage.shared()
+    var storage: Storage { Storage.shared() }
     // Invalidation margin for the insert-mode bar caret.
     let caretWidth: CGFloat = 2
     // The cursorline last drawn, so moving the caret repaints only the old and new lines.
@@ -34,12 +34,24 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     public var attributesCachingQueue = OperationQueue.init()
     
     private var preview = false
+    private var privateFinder: PrivateTextFinder?
+
+    override func performFindPanelAction(_ sender: Any?) {
+        guard let item = sender as? NSMenuItem else { return }
+        if item.tag == 11 || item.tag == 13 { privateFinder?.close(clear: true); return }
+        guard let note = note, !note.isEncryptedAndLocked() else { return }
+        if privateFinder == nil { privateFinder = PrivateTextFinder(editor: self) }
+        privateFinder?.perform(tag: item.tag)
+    }
+
+    override func performTextFinderAction(_ sender: Any?) { performFindPanelAction(sender) }
+
     
     public var isScrollPositionSaverLocked = false
     
     override func becomeFirstResponder() -> Bool {
         if let note = self.note {
-            if note.container == .encryptedTextPack {
+            if note.isEncryptedAndLocked() {
                 return false
             }
 
@@ -273,11 +285,11 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         super.toggleAutomaticDashSubstitution(sender)
     }
 
-    private var dragDetected = false
+    var dragDetected = false
 
     override func mouseDown(with event: NSEvent) {
         guard let note = self.note else { return }
-        guard note.container != .encryptedTextPack else {
+        guard !note.isEncryptedAndLocked() else {
             editorViewController?.unLock(notes: [note])
             editorViewController?.vcNonSelectedLabel?.isHidden = false
             return
@@ -359,7 +371,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
 
     private func openTitleEditor(at: Int) {
-        guard let vc = editorViewController,
+        guard let note = note, !note.isEncryptedAndLocked(), let vc = editorViewController,
               let window = vc.view.window,
               var attachment = getAttachment(at: at) else { return }
 
@@ -373,7 +385,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         vc.alert?.alertStyle = .informational
         vc.alert?.addButton(withTitle: "OK")
         vc.alert?.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
-            if returnCode == NSApplication.ModalResponse.alertFirstButtonReturn {
+            if returnCode == NSApplication.ModalResponse.alertFirstButtonReturn,
+               self.note === note, !note.isEncryptedAndLocked() {
                 attachment.title = field.stringValue
 
                 var range = NSRange()
@@ -396,6 +409,10 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         guard let attachment = getAttachment(at: at) else { return }
 
         let url = attachment.url
+        if let note = note, note.hasMemoryWorkspace {
+            PlaintextDisclosure.exportAttachment(url, from: note, window: window)
+            return
+        }
 
         if !url.isImage {
             NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -523,95 +540,56 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
 
     override func writeSelection(to pboard: NSPasteboard, type: NSPasteboard.PasteboardType) -> Bool {
-        guard let storage = textStorage else { return false }
-
+        guard let note = note, !note.isEncryptedAndLocked(), let storage = textStorage else { return false }
         dragDetected = true
-        
-        let range = selectedRange()
-        let attributedString = NSMutableAttributedString(attributedString: storage.attributedSubstring(from: range))
-
+        let selected = storage.attributedSubstring(from: selectedRange())
         if type == .string {
-            let plainText = attributedString.unloadAttachments().string
-            pboard.setString(plainText, forType: .string)
-            return true
+            return pboard.setString(NSMutableAttributedString(attributedString: selected).unloadAttachments().string, forType: .string)
         }
-
-        if type == NSPasteboard.attributed {
-            let attributedString = attributedString.unloadTasks()
-            attributedString.saveData()
-
-            if let data = try? NSKeyedArchiver.archivedData(
-                withRootObject: attributedString,
-                requiringSecureCoding: false
-            ) {
-                pboard.setData(data, forType: NSPasteboard.attributed)
-                return true
-            }
+        if type == NSPasteboard.attributed, let data = NotePasteboardCodec.encode(selected) {
+            return pboard.setData(data, forType: NSPasteboard.attributed)
         }
-
         return false
     }
 
-    // Copy empty string
     override func copy(_ sender: Any?) {
-        let attrString = attributedSubstring(forProposedRange: self.selectedRange, actualRange: nil)
-
-        if self.selectedRange.length == 1,
-            let url = attrString?.attribute(.attachmentUrl, at: 0, effectiveRange: nil) as? URL
-        {
-            let pb = NSPasteboard.general
-            pb.clearContents()
-            pb.writeObjects([url as NSURL])
+        guard let note = note, !note.isEncryptedAndLocked() else { return }
+        let attrString = attributedSubstring(forProposedRange: selectedRange(), actualRange: nil)
+        if selectedRange().length == 1,
+           let url = attrString?.attribute(.attachmentUrl, at: 0, effectiveRange: nil) as? URL, url.isFileURL {
+            SensitiveClipboard.writeURL(url)
             return
         }
-
         if selectedRanges.count > 1 {
-            var combined = String()
-            for range in selectedRanges {
-                if let range = range as? NSRange, let sub = attributedSubstring(forProposedRange: range, actualRange: nil) as? NSMutableAttributedString {
-
-                    combined.append(sub.unloadAttachments().string + "\n")
-                }
+            let parts = selectedRanges.compactMap { value -> String? in
+                let range = value.rangeValue
+                guard let sub = attributedSubstring(forProposedRange: range, actualRange: nil) else { return nil }
+                return NSMutableAttributedString(attributedString: sub).unloadAttachments().string
             }
-
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(combined.trim().removeLastNewLine(), forType: NSPasteboard.PasteboardType.string)
+            SensitiveClipboard.writeString(parts.joined(separator: "\n"))
             return
         }
-
-        if self.selectedRange.length == 0, let paragraphRange = self.getParagraphRange(), let paragraph = attributedSubstring(forProposedRange: paragraphRange, actualRange: nil) {
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(paragraph.string.trim().removeLastNewLine(), forType: NSPasteboard.PasteboardType.string)
+        if selectedRange().length == 0, let range = getParagraphRange(),
+           let paragraph = attributedSubstring(forProposedRange: range, actualRange: nil) {
+            SensitiveClipboard.writeString(paragraph.string.trim().removeLastNewLine())
             return
         }
-        
-        if let menuItem = sender as? NSMenuItem,
-           menuItem.identifier?.rawValue == "copy:",
-           self.selectedRange.length > 0 {
-            
-            let attrString = attributedSubstring(forProposedRange: self.selectedRange, actualRange: nil)
-            
-            if let attrString = attrString,
-               let link = attrString.attribute(.link, at: 0, effectiveRange: nil) as? String {
-                
-                let pasteboard = NSPasteboard.general
-                pasteboard.declareTypes([.string], owner: nil)
-                pasteboard.setString(link, forType: .string)
-                return
-            }
+        if let item = sender as? NSMenuItem, item.identifier?.rawValue == "copy:",
+           let text = attrString, text.length > 0, let link = text.attribute(.link, at: 0, effectiveRange: nil) as? String {
+            SensitiveClipboard.writeString(link)
+            return
         }
-
-        super.copy(sender)
+        if let selected = attrString {
+            SensitiveClipboard.write(selected, plainText: NSMutableAttributedString(attributedString: selected).unloadAttachments().string)
+        }
     }
 
     override func paste(_ sender: Any?) {
-        guard let note = self.note else { return }
+        guard let note = self.note, !note.isEncryptedAndLocked(), isEditable else { return }
 
-        // RTFD
+        // Structured rich content
         if let rtfdData = NSPasteboard.general.data(forType: NSPasteboard.attributed),
-           let attributed = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(rtfdData) as? NSAttributedString {
+           let attributed = NotePasteboardCodec.decode(rtfdData) {
 
             let mutable = NSMutableAttributedString(attributedString: attributed)
             mutable.loadTasks()
@@ -626,6 +604,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         // Plain text
         if let clipboard = NSPasteboard.general.string(forType: NSPasteboard.PasteboardType.string),
             NSPasteboard.general.string(forType: NSPasteboard.PasteboardType.fileURL) == nil {
+            guard clipboard.utf8.count <= NotePasteboardCodec.maximumTextBytes else { NSSound.beep(); return }
 
             let attributed = NSMutableAttributedString(string: clipboard.trim())
             attributed.loadTasks()
@@ -646,6 +625,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         // Images png or tiff
         for type in [NSPasteboard.PasteboardType.png, .tiff] {
             if let data = NSPasteboard.general.data(forType: type) {
+                guard data.count <= NotePasteboardCodec.maximumAttachmentBytes else { NSSound.beep(); return }
                 guard let attributed = NSMutableAttributedString.build(data: data) else { continue }
 
                 breakUndoCoalescing()
@@ -656,51 +636,42 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
             }
         }
 
-        super.paste(sender)
+        // Only the bounded representations above are accepted. AppKit's generic
+        // fallback could otherwise import the same oversized or rejected payload.
+        NSSound.beep()
     }
     
     override func pasteAsPlainText(_ sender: Any?) {
-        let currentRange = selectedRange()
-        var plainText: String?
-
-        if let rtfd = NSPasteboard.general.data(forType: NSPasteboard.attributed),
-           let attributedString = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(rtfd) as? NSAttributedString {
-
-            let mutable = NSMutableAttributedString(attributedString: attributedString)
-            plainText = mutable.unloadAttachments().string
-        } else if let clipboard = NSPasteboard.general.string(forType: NSPasteboard.PasteboardType.string), NSPasteboard.general.string(forType: NSPasteboard.PasteboardType.fileURL) == nil {
-            plainText = clipboard
-        } else if let url = NSPasteboard.general.string(forType: NSPasteboard.PasteboardType.fileURL) {
-            plainText = url
-        }
-
-        if let plainText = plainText {
-            self.breakUndoCoalescing()
-            self.insertText(plainText, replacementRange: currentRange)
-            self.breakUndoCoalescing()
-
-            return
-        }
-
-        return paste(sender)
+        guard let note = note, !note.isEncryptedAndLocked(), isEditable,
+              let text = NSPasteboard.general.string(forType: .string) ?? NSPasteboard.general.string(forType: .fileURL),
+              text.utf8.count <= NotePasteboardCodec.maximumTextBytes else { return }
+        breakUndoCoalescing()
+        insertText(text, replacementRange: selectedRange())
+        breakUndoCoalescing()
     }
 
     override func cut(_ sender: Any?) {
-        guard nil != self.note else {
-            super.cut(sender)
-            return
+        guard let note = note, !note.isEncryptedAndLocked(), isEditable, let storage = textStorage else { return }
+        var ranges = selectedRanges.map { $0.rangeValue }.filter { $0.length > 0 }.sorted { $0.location < $1.location }
+        if ranges.isEmpty, let paragraph = getParagraphRange() { ranges = [paragraph] }
+        guard !ranges.isEmpty else { return }
+        let copied = NSMutableAttributedString(string: "")
+        var previousEnd = 0
+        for (index, range) in ranges.enumerated() {
+            guard range.location >= previousEnd, range.location <= storage.length,
+                  range.length <= storage.length - range.location else { return }
+            if index > 0 { copied.append(NSAttributedString(string: "\n")) }
+            copied.append(storage.attributedSubstring(from: range))
+            previousEnd = NSMaxRange(range)
         }
-
-        if self.selectedRange.length == 0, let paragraphRange = self.getParagraphRange(), let paragraph = attributedSubstring(forProposedRange: paragraphRange, actualRange: nil) {
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(paragraph.string.trim().removeLastNewLine(), forType: NSPasteboard.PasteboardType.string)
-
-            insertText(String(), replacementRange: paragraphRange)
-            return
-        }
-
-        super.cut(sender)
+        // Cutting must embed every attachment before deletion can remove its file.
+        guard SensitiveClipboard.write(copied, plainText: NSMutableAttributedString(attributedString: copied).unloadAttachments().string,
+                                       requireCompleteContent: true) else { NSSound.beep(); return }
+        breakUndoCoalescing()
+        undoManager?.beginUndoGrouping()
+        for range in ranges.reversed() { insertText("", replacementRange: range) }
+        undoManager?.endUndoGrouping()
+        breakUndoCoalescing()
     }
 
     func getSelectedNote() -> Note? {
@@ -708,7 +679,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
     
     public func isEditable(note: Note) -> Bool {
-        if note.container == .encryptedTextPack { return false }
+        if note.isEncryptedAndLocked() { return false }
 
         guard let editor = editorViewController?.vcEditor else { return false }
 
@@ -767,7 +738,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         if let label = editorViewController?.vcNonSelectedLabel {
             label.isHidden = true
 
-            if note.container == .encryptedTextPack {
+            if note.isEncryptedAndLocked() {
                 label.stringValue = NSLocalizedString("Locked", comment: "")
                 label.isHidden = false
             } else {
@@ -777,6 +748,12 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         }
     
         self.note = note
+        if note.isEncryptedAndLocked() {
+            lockEncryptedView()
+            editorViewController?.updateTitle(note: note)
+            viewDelegate?.updateCounters(note: note)
+            return
+        }
         UserDefaultsManagement.lastSelectedURL = note.url
 
         editorViewController?.updateTitle(note: note)
@@ -844,7 +821,13 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         }
     }
 
+    public func clearPrivateFind() {
+        privateFinder?.close(clear: true)
+        markdownView?.clearPrivateFind()
+    }
+
     public func lockEncryptedView() {
+        clearPrivateFind()
         textStorage?.setAttributedString(NSAttributedString())
         markdownView?.removeFromSuperview()
         markdownView = nil
@@ -852,12 +835,13 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         isEditable = false
         
         if let label = editorViewController?.vcNonSelectedLabel {
-            label.stringValue = NSLocalizedString("Locked", comment: "")
+            label.stringValue = note?.isPrivacyShielded == true ? "Locked — enter the note password to recover unsaved changes." : NSLocalizedString("Locked", comment: "")
             label.isHidden = false
         }
     }
     
     public func clear() {
+        privateFinder?.close(clear: true)
         textStorage?.setAttributedString(NSAttributedString())
         markdownView?.removeFromSuperview()
         markdownView = nil
@@ -1003,6 +987,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
     
     override func keyDown(with event: NSEvent) {
+        guard note?.isEncryptedAndLocked() == false else { return }
         defer {
             saveSelectedRange()
         }
@@ -1162,13 +1147,14 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
             return super.shouldChangeText(in: range, replacementString: replacementString)
         }
 
+        guard !note.isEncryptedAndLocked(), isEditable,
+              super.shouldChangeText(in: range, replacementString: replacementString) else { return false }
         note.resetAttributesCache()
-                
+
         scheduleTagScan(for: note)
         deleteUnusedImages(checkRange: range)
         resetTypingAttributes()
-
-        return super.shouldChangeText(in: range, replacementString: replacementString)
+        return true
     }
     
     // MARK: Autocomplete overrides
@@ -1301,14 +1287,16 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let note = self.note, let storage = textStorage else { return false }
-        
+        guard let note = self.note, !note.isEncryptedAndLocked(), isEditable, let storage = textStorage else { return false }
+        dragDetected = (sender.draggingSource as? EditTextView) === self
         let pasteboard = sender.draggingPasteboard
         let dropPoint = convert(sender.draggingLocation, from: nil)
         let caretLocation = characterIndexForInsertion(at: dropPoint)
         let replacementRange = NSRange(location: caretLocation, length: 0)
 
-        if handleAttributedText(pasteboard, note: note, storage: storage, replacementRange: replacementRange) { return true }
+        if pasteboard.data(forType: NSPasteboard.attributed) != nil {
+            return handleAttributedText(pasteboard, note: note, storage: storage, replacementRange: replacementRange)
+        }
         if handleNoteReference(pasteboard, note: note, replacementRange: replacementRange) { return true }
         if handleURLs(pasteboard, note: note, replacementRange: replacementRange) { return true }
 
@@ -1323,7 +1311,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            completion(try Data(contentsOf: url), nil)
+            completion(try PrivateWorkingDirectory.readBoundedFile(url, maximumBytes: PrivateNoteArchive.maximumExpandedBytes), nil)
         } catch {
             completion(nil, error)
         }
@@ -1553,7 +1541,8 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
 
     private func saveFile(url: URL, in note: Note) -> Bool {
-        if let data = try? Data(contentsOf: url) {
+        guard !note.isEncryptedAndLocked(), url.isFileURL else { return false }
+        if let data = try? PrivateWorkingDirectory.readBoundedFile(url, maximumBytes: PrivateNoteArchive.maximumExpandedBytes) {
             let preferredName = url.lastPathComponent
 
             guard let attributed = NSMutableAttributedString.build(data: data, preferredName: preferredName) else { return false }
@@ -1742,11 +1731,22 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
     }
 
     private func deleteUnusedImages(checkRange: NSRange) {
-        guard let storage = textStorage, self.note != nil else { return }
+        guard let storage = textStorage, let note = self.note, !note.isEncryptedAndLocked() else { return }
 
         storage.enumerateAttribute(.attachment, in: checkRange) { (value, range, _) in
             guard let meta = storage.getMeta(at: range.location) else { return }
 
+            if note.hasMemoryWorkspace {
+                if let data = note.memoryAttachmentData(for: meta.url) {
+                    storage.addAttribute(.attachmentSave, value: data, range: range)
+                    var usedElsewhere = false
+                    storage.enumerateAttribute(.attachmentUrl, in: NSRange(location: 0, length: storage.length)) { value, other, _ in
+                        if value as? URL == meta.url, NSIntersectionRange(other, checkRange).length < other.length { usedElsewhere = true }
+                    }
+                    if !usedElsewhere { _ = note.removeMemoryAttachment(at: meta.url) }
+                }
+                return
+            }
             do {
                 if let data = try? Data(contentsOf: meta.url) {
                     storage.addAttribute(.attachmentSave, value: data, range: range)
@@ -1754,7 +1754,7 @@ class EditTextView: NSTextView, NSTextFinderClient, NSSharingServicePickerDelega
                     try FileManager.default.removeItem(at: meta.url)
                 }
             } catch {
-                print(error)
+                PrivacyLog.record("edittextview.event-1707")
             }
         }
     }

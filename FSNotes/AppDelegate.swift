@@ -48,7 +48,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        guard PrivateLibraryController.prepareForLaunch() else { NSApp.terminate(nil); return }
+        PrivacyLockCoordinator.shared.start()
         LocalPreviewSecurity.removeAbandonedStaging()
+        installRecoveryMenuItem()
         do {
             try LegacyNetworkCleanup.run()
         } catch {
@@ -80,6 +83,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         mainWC.window?.makeKeyAndOrderFront(nil)
     }
         
+    private func installRecoveryMenuItem() {
+        guard let fileMenu = NSApp.mainMenu?.items.compactMap({ $0.submenu })
+            .first(where: { $0.identifier?.rawValue == "fileMenu" }),
+              fileMenu.items.allSatisfy({ $0.identifier?.rawValue != "fileMenu.recoverInterrupted" }) else { return }
+        let recovery = NSMenuItem(title: "Recover Interrupted Notes…", action: #selector(recoverInterruptedNotes(_:)), keyEquivalent: "")
+        recovery.identifier = NSUserInterfaceItemIdentifier("fileMenu.recoverInterrupted")
+        recovery.target = self
+        fileMenu.addItem(.separator())
+        fileMenu.addItem(recovery)
+    }
+
+    @objc func recoverInterruptedNotes(_ sender: Any?) {
+        EditorViewController.cancelPasswordRequests()
+        EncryptedNoteRecoveryController.presentRecovery()
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if (!flag) {
             AppDelegate.mainWindowController?.makeNew()
@@ -93,12 +112,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // A failed encrypted write must never be followed by deletion of its
         // only recoverable plaintext. All note writes are synchronous.
         guard let storage = Storage.instance else { return .terminateNow }
+        EditorViewController.shieldForLock(notes: storage.noteList.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup })
+        for project in storage.getProjects() where project.isEncrypted { project.password = nil }
         defer {
-            for project in storage.getProjects() where project.isEncrypted {
-                if storage.getNotesBy(project: project).allSatisfy({ !$0.isUnlocked() }) {
-                    project.password = nil
-                }
-            }
             ViewController.shared()?.sidebarOutlineView.reloadTags()
             ViewController.shared()?.sidebarOutlineView.reloadData()
         }
@@ -124,11 +140,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let alert = NSAlert()
         alert.alertStyle = .critical
         alert.messageText = "consolinotes cannot quit safely yet"
-        alert.informativeText = "A note could not be saved or its temporary plaintext could not be cleaned up. The app will stay open so you can retry, resolve the storage problem, or export your changes."
+        alert.informativeText = "A note could not be saved or its temporary plaintext could not be cleaned up. The app will stay open with encrypted notes hidden. Retry after resolving the storage problem, or enter the note password to recover retained changes."
         alert.runModal()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        defer { SandboxBookmark.sharedInstance().releaseAll() }
+        guard Storage.instance != nil else { return }
         UserDefaultsManagement.crashedLastTime = false
         MPreviewView.purgeSensitivePreviews()
         
@@ -162,7 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         Storage.shared().saveProjectsCache()
         
-        print("Termination end, crash status: \(UserDefaultsManagement.crashedLastTime)")
+        PrivacyLog.record("appdelegate.event-1")
     }
     
     private static func saveWindowsState() {
@@ -220,7 +238,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
             // If the new copy can't start, keep this one running rather than quitting.
             guard error == nil else {
-                print("Relaunch failed: \(String(describing: error))")
+                PrivacyLog.record("app.relaunch.failed")
                 return
             }
 
@@ -235,37 +253,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     private func requestStorageDirectory() {
-        var directoryURL: URL? = nil
-        if let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
-            directoryURL = URL(fileURLWithPath: path)
-        }
-        
-        let panel = NSOpenPanel()
-        panel.directoryURL = directoryURL
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.message = "Please select default storage directory"
-        panel.begin { (result) -> Void in
-            if result == .OK {
-                guard let url = panel.url else {
-                    return
-                }
-                
-                let bookmarks = SandboxBookmark.sharedInstance()
-                bookmarks.save(url: url)
-
-                UserDefaultsManagement.storageType = .custom
-                UserDefaultsManagement.customStoragePath = url.path
-                
-                self.restartApp()
-            } else {
-                exit(EXIT_SUCCESS)
-            }
-        }
+        guard PrivateLibraryController.prepareForLaunch() else { NSApp.terminate(nil); return }
+        restartApp()
     }
-    
+
     func constructMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 

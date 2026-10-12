@@ -70,7 +70,7 @@ class Storage {
     init() {
         // Load root
 
-        print("A. Bookmarks loading is started")
+        PrivacyLog.record("storage.operation")
         let bookmarksManager = SandboxBookmark.sharedInstance()
         bookmarksManager.load()
 
@@ -123,7 +123,7 @@ class Storage {
         defer { projectsLock.unlock() }
 
         if projectExist(url: project.url) {
-            print("Project exist: \(project.label)")
+            PrivacyLog.record("storage.operation")
             return
         }
         
@@ -180,9 +180,12 @@ class Storage {
     }
 
     public func makeTempEncryptionDirectory() -> URL? {
-        // Do not clean abandoned encryption directories: they can hold edits
-        // whose ciphertext write failed before a crash or forced termination.
-        return try? PrivateWorkingDirectory.makeEncryptionDirectory()
+        do {
+            let directory = try PrivateWorkingDirectory.makeEncryptionDirectory()
+            do { try EncryptedNoteRecovery.register(directory) }
+            catch { try? FileManager.default.removeItem(at: directory); throw error }
+            return directory
+        } catch { return nil }
     }
 
     public func getChildProjects(project: Project) -> [Project] {
@@ -265,9 +268,9 @@ class Storage {
                 do {
                     try FileManager.default.createDirectory(at: trashURL, withIntermediateDirectories: false, attributes: nil)
 
-                    print("New trash created: \(trashURL)")
+                    PrivacyLog.record("storage.operation")
                 } catch {
-                    print("Trash dir error: \(error)")
+                    PrivacyLog.record("storage.operation")
                 }
             }
         }
@@ -309,7 +312,7 @@ class Storage {
 
     public func assignBookmarks() {
         let bookmarksManager = SandboxBookmark.sharedInstance()
-        let bookmarks = bookmarksManager.getRestoredUrls()
+        let bookmarks = bookmarksManager.attachedFolderURLs()
         
         for url in bookmarks {
             if url.pathExtension == "css" 
@@ -505,7 +508,7 @@ class Storage {
         if !_noteList.contains(where: { $0.name == note.name && $0.project == note.project }) {
            _noteList.append(note)
         } else {
-            print("Note already exists: \(note.name) (\(note.url))")
+            PrivacyLog.record("storage.operation")
         }
     }
 
@@ -753,8 +756,8 @@ class Storage {
                     fin.append(url)
                 }
             }
-            catch let error as NSError {
-                print("Error: ", error.localizedDescription)
+            catch {
+                PrivacyLog.record("storage.operation")
             }
 
             if i > maxDirs {
@@ -785,7 +788,7 @@ class Storage {
             for fileURL in fileURLs {
                 try FileManager.default.removeItem(at: fileURL)
             }
-        } catch  { print(error) }
+        } catch { PrivacyLog.record("storage.operation") }
     }
 
     public func getPinned() -> [Note]? {
@@ -816,7 +819,7 @@ class Storage {
                 _ = try FileManager.default.contentsOfDirectory(atPath: url.path)
                 result.append(url)
             } catch {
-                print(error)
+                PrivacyLog.record("storage.operation")
             }
         }
 
@@ -912,7 +915,7 @@ class Storage {
                     }
                 }
             } catch {
-                print("Initial copy error: \(error)")
+                PrivacyLog.record("storage.operation")
             }
         
             let project = Project(storage: self, url: url, label: "Welcome")
@@ -973,7 +976,7 @@ class Storage {
         guard let main = getDefault()?.url else { return [URL]() }
         
         var projectURLs = [URL]()
-        let bookmarkUrls = SandboxBookmark.sharedInstance().getRestoredUrls()
+        let bookmarkUrls = SandboxBookmark.sharedInstance().attachedFolderURLs()
         
         for url in bookmarkUrls {
             if !projectURLs.contains(url)
@@ -1073,7 +1076,7 @@ class Storage {
         
         add(note)
         
-        print("FSWatcher import note: \"\(note.name)\"")
+        PrivacyLog.record("storage.operation")
         
         return note
     }
@@ -1215,9 +1218,9 @@ class Storage {
             
             do {
                 try data.write(to: url)
-                print("B. Sidebar tree caching is finished")
+                PrivacyLog.record("storage.operation")
             } catch {
-                print("Sidebar caching error")
+                PrivacyLog.record("storage.operation")
             }
         }
     }
@@ -1227,7 +1230,18 @@ class Storage {
         let url = cacheDir.appendingPathComponent("sidebarTree")
         
         if let data = try? Data(contentsOf: url), let urls = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, NSURL.self], from: data) as? [URL] {
-            return urls
+            // The cache contains absolute paths from the previous launch. A
+            // library migration or detached bookmark must not restore access to
+            // an old root merely because its projects remain in this cache.
+            let roots = ([getDefault()?.url, getDefaultTrash()?.url].compactMap { $0 }
+                + SandboxBookmark.sharedInstance().attachedFolderURLs())
+                .filter { $0.isFileURL }
+                .map { $0.standardizedFileURL.resolvingSymlinksInPath().pathComponents }
+            return urls.filter { cached in
+                guard cached.isFileURL else { return false }
+                let components = cached.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+                return roots.contains { components.starts(with: $0) }
+            }
         }
         
         return nil
@@ -1251,7 +1265,7 @@ class Storage {
                 do {
                     try data.write(to: url)
                 } catch {
-                    print("Sidebar caching error")
+                    PrivacyLog.record("storage.operation")
                 }
             }
         }

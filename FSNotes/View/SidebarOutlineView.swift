@@ -17,7 +17,7 @@ class SidebarOutlineView: NSOutlineView,
     public var sidebarItems: [Any]? = nil
     public var viewDelegate: ViewController? = nil
     
-    public var storage = Storage.shared()
+    public var storage: Storage { Storage.shared() }
     public var isFirstLaunch = true
     public var selectNote: Note? = nil
 
@@ -291,6 +291,7 @@ class SidebarOutlineView: NSOutlineView,
             var isDirectory = ObjCBool(true)
             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue && !url.path.contains(".textbundle") {
 
+                guard !project.isEncrypted, PlaintextDisclosure.allowUnencryptedCopy("Import Unencrypted Folder") else { return false }
                 let dirName = url.lastPathComponent
                 let dirDst = project.url.appendingPathComponent(dirName)
 
@@ -806,7 +807,7 @@ class SidebarOutlineView: NSOutlineView,
                         
                         self.storage.cleanCachedTree(url: project.url)
                     } catch {
-                        print(error)
+                        PrivacyLog.record("folder.operation.failed")
                     }
 
                     NSApp.mainWindow?.makeFirstResponder(vc.sidebarOutlineView)
@@ -817,12 +818,25 @@ class SidebarOutlineView: NSOutlineView,
             return
         }
 
-        let projects = storage.getAvailableProjects().filter({ $0.url.path.starts(with: project.url.path) })
-
-        for item in projects {
-            SandboxBookmark().removeBy(item.url)
+        let projects = storage.getAvailableProjects().filter {
+            $0.url == project.url || $0.url.path.hasPrefix(project.url.path + "/")
         }
+        let notes = storage.noteList.filter { note in projects.contains { $0 === note.project } }
+        let protected = notes.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
+        guard vc.lockUnlocked(notes: protected).isEmpty else { return }
+        for note in notes where !note.isEncryptedAndLocked() && note.lastWriteError != nil {
+            guard note.save() else {
+                vc.showProtectionFailure("Save the pending edits before detaching this folder. The folder remains attached so you can recover your changes.")
+                return
+            }
+        }
+        for note in notes { vc.closeAllOpenedWindows(where: note) }
+        if let note = vc.editor.note, notes.contains(where: { $0 === note }) { vc.editor.clear() }
 
+        guard SandboxBookmark.sharedInstance().removeFolders(projects.map { $0.url }) else {
+            vc.showProtectionFailure("The folder selection could not be saved. It remains attached; check available space and try again.")
+            return
+        }
         vc.sidebarOutlineView.removeRows(projects: projects)
         vc.sidebarOutlineView.selectRowIndexes([0], byExtendingSelection: false)
         vc.updateTable()
@@ -921,7 +935,11 @@ class SidebarOutlineView: NSOutlineView,
     public func lock(projects: [Project]) {
         EditorViewController.cancelPasswordRequests()
         guard let vc = ViewController.shared() else { return }
+        EditorViewController.shieldForLock(notes: projects.flatMap { storage.getNotesBy(project: $0) }.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup })
         for project in projects { _ = project.lock() }
+        let incomplete = projects.contains { project in
+            storage.getNotesBy(project: project).contains { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
+        }
         reloadTags()
         if let selectedProject = getSelectedProject(), projects.contains(selectedProject), selectedProject.isLocked() {
             vc.notesTableView.enableLockedProject()
@@ -932,8 +950,8 @@ class SidebarOutlineView: NSOutlineView,
         for editor in AppDelegate.getEditTextViews() {
             editor.editorViewController?.refillEditArea()
         }
-        if projects.contains(where: { !$0.isLocked() }) {
-            vc.showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry.")
+        if incomplete {
+            vc.showProtectionFailure("Some notes could not finish saving or cleanup. Content is hidden and unsaved changes have been retained. Resolve the storage problem and retry, or enter the note password to reveal the retained changes.")
         }
     }
 
@@ -1288,8 +1306,10 @@ class SidebarOutlineView: NSOutlineView,
                 guard let url = openPanel.url else { return }
                 
                 let bookmarksManager = SandboxBookmark.sharedInstance()
-                bookmarksManager.store(url: url)
-                bookmarksManager.save()
+                guard bookmarksManager.authorize(url: url, role: .folder) else {
+                    self.viewDelegate?.showProtectionFailure("Access to this folder could not be saved. Check available space and choose the folder again.")
+                    return
+                }
                 
                 if let results = self.storage.insert(url: url, bookmark: true) {
                     self.insertRows(projects: results)
@@ -2002,7 +2022,7 @@ class SidebarOutlineView: NSOutlineView,
                 guard let newProject = inserted.first else { return }
                 self.focus(on: newProject)
                 
-                print("sidebar table")
+                PrivacyLog.record("sidebar.drag.event")
             }
         } catch {
             DispatchQueue.main.async {

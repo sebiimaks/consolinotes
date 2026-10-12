@@ -103,7 +103,7 @@ extension Note {
 
             return commits
         } catch {
-            print(error)
+            PrivacyLog.record("note-history.event-106")
         }
 
         return commits
@@ -114,9 +114,9 @@ extension Note {
             guard let repository = try getGitProject()?.getRepository() else { return }
             let commit = try repository.commitLookup(oid: commit.oid)
             try repository.checkout(commit: commit, path: getGitPath())
-            print("Successful checkout")
+            PrivacyLog.record("note-history.event-117")
         } catch {
-            print(error)
+            PrivacyLog.record("note-history.event-119")
         }
     }
 }

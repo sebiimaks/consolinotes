@@ -76,7 +76,7 @@ public class StatusIterator : Sequence, IteratorProtocol {
                 let result = try Status(entry: entry!)
                 return result
             } catch {
-                print(error.localizedDescription)
+                PrivacyLog.record("statusiterator.event-79")
                 return nil
             }
         } else {

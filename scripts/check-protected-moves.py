@@ -28,7 +28,7 @@ final class Project: Equatable {
 }
 final class Note {
     var project: Project; var name = "fixture.md"
-    var encrypted = false; var unlocked = false
+    var encrypted = false; var unlocked = false; var shielded = false
     var failEncrypt = false; var failMove = false; var failLock = false
     var moved = false; var plaintextEnteredProtectedFolder = false
     var events = [String]()
@@ -43,6 +43,7 @@ final class Note {
     func unLock(password: String) -> Bool { events.append("unlock"); unlocked = true; return true }
     func lock() -> Bool {
         events.append("lock")
+        expect(shielded, "Move attempted a write before shielding content")
         if failLock { return false }
         unlocked = false; return true
     }
@@ -70,6 +71,7 @@ struct Search { func isFit(note: Note) -> Bool { true } }
 struct Storage { let searchQuery = Search() }
 final class Editor { var cleared = false; func clear() { cleared = true } }
 final class ViewController {
+    static func shieldForLock(notes: [Note]) { for note in notes { note.shielded = true } }
     let sidebarOutlineView = Sidebar(); let notesTableView = Table()
     let storage = Storage(); let editor = Editor()
     var failures = 0
@@ -107,7 +109,7 @@ let ordinary = Project("/synthetic/ordinary")
 let lockController = ViewController(); completed = nil
 lockController.moveReq(notes: [failedLock], project: ordinary) { completed = $0 }
 expect(completed == false && !failedLock.moved && failedLock.unlocked, "failed lock must block the move and keep working state")
-expect(!lockController.editor.cleared, "failed lock must keep the working editor")
+expect(!lockController.editor.cleared && failedLock.shielded, "failed lock must retain working model behind shield")
 
 let alreadyEncrypted = Note(source); alreadyEncrypted.encrypted = true
 completed = nil

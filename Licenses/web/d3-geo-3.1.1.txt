@@ -1,3 +1,5 @@
+LICENSE:
+
 Copyright 2010-2024 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose

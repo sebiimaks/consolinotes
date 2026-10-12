@@ -71,7 +71,7 @@ class PreferencesEditorViewController: NSViewController {
 
     //MARK: global variables
 
-    let storage = Storage.shared()
+    var storage: Storage { Storage.shared() }
 
     @IBAction func codeBlockHighlight(_ sender: NSButton) {
         UserDefaultsManagement.codeBlockHighlight = (sender.state == NSControl.StateValue.on)

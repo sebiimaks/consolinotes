@@ -84,9 +84,9 @@ extension ViewController {
     }
 
     func updateTUIEditorPane(note: Note?, info: VimBufferInfo?) {
-        vimBufferInfo = info
+        vimBufferInfo = note?.isEncryptedAndLocked() == true ? nil : info
 
-        ViewController.fillVimEditorStatus(vimEditorStatus, note: note, info: info)
+        ViewController.fillVimEditorStatus(vimEditorStatus, note: note, info: vimBufferInfo)
         ViewController.refreshVimTabLines()
 
         // The chips stay visible, so keep the lock chip in step with the open note.
@@ -145,13 +145,14 @@ extension ViewController {
 
     /// Vim's file message, like `"plan.md" 42L, 1234B`.
     static func vimFileInfo(note: Note?, info: VimBufferInfo?) -> [TUISegment] {
-        guard let note = note, let info = info else { return [] }
+        guard let note = note, !note.isEncryptedAndLocked(), let info = info else { return [] }
 
         return [("\"\(tuiFileName(note))\" \(info.lineCount)L, \(info.byteCount)B", TUITheme.dim)]
     }
 
     static func fillVimEditorStatus(_ status: VimStatusLine?, note: Note?, info: VimBufferInfo?) {
-        status?.name = note.map { $0.project.label + "/" + tuiFileName($0) } ?? "[No Name]"
+        let info = note?.isEncryptedAndLocked() == true ? nil : info
+        status?.name = note?.isPrivacyShielded == true ? "[Locked]" : note.map { $0.project.label + "/" + tuiFileName($0) } ?? "[No Name]"
         status?.flags = note?.isEncryptedAndLocked() == true ? "[RO]" : ""
         status?.right = info.map { ["markdown", "utf-8", "\($0.words)w \($0.characters)c"] } ?? []
         status?.position = info.map { "\($0.line):\($0.column)" } ?? ""
@@ -388,6 +389,7 @@ extension ViewController {
 
     /// The buffer name for a note. A TextBundle is named after its markdown text, not the bundle folder.
     static func tuiFileName(_ note: Note) -> String {
+        if note.isPrivacyShielded { return "[Locked]" }
         return note.isTextBundle()
             ? note.getFileName() + "." + note.getExtensionForContainer()
             : note.url.lastPathComponent

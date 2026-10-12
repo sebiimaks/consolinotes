@@ -70,10 +70,11 @@ extension NSMutableAttributedString {
                 let fileURL = note.getAttachmentFileUrl(name: cleanPath)
             else { return }
 
+            let memoryData = note.memoryAttachmentData(for: fileURL)
             if fileURL.isRemote() {
                 return
 
-            } else if FileManager.default.fileExists(atPath: fileURL.path),
+            } else if memoryData != nil || (fileURL.isFileURL && FileManager.default.fileExists(atPath: fileURL.path)),
                       fileURL.isImage || fileURL.isVideo {
                 images.append(fileURL)
             } else {
@@ -81,6 +82,9 @@ extension NSMutableAttributedString {
             }
 
             let attributedAttachment = NSMutableAttributedString(url: fileURL, title: title, path: cleanPath)
+            if let data = memoryData {
+                attributedAttachment.addAttribute(.attachmentMemoryData, value: data, range: NSRange(location: 0, length: 1))
+            }
             self.replaceCharacters(in: range, with: attributedAttachment)
             offset += range.length - 1
         }
@@ -211,7 +215,8 @@ extension NSMutableAttributedString {
         let range = NSRange(location: 0, length: length)
         enumerateAttribute(.attachmentUrl, in: range) { (value, range, _) in
             guard let url = value as? URL,
-                  let data = try? Data(contentsOf: url) else { return }
+                  let data = (attribute(.attachmentMemoryData, at: range.location, effectiveRange: nil) as? Data)
+                    ?? (url.isFileURL ? try? Data(contentsOf: url) : nil) else { return }
 
             addAttribute(.attachmentSave, value: data, range: range)
         }

@@ -35,7 +35,7 @@ public class GitProgress {
     }
 
     func send(message: String) {
-        print(message)
+        PrivacyLog.record("progress.event-38")
 
         DispatchQueue.main.async {
             self.statusTextField.stringValue = message

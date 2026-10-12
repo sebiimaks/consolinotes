@@ -60,6 +60,18 @@ expect(html.contains("{{TOC}}"), "Literal TOC in fenced code changed")
 expect(html.contains("type=\"checkbox\""), "Task list rendering regressed")
 expect(html.contains("<table>"), "Table rendering regressed")
 expect(renderMarkdownHTML(markdown: String(repeating: "x", count: LocalPreviewSecurity.maximumMarkdownBytes + 1))!.contains("preview limit"), "Large input must be bounded")
+// Official cmark-gfm GHSA-29g3-96g3-jg6c regression shapes, bounded to
+// synthetic input well below the app limit. The process has an outer deadline.
+for hostile in [
+    "-1" + String(repeating: "<?x", count: 10_000) + "y",
+    String(repeating: "|-\nt>|-\n", count: 10_000),
+    String(repeating: "*t ", count: 10_000) + String(repeating: "_t*_ ", count: 10_000),
+    "x\n| - |\n" + String(repeating: "|", count: 10_000) + "y",
+    String(repeating: "z_www.", count: 10_000),
+    "www." + String(repeating: ")", count: 10_000),
+    String(repeating: "<http://s", count: 10_000),
+    "~e" + String(repeating: ",z~~", count: 10_000)
+] { expect(renderMarkdownHTML(markdown: hostile) != nil, "Hostile Markdown did not finish") }
 expect(replaceHorizontalRulesOutsideCodeBlocks(in: "before\n---\nafter").contains("***"), "Safe horizontal rule conversion failed")
 
 let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR9kAAAAASUVORK5CYII=")!
@@ -112,10 +124,10 @@ def main():
             "swiftc", "-module-cache-path", str(directory / "modules"),
             "-Xcc", "-fmodule-map-file=" + str(MODULES / "libcmark_gfm.modulemap"),
             str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"),
-            str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(ROOT / "FSNotesCore/Business/Markdown.swift"),
+            str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(ROOT / "FSNotesCore/MemoryPreview.swift"), str(ROOT / "FSNotesCore/Business/Markdown.swift"),
             str(source), str(CMARK), "-o", str(executable)
         ], check=True, cwd=ROOT)
-        subprocess.run([str(executable)], check=True)
+        subprocess.run([str(executable)], check=True, timeout=20)
 
 if __name__ == "__main__":
     main()

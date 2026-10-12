@@ -130,14 +130,10 @@ class PreferencesAdvancedViewController: NSViewController {
 
                 let bookmarksManager = SandboxBookmark.sharedInstance()
 
-                if let currentURL = UserDefaultsManagement.trashURL {
-                    bookmarksManager.remove(url: currentURL)
-                }
-
-                bookmarksManager.store(url: url)
-                bookmarksManager.save()
-
+                guard bookmarksManager.authorize(url: url, role: .trash) else { return }
+                let previous = UserDefaultsManagement.trashURL
                 UserDefaultsManagement.trashURL = url
+                if let previous = previous, previous != url { bookmarksManager.remove(url: previous, role: .trash) }
                 self.trashPath.url = url
                 
                 Storage.shared().getDefaultTrash()?.url = url

@@ -101,7 +101,7 @@ public class Project: NSObject {
                 try? data.write(to: url)
             }
         } catch {
-            print("Settings arc error: \(error.localizedDescription)")
+            PrivacyLog.record("project.event-104")
         }
     }
         
@@ -201,9 +201,9 @@ public class Project: NSObject {
             let data = try jsonEncoder.encode(meta)
             try data.write(to: cacheURL)
 
-            print("Cache saved for: \(self.label)")
+            PrivacyLog.record("project.event-204")
         } catch {
-            print("Serialization error.")
+            PrivacyLog.record("project.event-206")
         }
     }
 
@@ -214,10 +214,10 @@ public class Project: NSObject {
             if FileManager.default.fileExists(atPath: cacheURL.path) {
                 try FileManager.default.removeItem(at: cacheURL)
 
-                print("Cache removed successfully at: \(cacheURL.path)")
+                PrivacyLog.record("project.event-217")
             }
         } catch {
-            print("Cache removing error: \(error)")
+            PrivacyLog.record("project.event-220")
         }
     }
 
@@ -230,7 +230,7 @@ public class Project: NSObject {
             do {
                 return try decoder.decode(Array<NoteMeta>.self, from: data)
             } catch {
-                print(error)
+                PrivacyLog.record("project.event-233")
             }
         }
 
@@ -271,13 +271,13 @@ public class Project: NSObject {
                 notes.append(note)
             }
 
-            print("From cache: \(notes.count)")
+            PrivacyLog.record("project.event-274")
             
             isNeededCacheValidation = true
         } else if !cacheOnly {
             notes = fetchNotes()
             
-            print("From disk: \(notes.count), lbl: \(label)")
+            PrivacyLog.record("project.event-280")
         }
         
         for note in notes {
@@ -431,7 +431,7 @@ public class Project: NSObject {
         do {
             try FileManager.default.removeItem(at: url)
         } catch {
-            print(error)
+            PrivacyLog.record("project.event-434")
         }
     }
 
@@ -439,7 +439,7 @@ public class Project: NSObject {
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print(error)
+            PrivacyLog.record("project.event-442")
         }
     }
 
@@ -447,7 +447,7 @@ public class Project: NSObject {
         let notes = Storage.shared().noteList.filter({ $0.project == self })
 
         var tags: Set<String> = []
-        for note in notes {
+        for note in notes where !note.isEncryptedAndLocked() {
             for tag in note.tags {
                 if !tags.contains(tag) {
                     tags.insert(tag)
@@ -647,6 +647,9 @@ public class Project: NSObject {
     }
 
     public func lock() -> [Note] {
+        // A failed note save may retain its own recovery secret, but must not
+        // keep the folder authorized for creation, imports or other actions.
+        password = nil
         var locked = [Note]()
         let notes = self.storage.getNotesBy(project: self)
 
@@ -656,7 +659,6 @@ public class Project: NSObject {
             }
         }
 
-        if notes.allSatisfy({ !$0.isUnlocked() }) { password = nil }
         return locked
     }
     
@@ -675,7 +677,7 @@ public class Project: NSObject {
 
         let results = checkFSAndMemoryDiff()
 
-        print("Cache diff found: removed - \(results.0.count), added - \(results.1.count), modified - \(results.2.count), lbl: \(label)")
+        PrivacyLog.record("project.event-678")
         
         return results
     }
@@ -769,8 +771,8 @@ public class Project: NSObject {
                     fin.append(url)
                 }
             }
-            catch let error as NSError {
-                print("Error: ", error.localizedDescription)
+            catch {
+                PrivacyLog.record("project.event-773")
             }
 
             if i > maxDirs {

@@ -18,9 +18,8 @@ class TitleTextField: NSTextField {
             && !event.modifierFlags.contains(.shift)
             && !event.modifierFlags.contains(.control)
             && !event.modifierFlags.contains(.option) {
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(self.stringValue, forType: NSPasteboard.PasteboardType.string)
+            SensitiveClipboard.writeString(self.stringValue)
+            return true
         }
 
         return super.performKeyEquivalent(with: event)
@@ -123,7 +122,7 @@ class TitleTextField: NSTextField {
     public func updateNotesTableView() {
         guard let vc = ViewController.shared(), let note = vc.editor.note else { return }
 
-        if (note.container == .encryptedTextPack && !note.isUnlocked()) || !note.project.settings.isFirstLineAsTitle() {
+        if note.isEncryptedAndLocked() || !note.project.settings.isFirstLineAsTitle() {
             vc.notesTableView.reloadRow(note: note)
         }
 

@@ -104,10 +104,12 @@ CONSOLINOTES-LICENSE-END -->
             });
             if (toc) toc.appendChild(list);
         }
-        function loadMermaid() {
+        async function loadMermaid() {
             if (typeof mermaid === 'undefined') return;
             const dark = document.body.classList.contains('darkmode');
-            const config = {startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default', flowchart: {useMaxWidth: true, htmlLabels: false}};
+            const config = {startOnLoad: false, securityLevel: 'strict', maxTextSize: 16384, maxEdges: 500,
+                secure: ['securityLevel', 'startOnLoad', 'maxTextSize', 'maxEdges'],
+                theme: dark ? 'dark' : 'default', flowchart: {useMaxWidth: true, htmlLabels: false}};
             if (previewTheme === 'consolinotes') {
                 const css = getComputedStyle(document.body);
                 const color = name => css.getPropertyValue(name).trim();
@@ -122,9 +124,21 @@ CONSOLINOTES-LICENSE-END -->
                 };
             }
             mermaid.initialize(config);
-            mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+            const diagrams = Array.from(document.querySelectorAll('.language-mermaid'));
+            for (let index = 0; index < diagrams.length; index++) {
+                const diagram = diagrams[index];
+                // Note-controlled configuration is unnecessary for local previews and
+                // can override security/resource limits in third-party renderers.
+                const source = diagram.textContent;
+                if (index >= 16 || source.length > 16384 || /%%\s*\{|^\s*---/.test(source)) {
+                    diagram.textContent = 'Diagram unavailable: preview limit or embedded configuration.';
+                    continue;
+                }
+                try { await mermaid.run({nodes: [diagram]}); }
+                catch { diagram.textContent = 'Diagram unavailable: invalid or unsupported input.'; }
+            }
         }
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             loadTOC();
             document.querySelectorAll('li input[type=checkbox]').forEach(box => {
                 const item = box.closest('li');
@@ -133,9 +147,14 @@ CONSOLINOTES-LICENSE-END -->
                 box.addEventListener('change', () => item.classList.toggle('strike', box.checked));
             });
             if (typeof hljs !== 'undefined') {
-                document.querySelectorAll('pre code:not(.language-mermaid)').forEach(code => hljs.highlightBlock(code));
+                document.querySelectorAll('pre code:not(.language-mermaid)').forEach(code => {
+                    if (code.textContent.length <= 131072) hljs.highlightElement(code);
+                });
             }
-            loadMermaid();
+            try {
+                await loadMermaid();
+                if (typeof MathJax !== 'undefined' && MathJax.startup) await MathJax.startup.promise;
+            } finally { window.consolinotesPreviewReady = true; }
         });
     </script>
 </head>

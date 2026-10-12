@@ -23,7 +23,7 @@ public class Statuses {
             do {
                 return try all().next() == nil
             } catch {
-                print(error.localizedDescription)
+                PrivacyLog.record("statuses.event-26")
                 return false
             }
         }

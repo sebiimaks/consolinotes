@@ -37,21 +37,17 @@ extension EditorViewController: NSSharingServicePickerDelegate {
     //MARK: Share Service
         
     public func saveTextAtClipboard() {
-        if let note = vcEditor?.note {
+        if let note = vcEditor?.note, !note.isEncryptedAndLocked() {
             let unloadedText = note.content.unloadTasks()
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(unloadedText.string, forType: NSPasteboard.PasteboardType.string)
+            SensitiveClipboard.writeString(unloadedText.string)
         }
     }
     
     public func saveHtmlAtClipboard() {
-        if let note = vcEditor?.note {
+        if let note = vcEditor?.note, !note.isEncryptedAndLocked() {
             let unloadedText = note.content.unloadTasks()
             if let render = renderMarkdownHTML(markdown: unloadedText.string) {
-                let pasteboard = NSPasteboard.general
-                pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-                pasteboard.setString(render, forType: NSPasteboard.PasteboardType.string)
+                SensitiveClipboard.writeString(render)
             }
         }
     }

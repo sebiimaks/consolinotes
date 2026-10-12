@@ -87,7 +87,8 @@ final class Project {
 final class Note {
     let title: String; let project: Project
     var content = NSMutableAttributedString(string: "original fixture")
-    var unlocked = false; var encrypted = true
+    var password: String? = "fixture-note-password"
+    var unlocked = false; var encrypted = true; var shielded = false
     var hasPendingPlaintextCleanup = false
     var lastWriteError: String?; var lockSucceeds = true; var saveSucceeds = true
     var saveCalls = 0; var lockCalls = 0; var appendCalls = 0
@@ -95,8 +96,9 @@ final class Note {
     func isUnlocked() -> Bool { unlocked }
     func isEncryptedAndLocked() -> Bool { encrypted && !unlocked }
     func lock() -> Bool {
+        expect(shielded, "Quit wrote before shielding note content")
         lockCalls += 1
-        if lockSucceeds { unlocked = false; hasPendingPlaintextCleanup = false }
+        if lockSucceeds { unlocked = false; hasPendingPlaintextCleanup = false; password = nil }
         return lockSucceeds
     }
     func save() -> Bool { saveCalls += 1; return saveSucceeds }
@@ -143,6 +145,7 @@ final class AppDelegate {
 enum EditorViewController {
     static var cancellations = 0
     static func cancelPasswordRequests() { cancellations += 1 }
+    static func shieldForLock(notes: [Note]) { for note in notes { note.shielded = true } }
 }
 extension String {
 ''' + string_helper + r'''
@@ -195,9 +198,10 @@ let failed = Note("failed-second")
 failed.unlocked = true; failed.lockSucceeds = false
 Storage.shared().noteList = [good, failed]
 expect(delegate.applicationShouldTerminate(NSApp) == .terminateCancel, "failed encrypted write must cancel quit")
-expect(!good.unlocked && failed.unlocked && failed.project.password != nil, "failure must preserve recoverable note and password")
+expect(!good.unlocked && failed.unlocked && failed.shielded && failed.password == "fixture-note-password", "failure must preserve shielded edits and their note recovery password")
+expect(failed.project.password == nil, "failed quit must revoke folder authorization")
 expect(vc.refreshed.contains(good.title) && vc.notesTableView.refreshed.contains(good.title), "a cancelled quit must clear windows for notes already locked")
-expect(!vc.refreshed.contains(failed.title), "failed note must stay visible")
+expect(!vc.refreshed.contains(failed.title), "failed note must retain its shielded working state")
 expect(good.project.password == nil && delegate.failures == 1, "finished projects must clear secrets and failure must be reported")
 expect(vc.sidebarOutlineView.tagReloads >= 2 && vc.sidebarOutlineView.dataReloads >= 2, "sidebar must refresh even on cancellation")
 failed.lockSucceeds = true

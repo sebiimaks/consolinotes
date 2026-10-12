@@ -86,7 +86,7 @@ public class FileHistoryIterator: RevisionIterator {
             }
             
         } catch {
-            print("Unable to find next OID \(String(describing: error))")
+            PrivacyLog.record("filehistoryiterator.event-89")
         }
         
         return nil
@@ -221,7 +221,7 @@ public class FileHistoryIterator: RevisionIterator {
             }
 
         } catch {
-            print("Unable to find next OID \(String(describing: error))")
+            PrivacyLog.record("filehistoryiterator.event-224")
         }
 
         return nil

@@ -184,11 +184,11 @@ extension Project {
                 do {
                     try data.write(to: writeTo)
                 } catch {
-                    print("Caching error: " + error.localizedDescription)
+                    PrivacyLog.record("project-git.event-187")
                 }
             }
         } catch {
-            print(error)
+            PrivacyLog.record("project-git.event-191")
         }
 
         progress?.log(message: "git history caching done 🤟")

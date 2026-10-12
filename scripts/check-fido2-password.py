@@ -7,6 +7,7 @@ fixture=r'''
 import Foundation
 import CryptoKit
 func expect(_ condition: Bool, _ message: String) { if !condition { fatalError(message) } }
+func verified(_ value: String) throws -> FIDO2PasswordProvider.PasswordProof { try FIDO2PasswordProvider.verifyPassword(value, using: { $0 == value }) }
 func fails(_ body: () throws -> Void) { do { try body(); fatalError("Expected failure") } catch {} }
 let base = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
 func writePrivate(_ data: Data, to file: URL) throws {
@@ -50,7 +51,7 @@ var unlockPrompts = 0
 expect(try store.unlock(id: legacyID, pin: "correct-pin", ticket: store.ticket(), beforeActivation: { unlockPrompts += 1; return true }) == password, "legacy unlock")
 expect(unlockPrompts == 1, "unlock prompt count")
 var steps = [Int]()
-try store.enroll(name: "  Backup YubiKey  ", password: "backup-password", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { steps.append($0); return true })
+try store.enroll(name: "  Backup YubiKey  ", password: "backup-password", proof: try verified("backup-password"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { steps.append($0); return true })
 expect(steps == [1, 2, 3], "three explicit enrollment activations")
 let added = try store.enrollments()
 expect(added.count == 2 && added[0].name == "Original YubiKey" && added[1].name == "Backup YubiKey", "addition replaced legacy or failed name normalization")
@@ -72,30 +73,30 @@ expect(renamed[0].name == "Original YubiKey", "rename affected other key")
 let stable = try Data(contentsOf: file)
 // Names identify picker choices, so a case-only duplicate must fail before USB access.
 cn_test_reset_counts()
-fails { try store.enroll(name: "  ORIGINAL yubikey  ", password: "new", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("duplicate name activated hardware") }) }
+fails { try store.enroll(name: "  ORIGINAL yubikey  ", password: "new", proof: try verified("new"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("duplicate name activated hardware") }) }
 fails { try store.rename(id: backupID, name: "original YUBIKEY") }
 expect(cn_test_create_calls() == 0 && cn_test_secret_calls() == 0, "duplicate name accessed hardware")
 expect(try Data(contentsOf: file) == stable, "duplicate name changed store")
 for name in ["", "   ", String(repeating: "x", count: 81), "key\nname", "key\0name", "x" + String(repeating: "\u{301}", count: 200)] {
     fails { try store.rename(id: backupID, name: name) }
-    fails { try store.enroll(name: name, password: "new", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("invalid name touched hardware") }) }
+    fails { try store.enroll(name: name, password: "new", proof: try verified("new"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("invalid name touched hardware") }) }
     expect(try Data(contentsOf: file) == stable, "invalid name changed store")
 }
 // Wrong IDs, malformed PINs, and stale tickets never invoke a hardware activation.
 fails { _ = try store.unlock(id: "missing", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { fatalError("unknown record activated") }) }
 for pin in ["", String(repeating: "x", count: 64), "correct-pin\0suffix"] {
-    fails { try store.enroll(name: "Test", password: "new", pin: pin, ticket: store.ticket(), beforeActivation: { _ in fatalError("invalid PIN activated") }) }
+    fails { try store.enroll(name: "Test", password: "new", proof: try verified("new"), pin: pin, ticket: store.ticket(), beforeActivation: { _ in fatalError("invalid PIN activated") }) }
     fails { _ = try store.unlock(id: legacyID, pin: pin, ticket: store.ticket(), beforeActivation: { fatalError("invalid PIN activated") }) }
 }
 let stale = store.ticket(); store.cancel()
-fails { try store.enroll(name: "Test", password: "new", pin: "correct-pin", ticket: stale, beforeActivation: { _ in fatalError("stale transaction activated") }) }
+fails { try store.enroll(name: "Test", password: "new", proof: try verified("new"), pin: "correct-pin", ticket: stale, beforeActivation: { _ in fatalError("stale transaction activated") }) }
 // Cancellation before each activation stops the next native operation and never commits.
 for step in 1...3 {
     for invalidateTicket in [false, true] {
         cn_test_reset_counts()
         var observed = [Int]()
         fails {
-            try store.enroll(name: "Canceled", password: "new", pin: "correct-pin", ticket: store.ticket(), beforeActivation: {
+            try store.enroll(name: "Canceled", password: "new", proof: try verified("new"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: {
                 observed.append($0)
                 if $0 == step {
                     if invalidateTicket { store.cancel(); return true }
@@ -111,20 +112,20 @@ for step in 1...3 {
     }
 }
 for pin in ["create-fails", "derive-fails", "verification-fails", "duplicate-legacy"] {
-    fails { try store.enroll(name: "Failed", password: "new", pin: pin, ticket: store.ticket(), beforeActivation: { _ in true }) }
+    fails { try store.enroll(name: "Failed", password: "new", proof: try verified("new"), pin: pin, ticket: store.ticket(), beforeActivation: { _ in true }) }
     expect(try Data(contentsOf: file) == stable, "failed enrollment changed existing collection")
 }
 // Cancel during the final native call, exercising the commit lock's ticket check.
 let cancelStore = store
 cn_test_set_cancel_callback({ cancelStore.cancel() })
-fails { try store.enroll(name: "Late cancellation", password: "new", pin: "cancel-during-verification", ticket: store.ticket(), beforeActivation: { _ in true }) }
+fails { try store.enroll(name: "Late cancellation", password: "new", proof: try verified("new"), pin: "cancel-during-verification", ticket: store.ticket(), beforeActivation: { _ in true }) }
 expect(try Data(contentsOf: file) == stable, "late cancellation committed enrollment")
 cn_test_reset_counts()
 fails { _ = try store.unlock(id: legacyID, pin: "correct-pin", ticket: store.ticket(), beforeActivation: { false }) }
 expect(cn_test_secret_calls() == 0, "canceled unlock invoked hardware")
 fails { _ = try unlock(store, legacyID, pin: "incorrect") }
 // A rename completed while the new key is being verified survives its later commit.
-try store.enroll(name: "Third key", password: "third-password", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { step in
+try store.enroll(name: "Third key", password: "third-password", proof: try verified("third-password"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { step in
     if step == 3 { try! store.rename(id: backupID, name: "Renamed while adding") }
     return true
 })
@@ -137,6 +138,83 @@ let two = try store.enrollments()
 expect(two.count == 2 && two[0].id == legacyID && two[1].id == three[2].id, "remove deleted wrong record")
 expect(try unlock(store, two[1].id) == "third-password", "remove corrupted surviving envelope")
 fails { _ = try unlock(store, backupID) }
+// Verification is mandatory and happens before any hardware operation.
+cn_test_reset_counts()
+fails { _ = try FIDO2PasswordProvider.verifyPassword("wrong-password", using: { _ in false }) }
+let proof = try verified("verified-password")
+fails { try store.enroll(name: "Wrong proof", password: "another-password", proof: proof, pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("wrong proof activated hardware") }) }
+expect(cn_test_create_calls() == 0 && cn_test_secret_calls() == 0, "unverified password touched hardware")
+expect(added[1].envelope.version == 2 && added[1].envelope.protection != nil, "verified group missing")
+let protected = added[1].envelope
+let alteredGroup = FIDO2PasswordProvider.Envelope(version: 2, credential: protected.credential, publicKey: protected.publicKey, salt: protected.salt, ciphertext: protected.ciphertext,
+    protection: .init(group: UUID().uuidString, mode: .password))
+fails { _ = try FIDO2PasswordProvider.open(alteredGroup, secret: Data(repeating: protected.credential[0] + 3, count: 32)) }
+
+// Portable collections contain only validated ciphertext and non-secret metadata.
+let portable = try store.exportData()
+let exportedText = String(data: portable, encoding: .utf8)!
+expect(!exportedText.contains(password) && !exportedText.contains("third-password") && !exportedText.contains("correct-pin"), "export exposed secret")
+let imported = FIDO2PasswordProvider(directory: base.appendingPathComponent("imported"))
+let importedSummary = try imported.mergeImport(portable, ticket: imported.ticket())
+expect(importedSummary.added == 2 && importedSummary.alreadyPresent == 0, "portable merge count")
+expect(try unlock(imported, two[0].id) == password && unlock(imported, two[1].id) == "third-password", "portable restoration failed")
+try imported.rename(id: two[0].id, name: "Local name")
+let repeated = try imported.mergeImport(portable, ticket: imported.ticket())
+let afterRepeated = try imported.enrollments()
+expect(repeated.added == 0 && repeated.alreadyPresent == 2 && afterRepeated[0].name == "Local name", "import replaced local rename")
+let importedFile = base.appendingPathComponent("imported/password.envelope")
+let importedStable = try Data(contentsOf: importedFile)
+func portableData(_ records: [FIDO2PasswordProvider.Enrollment]) throws -> Data {
+    struct Document: Encodable { let format = "consolinotes-yubikey-enrollments"; let version = 1; let enrollments: [FIDO2PasswordProvider.Enrollment] }
+    return try JSONEncoder().encode(Document(enrollments: records))
+}
+let conflictEnvelope = try FIDO2PasswordProvider.seal(password: "different", credential: two[0].envelope.credential, publicKey: two[0].envelope.publicKey, salt: two[0].envelope.salt, secret: secret)
+let conflict = FIDO2PasswordProvider.Enrollment(id: two[0].id, name: "Conflict", envelope: conflictEnvelope)
+for bad in [try portableData([conflict]), try portableData([two[0], two[0]]), Data("{}".utf8), Data(repeating: 0, count: 262145)] {
+    fails { _ = try imported.mergeImport(bad, ticket: imported.ticket()) }
+    expect(try Data(contentsOf: importedFile) == importedStable, "failed import changed local bytes")
+}
+let namedConflict = FIDO2PasswordProvider.Enrollment(id: backupID, name: "Local name", envelope: added[1].envelope)
+fails { _ = try imported.mergeImport(portableData([namedConflict]), ticket: imported.ticket()) }
+let oldImportTicket = imported.ticket(); imported.cancel()
+fails { _ = try imported.mergeImport(portable, ticket: oldImportTicket) }
+let exportURL = base.appendingPathComponent("portable.json")
+try store.exportFile(exportURL, ticket: store.ticket())
+let exportStable = try Data(contentsOf: exportURL)
+expect((try FileManager.default.attributesOfItem(atPath: exportURL.path)[.posixPermissions] as! NSNumber).intValue == 0o600, "export permissions")
+let fromFile = FIDO2PasswordProvider(directory: base.appendingPathComponent("file-import"))
+expect(try fromFile.importFile(exportURL, ticket: fromFile.ticket()).added == 2, "file import")
+let exportLink = base.appendingPathComponent("portable-link.json")
+try FileManager.default.createSymbolicLink(at: exportLink, withDestinationURL: exportURL)
+fails { _ = try fromFile.importFile(exportLink, ticket: fromFile.ticket()) }
+fails { try store.exportFile(exportLink, ticket: store.ticket()) }
+let exportHardlink = base.appendingPathComponent("portable-hardlink.json")
+try FileManager.default.linkItem(at: exportURL, to: exportHardlink)
+fails { try store.exportFile(exportURL, ticket: store.ticket()) }
+try FileManager.default.removeItem(at: exportHardlink)
+let oldExportTicket = store.ticket(); store.cancel()
+fails { try store.exportFile(exportURL, ticket: oldExportTicket) }
+expect(try Data(contentsOf: exportURL) == exportStable, "rejected export changed existing file")
+
+// Backup proof preserves the authenticated password group and purpose.
+let backupProof = try FIDO2PasswordProvider.verifyBackupPassword("third-password", of: two[1], using: { $0 == "third-password" })
+let grouped = try imported.enroll(name: "Group backup", password: "third-password", proof: backupProof, pin: "correct-pin", ticket: imported.ticket(), beforeActivation: { _ in true })
+expect(grouped.envelope.protection == two[1].envelope.protection, "backup changed password group")
+
+// Strong mode cannot create a qualifying proof before offline recovery readback.
+let plan = try FIDO2PasswordProvider.StrongProtectionPlan()
+let recovery = plan.recoverySecret
+expect(recovery.hasPrefix("CN1-") && recovery.count == 75, "recovery secret format/entropy")
+fails { _ = try plan.verifyRecovery("incorrect saved copy") }
+let strongProof = try plan.verifyRecovery(recovery)
+let strongStore = FIDO2PasswordProvider(directory: base.appendingPathComponent("strong"))
+let strongKey = try strongStore.enroll(name: "Strong key", password: recovery, proof: strongProof, pin: "correct-pin", ticket: strongStore.ticket(), beforeActivation: { _ in true })
+expect(strongKey.envelope.protection?.mode == .hardwareWithRecovery, "strong mode purpose missing")
+expect(try unlock(strongStore, strongKey.id) == recovery, "strong key does not recover random note secret")
+expect(!String(data: try strongStore.exportData(), encoding: .utf8)!.contains(recovery), "strong recovery secret exported in plaintext")
+plan.clear()
+expect(plan.recoverySecret.isEmpty, "recovery setup retained secret after cleanup")
+fails { _ = try plan.verifyRecovery(recovery) }
 try store.remove(id: two[1].id)
 try store.remove(id: legacyID)
 expect(try store.enrollments().isEmpty && store.load() == nil, "last removal failed")
@@ -155,7 +233,7 @@ invalidRecords.append(Data(repeating: 0, count: 262145))
 for bytes in invalidRecords {
     try writePrivate(bytes, to: file)
     fails { _ = try store.enrollments() }
-    fails { try store.enroll(name: "Addition", password: "new", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("malformed store activated hardware") }) }
+    fails { try store.enroll(name: "Addition", password: "new", proof: try verified("new"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("malformed store activated hardware") }) }
     expect(try Data(contentsOf: file) == bytes, "malformed storage mutated")
 }
 // Full valid stores are readable but cannot add a seventeenth key.
@@ -166,7 +244,7 @@ let full = try (1...16).map { value -> FIDO2PasswordProvider.Enrollment in
 }
 try writePrivate(collectionData(full), to: file)
 expect(try store.enrollments().count == 16, "full valid collection unreadable")
-fails { try store.enroll(name: "Seventeenth", password: "new", pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("full store activated hardware") }) }
+fails { try store.enroll(name: "Seventeenth", password: "new", proof: try verified("new"), pin: "correct-pin", ticket: store.ticket(), beforeActivation: { _ in fatalError("full store activated hardware") }) }
 try FileManager.default.removeItem(at: file)
 try FileManager.default.createSymbolicLink(at: file, withDestinationURL: base.appendingPathComponent("missing"))
 fails { _ = try store.enrollments() }
@@ -181,7 +259,7 @@ fails { _ = try store.enrollments() }
 try FileManager.default.removeItem(at: hardlink)
 try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: file.deletingLastPathComponent().path)
 fails { _ = try store.enrollments() }
-print("PASS: legacy read-only migration, independent multi-key envelopes, named selection/rename/removal, concurrent rename preservation, three explicit activation gates, cancellation at every gate and final commit, native failures, duplicate credential/name rejection before hardware access, PIN NUL rejection, authenticated metadata, private storage and malformed/oversized/overfull/symlink/hardlink/permission rejection")
+print("PASS: verified note-password proof, v2 group authentication, encrypted portable export/import/atomic conflict rejection, private file recovery, offline recovery readback and strong-secret envelopes; legacy read-only migration, independent multi-key envelopes, named selection/rename/removal, concurrent rename preservation, three explicit activation gates, cancellation at every gate and final commit, native failures, duplicate credential/name rejection before hardware access, PIN NUL rejection, authenticated metadata, private storage and malformed/oversized/overfull/symlink/hardlink/permission rejection")
 '''
 # No real device code is linked; every synthetic credential has a distinct secret.
 stub=r'''

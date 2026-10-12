@@ -17,7 +17,7 @@ class NotesTableView: NSTableView,
     
     var defaultCell = NoteCellView()
     var pinnedCell = NoteCellView()
-    var storage = Storage.shared()
+    var storage: Storage { Storage.shared() }
 
     public var history = [URL]()
     public var historyPosition = 0
@@ -608,7 +608,7 @@ class NotesTableView: NSTableView,
                 try FileManager.default.moveItem(at: src, to: dst)
                 invertedMapping[dst] = src
             } catch {
-                print(error)
+                PrivacyLog.record("notestableview.event-611")
             }
         }
         

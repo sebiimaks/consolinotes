@@ -72,8 +72,9 @@ def check_app(app):
 
 def check_tracked():
     paths = [ROOT / "LICENSE", ROOT / "THIRD_PARTY_NOTICES.md", *SOURCES.values()]
-    for directory in ("Licenses", "scripts", "Resources/Fonts", "Resources/MPreview.bundle", "Vendor/LocalGit2", "Vendor/FIDO2"):
+    for directory in ("Licenses", "scripts", "Resources/Fonts", "Resources/MPreview.bundle", "Vendor/LocalGit2", "Vendor/FIDO2", "Vendor/CMark"):
         paths += [path for path in (ROOT / directory).rglob("*") if path.is_file() and "__pycache__" not in path.parts]
+    paths += [ROOT / "Vendor/Preview" / name for name in ["package.json", "package-lock.json", "entry.js", "build.mjs", ".gitignore"]]
     tracked = set(subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0"))
     missing = sorted({str(path.relative_to(ROOT)) for path in paths} - tracked)
     if missing:

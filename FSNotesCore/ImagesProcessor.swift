@@ -47,6 +47,10 @@ public class ImagesProcessor {
     
     public static func writeFile(data: Data, url: URL? = nil, note: Note, ext: String? = nil) -> String? {
         guard !note.isEncryptedAndLocked() else { return nil }
+        if note.hasMemoryWorkspace {
+            let name = url?.lastPathComponent ?? UUID().uuidString + "." + (ext ?? ImageFormat.get(from: data).rawValue)
+            return note.save(data: data, preferredName: name)?.0
+        }
         if note.isTextBundle() {
             var ext = ext
             

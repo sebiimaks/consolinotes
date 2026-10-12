@@ -208,7 +208,7 @@ class NoteCellView: NSTableCellView {
         if let value = objectValue, let note = value as? Note  {
             // Terminal glyphs: ◆/◇ encrypted, ★ pinned.
             if note.isEncrypted() {
-                pin.image = TUITheme.glyph(note.isUnlocked() ? "◇" : "◆", color: TUITheme.magenta, size: 14)
+                pin.image = TUITheme.glyph(note.isEncryptedAndLocked() ? "◆" : "◇", color: TUITheme.magenta, size: 14)
                 pin.isHidden = false
             } else {
                 pin.image = TUITheme.glyph("★", color: TUITheme.yellow, size: 14)
@@ -225,9 +225,9 @@ class NoteCellView: NSTableCellView {
     }
 
     public func getPreviewImage(imageUrl: URL, note: Note) -> Image? {
-        guard imageUrl.isFileURL, !note.isEncryptedAndLocked() else { return nil }
+        guard !note.isEncryptedAndLocked() else { return nil }
         // Sidebar previews must not leave a second plaintext attachment on disk.
-        guard let data = try? Data(contentsOf: imageUrl), let image = NSImage(data: data) else { return nil }
+        guard let data = note.memoryAttachmentData(for: imageUrl) ?? (imageUrl.isFileURL ? try? Data(contentsOf: imageUrl) : nil), let image = NSImage(data: data) else { return nil }
         return image.crop(to: CGSize(width: 70, height: 70))
     }
 
@@ -314,6 +314,12 @@ class NoteCellView: NSTableCellView {
     }
 
     public func attachHeaders(note: Note) {
+        if note.isPrivacyShielded {
+            self.name.stringValue = "Locked — unsaved changes protected"
+            self.preview.stringValue = ""
+            self.date.stringValue = ""
+            return
+        }
         if let title = note.getTitle() {
             self.name.stringValue = title
             self.preview.stringValue = note.preview

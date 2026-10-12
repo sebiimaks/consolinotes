@@ -73,7 +73,7 @@ class SearchQuery {
                 note.project.isLocked()
             ) && (
                 self.type != .Todo
-                || self.type == .Todo && note.content.hasTodoAttribute()
+                || self.type == .Todo && !note.isEncryptedAndLocked() && note.content.hasTodoAttribute()
             )
     }
 
@@ -90,7 +90,7 @@ class SearchQuery {
 
     private func isMatched(note: Note, terms: [Substring]) -> Bool {
         let name = note.name as NSString
-        let content = note.content.mutableString
+        let content = note.isEncryptedAndLocked() ? NSString(string: "") : note.content.mutableString
         let options: NSString.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
 
         for term in terms {

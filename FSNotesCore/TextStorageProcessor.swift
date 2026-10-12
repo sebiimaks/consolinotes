@@ -32,7 +32,7 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
     }
 
     private func process(textStorage: NSTextStorage, range editedRange: NSRange, changeInLength delta: Int) {
-        guard let note = editor?.note, textStorage.length > 0 else { return }
+        guard let note = editor?.note, !note.isEncryptedAndLocked(), textStorage.length > 0 else { return }
 
         defer {
             loadImages(textStorage: textStorage, checkRange: editedRange)
@@ -91,7 +91,7 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
     }
 
     private func loadImages(textStorage: NSTextStorage, checkRange: NSRange) {
-        guard let note = editor?.note else { return }
+        guard let note = editor?.note, !note.isEncryptedAndLocked() else { return }
 
         var start = checkRange.lowerBound
         var finish = checkRange.upperBound
@@ -120,6 +120,9 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
                     .attachmentPath: result.0
                 ], range: range)
 
+                if note.hasMemoryWorkspace {
+                    textStorage.addAttribute(.attachmentMemoryData, value: data, range: range)
+                }
                 url = result.1
             }
 
@@ -130,17 +133,25 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
     }
 
     public func loadImage(attachment: NSTextAttachment, url: URL, range: NSRange, textStorage: NSTextStorage, maxWidth: CGFloat) {
+        guard let note = editor?.note, !note.isEncryptedAndLocked() else { return }
         editor?.imagesLoaderQueue.addOperation {
+            guard self.editor?.note === note, !note.isEncryptedAndLocked() else { return }
             var image: PlatformImage?
             var size: CGSize?
 
-            if url.isMedia {
+            let memoryData = note.memoryAttachmentData(for: url)
+            if let data = memoryData, url.isImage, let decoded = NSImage(data: data), decoded.size.width > 0, decoded.size.height > 0 {
+                let scale = min(1, maxWidth / decoded.size.width)
+                let fitted = CGSize(width: decoded.size.width * scale, height: decoded.size.height * scale)
+                size = fitted
+                image = decoded.resized(to: fitted) ?? decoded
+            } else if url.isFileURL && url.isMedia {
                 let imageSize = url.getBorderSize(maxWidth: maxWidth)
 
                 size = imageSize
                 image = NoteAttachment.getImage(url: url, size: imageSize)
             } else {
-                let attachment = NoteAttachment(url: url)
+                let attachment = NoteAttachment(url: url, memorySize: memoryData?.count)
                 if let attachmentImage = attachment.getAttachmentImage() {
                     size = attachmentImage.size
                     image = attachmentImage
@@ -148,6 +159,7 @@ class TextStorageProcessor: NSObject, NSTextStorageDelegate {
             }
 
             DispatchQueue.main.async {
+                guard self.editor?.note === note, !note.isEncryptedAndLocked() else { return }
                 guard let manager = self.editor?.layoutManager as? NSLayoutManager else { return }
 
                 guard let container = self.editor?.textContainer,

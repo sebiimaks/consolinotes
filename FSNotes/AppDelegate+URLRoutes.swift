@@ -81,7 +81,7 @@ extension AppDelegate {
                     importedNote = note
                 }
             } else if let project = Storage.shared().getDefault() {
-                let newUrl = vc.copy(project: project, url: url)
+                guard let newUrl = vc.copy(project: project, url: url) else { continue }
 
                 UserDataService.instance.focusOnImport = newUrl
                 UserDataService.instance.skipSidebarSelection = true

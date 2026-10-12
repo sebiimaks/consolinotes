@@ -11,7 +11,7 @@ typealias Image = NSImage
 
 class Sidebar {
     var list = [Any]()
-    let storage = Storage.shared()
+    var storage: Storage { Storage.shared() }
     public var items = [[SidebarItem]]()
     
     init() {

@@ -15,7 +15,7 @@ consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/
 - **Matching colours.** Markdown colours in the editor and a preview that uses the same palette in light and dark. Code blocks use the consolinotes theme or a terminal favourite: Gruvbox, Solarized, Tokyo Night, Catppuccin, Nord, Dracula or One, identical in the editor and the preview.
 - **New name and icon.**
 - **Its own identity.** Bundle identifier `io.github.sebiimaks.consolinotes`, and note and tag links use `consolinotes://`. `fsnotes://` links from existing notes still open in consolinotes.
-- **Notes in `~/Documents/consolinotes`.** That folder is the default storage, and on first launch notes that earlier builds kept inside the app's sandbox are moved there. There is no built-in iCloud integration. macOS can still sync this folder if Desktop & Documents syncing is enabled, and other backup or sync software may copy it. Choose a folder outside those services for local-only storage.
+- **Private library by default.** New libraries live in the app’s private Application Support storage with owner-only permissions and system backup exclusion. Existing users explicitly choose to keep their selected folder or copy it into private storage. Copies are verified and originals are kept. Preferences → General → Storage controls library selection and the private library’s system-backup setting. Third-party tools and existing backups are outside this setting.
 - **Local-only operation.** Built-in Git sync and SSH/web publishing are removed. The app does not fetch link titles or remote preview resources. The sandbox has no outgoing-network entitlement.
 
 Everything else comes from FSNotes: plain-file storage, folders, tags and `[[wikilinks]]`, AES-256 encrypted notes, optional local Git history, Mermaid and MathJax.
@@ -28,23 +28,35 @@ The app has no managed sync/publishing, Handoff or automatic remote-content requ
 
 Previews and printing use a nonpersistent WebKit data store, block network resources, reject raw note HTML, and limit local attachments to verified files inside the note's attachment root. Note and tag links navigate or search; URL parameters cannot create notes or append text. User-initiated external links still open in the chosen browser or app, where that app's privacy settings apply.
 
-Encrypted-note writes complete synchronously and replace ciphertext atomically. Failed saves keep the recoverable working copy and prevent locking or quitting from discarding it. Successful locking clears note content, undo state and generated previews; encrypted-note metadata caches omit content, tags and attachment paths. These protections do not make ordinary notes encrypted: plaintext notes, unencrypted attachments, local history and external backups need separate care.
+Encrypted-note writes complete synchronously and replace ciphertext atomically. Failed saves keep recoverable edits in memory and an encrypted journal snapshot and prevent locking or quitting from discarding it. Every lock request immediately hides content across all windows, including when saving fails; revealing retained edits requires the existing password again. Locking on fast user switching happens when the session becomes inactive. Password and PIN dialogs clear their fields on completion, cancellation, window closure and lock. Successful locking clears note content, undo state and generated previews; encrypted-note metadata caches omit content, tags and attachment paths. These protections do not make ordinary notes encrypted: plaintext notes, unencrypted attachments, local history and external backups need separate care.
 
 Newly encrypted notes use AES-256-GCM and PBKDF2-HMAC-SHA256 with 600,000 iterations, implemented by CryptoKit and CommonCrypto. A key is derived once per unlock; each save uses a new random nonce. Existing RNCryptor v3 notes remain supported and retain their format when edited, subject to the archive safety limits below. To upgrade one, unlock it and choose **File → Upgrade Encryption…**. The password stays the same. New and upgraded files require consolinotes 1.2 or newer; FSNotes and older consolinotes cannot read them. Upgrading the live file does not upgrade older history or backups.
 
 The new-encryption notice has a **Do not ask again.** checkbox. Its preference is saved only when you confirm **Encrypt**, never when you cancel. It does not suppress the separate confirmation for upgrading an existing note.
 
-Unlocked encrypted notes still use temporary plaintext working files. New working copies are in `ConsolinotesEncryption.noindex` inside the app's temporary directory, with owner-only permissions and Time Machine exclusion. Preview directories use the same indexing/backup precautions; thumbnails render in memory without disk caches. Successful locking removes working copies, while failed writes deliberately retain recovery data. Interrupted sessions and older `Encryption` directories are preserved for recovery. This is not a memory-only vault, and backup exclusion does not control third-party software. Archive members are checked for links/special files, and new saves and extracted content are limited to 512 MiB and fewer than 16,384 child entries. The extraction metadata guard is not a strict hostile-ZIP64 decompression budget.
+Since 1.7, encrypted notes and attachments are decrypted into memory. Normal unlock, editing, save, lock, sidebar thumbnails, and encrypted preview do not create plaintext working files. Preview and print rendering use a private in-memory WebKit document with a revocable per-document capability; bundled scripts, styles and fonts stay local. Opening an encrypted attachment in another app requires an explicit plaintext export. Printing and sharing require confirmation and can give an external destination its own plaintext copy.
+
+Encrypted saves first write an authenticated encrypted recovery snapshot in private Application Support storage. **File → Recover Interrupted Notes…** restores a separate `.etp` file using its original password or recovery secret, without overwriting current notes. Interrupted plaintext working copies from older versions still have explicit restore/discard options; incomplete old copies can be deliberately exported for manual recovery. Routine working content stays in memory, but this cannot exclude OS swap, crash dumps, compromised processes or copies already sent outside the app.
+
+Archive extraction rejects unsafe paths, links and special files, and counts actual decompressed bytes before writing each chunk. New saves and extracted content are limited to 512 MiB, 16,384 entries and 32 path components; ciphertext is size-checked before reading and bounded throughout the read. Cancellation removes partial extraction. New encryption maps attachment references before serialization, so spaces, percent signs and Unicode filenames work when the encrypted note is moved away from its original assets. Older encrypted notes with already-broken attachment references are not automatically rewritten.
+
+Unlock still runs synchronously: large notes can delay the interface and delivery of a lock or cancellation event. Once cancellation is observed, an interrupted operation cannot publish its decrypted content. Moving this work off the interface thread remains a follow-up.
+
+Find and recent searches stay in this app's memory and are cleared when notes lock. Older persisted recent-search preferences are removed. Note clipboard copies are marked local to this Mac, concealed and transient, then cleared after one minute by default or when notes lock. **Preferences → Security → Clipboard Privacy…** changes the expiry to 30 seconds, one, two or five minutes. Cleanup preserves newer clipboard content from other applications. Clipboard managers may ignore these markers. Rich paste and drag use a bounded structured format containing text and embedded attachment bytes; legacy object archives are not decoded, and Paste as Plain Text only reads text.
+
+Diagnostics retain only a bounded set of static event labels in memory, without note contents, names, paths or raw error details. **Preferences → Security → Review Diagnostics…** lets you review and deliberately save that report; it is never sent automatically.
 
 Unlocking supports manual password entry and optional direct-USB FIDO2 YubiKey unlocking. Touch ID, saved Keychain passwords and native PIV unlocking have been removed so no unlock feature requires Apple provisioning. Existing encrypted notes and passwords are unchanged. Previously saved Keychain items and PIV envelopes are not read or deleted by this build; retain your original note passwords.
 
 Local history is optional and records earlier file contents. Encrypting or deleting the current note does not erase plaintext in earlier revisions or external backups. Preferences → Local History explains this and lets you delete local history deliberately; the upgrade preserves existing history.
 
-Deleting a note saves and locks any encrypted working copy first; a failed save or file removal keeps the note visible. If plaintext cleanup fails after a successful encrypted save, the editor locks and subsequent retries remove only the leftover files; they cannot overwrite ciphertext from a partially removed working folder. Quitting waits for cleanup to succeed. Deleting a flat Markdown note preserves attachments that may be shared with other notes. Deleting a TextBundle removes its enclosed assets. Deletion is not secure erasure of storage, history or backups.
+Deleting a note saves and locks any encrypted working copy first; a failed save or file removal keeps the note visible. Failed encrypted saves retain memory and encrypted recovery data while the editor is shielded. Quitting waits for persistence to succeed. Deleting a flat Markdown note preserves attachments that may be shared with other notes. Deleting a TextBundle removes its enclosed assets. Deletion is not secure erasure of storage, history or backups.
 
 On launch, the app removes legacy networking preferences and its own imported Git key copies, and rewrites its project-settings archives without saved credentials. Original SSH key files, notes, Git repositories and already-published sites are preserved. Cleanup failures are reported and retried. Copies in external backups are outside this cleanup.
 
 Local history uses libgit2 1.9.7 built from pinned source for arm64 and x86_64. All network transport implementations are excluded; the old swift-cgit2, libssh2 and OpenSSL binary dependencies are removed. Complete source, the local patch and build provenance ship with the app. Existing historical plaintext is not rewritten. These measures are not a claim of complete security certification.
+
+Preferences → Security → Note Protection also offers encryption for newly created notes, idle locking (five minutes by default), locking when the last note window closes, and optional locking when any YubiKey is unplugged. Imports and duplicates preserve their existing format and require an explicit unencrypted-copy choice when new-note encryption is enabled. Writing Tools and inline prediction are disabled in the note editor and active text fields. Folder access is restored only for configured roots, refreshed when stale, and released on detach or quit.
 
 ### Direct-USB YubiKey unlocking
 
@@ -52,13 +64,15 @@ Since version 1.4, consolinotes uses libfido2 over USB HID, not Apple's PIV iden
 
 Open **Preferences → Security → YubiKey Unlock…** to manage up to 16 named enrollments. Add a YubiKey without replacing existing enrollments; rename or remove only the selected entry. Connect one key at a time. To create an independent backup, physically swap to a different YubiKey; multiple enrollments of the same physical key do not provide redundancy. Each enrollment can protect the same existing note password or a different one.
 
-Enrollment asks for a name, the existing note password and the key's FIDO2 PIN. The app guides each activation separately: **1. Create the credential → 2. Protect the saved password → 3. Verify unlocking**. Before each operation it waits for **Continue**, then explicitly prompts **Touch your YubiKey now**. No reliance on noticing flashing lights. Existing enrollments are saved unchanged unless all three stages succeed. A non-discoverable ES256 credential is created under `consolinotes.local-unlock`; PINs, OTP/PIV slots, existing credentials and note passwords are not replaced or reset.
+Select the intended encrypted note before enrollment. Enrollment checks its existing password against the actual ciphertext before any hardware operation, then asks for a name and the key’s FIDO2 PIN. The app guides each activation separately: **1. Create the credential → 2. Protect the saved password → 3. Verify unlocking**. Before each operation it waits for **Continue**, then explicitly prompts **Touch your YubiKey now**. No reliance on noticing flashing lights. Existing enrollments are saved unchanged unless all three stages succeed. A non-discoverable ES256 credential is created under `consolinotes.local-unlock`; PINs, OTP/PIV slots, existing credentials and note passwords are not replaced or reset.
 
 For individual encrypted notes, choose **Use YubiKey…**, select the named enrollment and enter its FIDO2 PIN. A signed, PIN-free credential check on the same opened USB device rejects a mismatched enrollment before sending the PIN. This check omits the built-in `uv` option, which ordinary non-biometric YubiKeys do not support even when set to false; version 1.5.1 corrects that compatibility error. Keys configured to require user verification even for this check fail closed with guidance to use a manual password. Each secret-producing assertion still requires PIN verification and touch, and the app verifies its signature and flags. PIN errors are never automatically retried; manual password fallback is explicit. The app does not attest the manufacturer's identity; USB vendor filtering is a convenience, not a security attestation.
 
-New encryption and folder operations continue to use manual passwords. This is optional password convenience, not “Require YubiKey”: retain the original note password for recovery. Removing a key does not automatically lock notes; use Lock All or auto-lock settings. Cancellation remains visible until the bounded USB request ends; cancellation, window closure and auto-lock discard pending results.
+Ordinary YubiKey unlocking wraps the existing note password; keep that password for recovery. It does not strengthen resistance to guessing that password against a copied note. Preferences → Security → Note Protection adds a separate stronger setup and deliberate secret-rotation flow for the selected encrypted note. Setup generates a 256-bit random secret, requires a separately re-entered offline recovery password and a verified hardware enrollment, then atomically replaces the note ciphertext. The recovery password also unlocks the note manually. Keep it offline and export your enrollment collection. Losing both means losing access. Removing an enrollment does not revoke an exported copy or previously copied ciphertext.
 
-Each enrollment uses a separately generated hardware secret and salt. The hardware's 32-byte `hmac-secret` output feeds HKDF-SHA256 with an app-specific purpose string, then AES-256-GCM protects the saved password. Credential ID, public key and salt are authenticated; enrollment names are descriptive plaintext labels. The owner-only, backup-excluded store remains at `consolinotes/FIDO2Unlock.noindex/password.envelope` under Application Support. Existing 1.4 single-enrollment files appear as **Original YubiKey** without any write; the first successful add, rename or removal atomically migrates to a version-2 collection. Older builds cannot read that collection, but manual note passwords and note files are unchanged.
+Use **Test Enrollment** to check a selected key against the selected encrypted note, and **Add Backup Key** to protect that same password with another key. **Export Enrollments** saves a portable encrypted collection; **Import Enrollments** validates and atomically merges it without replacing conflicting records. Test the import and each physical key before relying on the backup. The collection is necessary for recovery on another Mac because credentials are non-discoverable.
+
+Each enrollment uses a separately generated hardware secret and salt. The hardware's 32-byte `hmac-secret` output feeds HKDF-SHA256 with an app-specific purpose string, then AES-256-GCM protects the saved password. Credential ID, public key, salt, and (for new records) a random password-group identifier and purpose are authenticated; enrollment names are descriptive plaintext labels. No note path or password hash is stored. The owner-only, backup-excluded store remains at `consolinotes/FIDO2Unlock.noindex/password.envelope` under Application Support. Existing 1.4 single-enrollment files appear as **Original YubiKey** without any write; the first successful add, rename or removal atomically migrates to a version-2 collection. Older builds cannot read that collection, but manual note passwords and note files are unchanged.
 
 The FIDO2 PIN and derived secret are never persisted or passed through a subprocess. Library diagnostics are suppressed even if `FIDO_DEBUG` is inherited. Swift/OS memory handling does not guarantee perfect erasure of every temporary copy.
 
@@ -93,7 +107,7 @@ For a Release build for local use, run:
 bash scripts/build-local-macos.sh
 ```
 
-This uses ad-hoc signing and preserves the app sandbox, with one exception that lets the app use `~/Documents/consolinotes`. It needs no Apple signing account and produces `build/DerivedData/Build/Products/Release/consolinotes.app`. The script verifies the signature and bundled licences.
+This uses ad-hoc signing and preserves the app sandbox. Libraries outside private app storage require an explicit folder selection; there is no automatic Documents access. It needs no Apple signing account and produces `build/DerivedData/Build/Products/Release/consolinotes.app`. The script verifies the signature and bundled licences.
 
 ### Privacy regression checks
 
@@ -103,6 +117,19 @@ After building, run these checks on macOS:
 python3 scripts/check-encrypted-storage.py
 python3 scripts/check-encrypted-codec.py
 python3 scripts/check-password-routing.py
+python3 scripts/check-password-lifecycle.py
+python3 scripts/check-lock-privacy.py
+python3 scripts/check-private-clipboard.py
+python3 scripts/check-private-editor.py
+python3 scripts/check-private-preview-find.py
+python3 scripts/check-editor-clipboard.py
+python3 scripts/check-privacy-defaults.py
+python3 scripts/check-watcher-privacy.py
+python3 scripts/check-file-watcher.py
+python3 scripts/check-launch-storage.py
+python3 scripts/check-private-library.py
+python3 scripts/check-encrypted-attachments.py
+python3 scripts/check-encrypted-recovery.py
 python3 scripts/check-fido2-password.py
 python3 scripts/check-fido2-bridge.py
 python3 scripts/check-fido2-ui.py
@@ -114,6 +141,9 @@ python3 scripts/check-offline-core.py
 bash scripts/test-offline-migration.sh
 python3 scripts/check-preview-security.py
 python3 scripts/check-preview-webkit.py
+python3 scripts/check-preview-watchdog.py
+python3 scripts/check-print-preview.py
+python3 scripts/check-preview-dependencies.py
 python3 scripts/test-local-history.py
 ```
 

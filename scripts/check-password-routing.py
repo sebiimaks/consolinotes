@@ -51,11 +51,18 @@ final class FIDO2PasswordProvider {
 }
 enum FIDO2UnlockUI {
  static var callback: ((String) -> Void)?
+ static func cancelPendingRequests() {}
  static func unlock(from: EditorViewController, completion: @escaping (String) -> Void, manualFallback: (() -> Void)? = nil) { callback = completion }
 }
+enum EncryptedNoteRecoveryController { static func cancel() {} }
+enum PlaintextDisclosure { static func cancel() {} }
+enum PrivateNoteArchive { static func cancelOperations() {} }
 enum UserDefaultsManagement { static var suppressNewEncryptionFormatNotice = false }
 final class EditorViewController {
     private static var passwordRequestGeneration: UInt64 = 0
+    private static let passwordControllers = NSHashTable<EditorViewController>.weakObjects()
+    func teardownPasswordPrompt() { pending = nil }
+    func runPasswordNotice(_ alert: NSAlert) -> Response { alert.runModal() }
     var pending: ((String) -> Void)?
     var validation = false
     func masterPasswordPrompt(validation: Bool, reason: String? = nil, completion: @escaping (String) -> Void) {
@@ -70,8 +77,9 @@ editor.pending?("manual")
 expect(received == "manual" && !editor.validation, "Manual unlock failed")
 received = nil
 editor.getMasterPassword { received = $0 }
+let cancelledCallback = editor.pending
 EditorViewController.cancelPasswordRequests()
-editor.pending?("late")
+cancelledCallback?("late")
 expect(received == nil, "Late manual prompt reversed lock")
 editor.pending = nil
 NSAlert.choices = [(.cancel, true)]

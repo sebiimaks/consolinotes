@@ -3,3 +3,13 @@
 # Preserve byte-for-byte upstream headers and unified-diff context in the pinned build inputs.
 Vendor/LocalGit2/libgit2.xcframework/**/Headers/** -whitespace
 Vendor/LocalGit2/local-only.patch -whitespace
+
+# Preserve whitespace inside generated JavaScript template literals.
+Resources/MPreview.bundle/js/mermaid.min.js whitespace=-blank-at-eol
+Resources/MPreview.bundle/js/highlight.min.js whitespace=-blank-at-eol
+
+# Preserve pinned upstream C sources and original font notice text byte for byte.
+Vendor/CMark/Sources/** whitespace=-blank-at-eol
+Licenses/web/mathjax-tex-fonts-3.2.2.txt whitespace=-blank-at-eol
+THIRD_PARTY_NOTICES.md whitespace=-blank-at-eol
+Resources/MPreview.bundle/THIRD_PARTY_NOTICES.md whitespace=-blank-at-eol

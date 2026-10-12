@@ -19,6 +19,7 @@ class NoteAttachment {
     // MARK: - Properties
 
     public let url: URL
+    private let memorySize: Int?
 
     // MARK: - Constants
 
@@ -31,14 +32,15 @@ class NoteAttachment {
 
     // MARK: - Initialization
 
-    init(url: URL) {
+    init(url: URL, memorySize: Int? = nil) {
         self.url = url
+        self.memorySize = memorySize
     }
 
     // MARK: - Public Methods
 
     public func getImageText() -> String {
-        let fileSize = url.fileSize
+        let fileSize = memorySize ?? (url.isFileURL ? Int(url.fileSize) : 0)
         let sizeTitle = formatFileSize(Int(fileSize))
         return " \(url.lastPathComponent) – \(sizeTitle) 📎 "
     }

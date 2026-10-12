@@ -12,25 +12,24 @@ extension EditTextView
 {
     public func handleAttributedText(_ pasteboard: NSPasteboard, note: Note, storage: NSTextStorage, replacementRange: NSRange) -> Bool {
 
-        let locationDiff = selectedRange().location > replacementRange.location
-            ? replacementRange.location
-            : replacementRange.location - selectedRange().length
-
-        let insertRange = NSRange(location: locationDiff, length: 0)
-        let removeRange = selectedRange()
-
-        // drag
-        insertText("", replacementRange: removeRange)
-
-        guard let data = pasteboard.data(forType: NSPasteboard.attributed),
-              let attributedString = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? NSAttributedString else { return false }
-
-        // drop
-        insertText(attributedString, replacementRange: insertRange)
-
-        // select
-        let selectedRange = NSRange(location: locationDiff, length: attributedString.length)
-        setSelectedRange(selectedRange)
+        guard !note.isEncryptedAndLocked(), isEditable,
+              let data = pasteboard.data(forType: NSPasteboard.attributed),
+              let attributedString = NotePasteboardCodec.decode(data),
+              replacementRange.location >= 0, replacementRange.location <= storage.length else { return false }
+        let selection = selectedRange()
+        guard selection.location >= 0, selection.length >= 0,
+              selection.location <= storage.length, selection.length <= storage.length - selection.location else { return false }
+        // Only a drag originating in this editor moves its selection.
+        let moving = dragDetected
+        if moving && NSLocationInRange(replacementRange.location, selection) { return false }
+        let location = moving && selection.location < replacementRange.location
+            ? replacementRange.location - selection.length : replacementRange.location
+        attributedString.loadTasks()
+        undoManager?.beginUndoGrouping()
+        defer { undoManager?.endUndoGrouping(); dragDetected = false }
+        if moving { insertText("", replacementRange: selection) }
+        insertText(attributedString, replacementRange: NSRange(location: location, length: 0))
+        setSelectedRange(NSRange(location: location, length: attributedString.length))
 
         return true
     }
@@ -47,6 +46,7 @@ extension EditTextView
         let title = "[[\(draggableNote.title)]]"
         
         DispatchQueue.main.async {
+            guard self.note === note, !note.isEncryptedAndLocked(), self.isEditable else { return }
             self.window?.makeFirstResponder(self)
             
             guard let undoManager = self.undoManager else { return }
@@ -103,6 +103,7 @@ extension EditTextView
         }
         
         group.notify(queue: .main) {
+            guard self.note === note, !note.isEncryptedAndLocked(), self.isEditable else { return }
             let final = NSMutableAttributedString()
             for i in 0..<total {
                 guard let part = results[i] else { continue }

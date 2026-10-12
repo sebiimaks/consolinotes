@@ -8,6 +8,7 @@ No USB, Keychain, note files, enrollment files, or real secrets are accessed.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +17,27 @@ FIXTURE = r'''
 import Cocoa
 
 final class FIDO2PasswordProvider {
-    struct Enrollment { let id: String; var name: String }
+    struct Protection { let group: String; let mode: String }
+    struct Envelope { var protection: Protection? = nil }
+    struct Enrollment { let id: String; var name: String; var envelope = Envelope() }
+    struct PasswordProof {}
+    final class StrongProtectionPlan {
+        init() throws {}
+        var recoverySecret = "synthetic-recovery-password"
+        func verifyRecovery(_ entered: String) throws -> PasswordProof {
+            guard entered == recoverySecret else { throw Failure("Recovery mismatch") }; return PasswordProof()
+        }
+        func clear() { recoverySecret = "" }
+    }
+    static func verifyPassword(_ password: String, using verify: (String) -> Bool) throws -> PasswordProof {
+        guard verify(password) else { throw Failure("Password does not unlock selected note") }; return PasswordProof()
+    }
+    static func verifyBackupPassword(_ password: String, of entry: Enrollment, using verify: (String) -> Bool) throws -> PasswordProof {
+        try verifyPassword(password, using: verify)
+    }
+    struct ImportSummary { let added: Int; let alreadyPresent: Int }
+    func exportFile(_ url: URL, ticket: UInt64) throws {}
+    func importFile(_ url: URL, ticket: UInt64) throws -> ImportSummary { ImportSummary(added: 0, alreadyPresent: 0) }
     struct Failure: LocalizedError {
         let errorDescription: String?
         init(_ text: String) { errorDescription = text }
@@ -30,6 +51,7 @@ final class FIDO2PasswordProvider {
     private var operationLog = [String]()
     private var mutationLog = [String]()
     var failUnlock = false
+    var failEnrollment = false
     private func guarded<T>(_ body: () -> T) -> T { lock.lock(); defer { lock.unlock() }; return body() }
     func ticket() -> UInt64 { guarded { generation } }
     func current(_ ticket: UInt64) -> Bool { guarded { generation == ticket } }
@@ -44,13 +66,15 @@ final class FIDO2PasswordProvider {
         guard hardwareGate.wait(timeout: .now() + 8) == .success else { throw Failure("Fixture operation timed out") }
         guard current(ticket) else { throw Failure("Cancelled") }
     }
-    func enroll(name: String, password: String, pin: String, ticket: UInt64, beforeActivation: (Int) -> Bool) throws {
-        guard password == "synthetic-password", pin == "synthetic-pin" else { throw Failure("Fixture credentials mismatch") }
+    @discardableResult
+    func enroll(name: String, password: String, proof: PasswordProof, pin: String, ticket: UInt64, beforeActivation: (Int) -> Bool) throws -> Enrollment {
+        guard ["synthetic-password", "synthetic-password-for-backup", "synthetic-recovery-password"].contains(password), pin == "synthetic-pin" else { throw Failure("Fixture credentials mismatch") }
         for step in 1...3 {
             guard current(ticket), beforeActivation(step), current(ticket) else { throw Failure("Cancelled") }
             try activate("enroll-\(step)", ticket: ticket)
         }
-        guarded { records.append(Enrollment(id: "new", name: name)); mutationLog.append("add:new") }
+        guard !failEnrollment else { throw Failure("Synthetic final verification failure") }
+        return guarded { let record = Enrollment(id: "new", name: name); records.append(record); mutationLog.append("add:new"); return record }
     }
     func unlock(id: String, pin: String, ticket: UInt64, beforeActivation: () -> Bool) throws -> String {
         guard pin == "synthetic-pin", current(ticket), beforeActivation(), current(ticket) else { throw Failure("Cancelled") }
@@ -67,6 +91,32 @@ final class FIDO2PasswordProvider {
         guarded { records.removeAll { $0.id == id }; mutationLog.append("remove:\(id)"); generation += 1 }
     }
 }
+
+final class Note {
+    static let fixture = Note()
+    var acceptsPassword = true
+    var verificationCalls = 0
+    var rotations = [String]()
+    var lastWriteError: String?
+    func isEncrypted() -> Bool { true }
+    func isEncryptedAndLocked() -> Bool { false }
+    func isUnlocked() -> Bool { true }
+    func verifyEncryptionPassword(_ password: String) -> Bool { verificationCalls += 1; return acceptsPassword }
+    func rotateEncryptionSecret(to secret: String, isCancelled: () -> Bool) -> Bool {
+        expect(Thread.isMainThread, "Rotation read mutable editor state off-main")
+        guard !isCancelled() else { return false }; rotations.append(secret); return true
+    }
+}
+final class NoteTable {
+    func getSelectedNotes() -> [Note] { [Note.fixture] }
+    func reloadData() {}
+}
+final class ViewController {
+    static let instance = ViewController()
+    static func shared() -> ViewController? { instance }
+    let notesTableView = NoteTable()
+}
+enum SensitiveClipboard { static func writeString(_ value: String) {} }
 
 func fail(_ message: String) -> Never {
     FileHandle.standardError.write(Data(("FAIL: " + message + "\n").utf8))
@@ -141,17 +191,18 @@ func beginEnrollment() {
     }
 }
 let activationTitles = ["Create this key's credential", "Protect the saved password", "Verify this key can unlock it"]
-func activation(_ step: Int, cancel: Bool = false, release: Bool = true) {
+func activation(_ step: Int, cancel: Bool = false, release: Bool = true, offset: Int = 0) {
     let title = "Activation \(step) of 3: \(activationTitles[step - 1])"
-    onAlert(title) { _ in expect(provider.operations.count == step - 1, "Hardware began before Continue for step \(step)") }
+    onAlert(title) { _ in expect(provider.operations.count == offset + step - 1, "Hardware began before Continue for step \(step)") }
     pause("step \(step) waits for Continue") {
-        expect(provider.operations.count == step - 1, "Prompt did not gate hardware step \(step)")
+        expect(provider.operations.count == offset + step - 1, "Prompt did not gate hardware step \(step)")
         click(cancel ? "Cancel" : "Continue", in: alert(title)!)
     }
     if !cancel {
         let waiting = "Activation \(step) of 3: Touch your YubiKey now"
-        stage("activation \(step) running", when: { alert(waiting) != nil && provider.operations.count == step }) {
+        stage("activation \(step) running", when: { alert(waiting) != nil && provider.operations.count == offset + step }) {
             expect(provider.operations.last == "enroll-\(step)", "Wrong hardware operation")
+            expect(Note.fixture.rotations.isEmpty, "Note changed before final hardware verification completed")
             if release { provider.releaseActivation() }
         }
     }
@@ -160,10 +211,11 @@ func verifyUnchanged() {
     expect((try! provider.enrollments()).map { $0.id } == ["everyday", "backup"], "Cancellation changed enrollments")
     expect(provider.mutations.isEmpty, "Cancellation wrote enrollment")
 }
-func beginUnlock(release: Bool = true) {
+func beginUnlock(release: Bool = true, fixedSelection: Bool = false) {
     onAlert("Choose a YubiKey to unlock") { dialog in
         let selection = picker(in: dialog)
         expect(selection.itemTitles == ["Everyday", "Backup"], "Unlock picker missing named enrollments")
+        if fixedSelection { expect(!selection.isEnabled && selection.indexOfSelectedItem == 1, "Management unlock did not bind selected enrollment") }
         selection.selectItem(at: 1)
         input("FIDO2 PIN", in: dialog).stringValue = "synthetic-pin"
         click("Continue", in: dialog)
@@ -180,7 +232,106 @@ func beginUnlock(release: Bool = true) {
     }
 }
 
+func managementAction(_ title: String) {
+    onAlert("YubiKey enrollments") { dialog in
+        picker(in: dialog).selectItem(at: 1); click(title, in: dialog)
+    }
+}
+func sourceEnrollment() {
+    onAlert("Add a YubiKey") { dialog in
+        expect(!views(dialog).compactMap { $0 as? NSTextField }.contains { $0.placeholderString == "Existing note password" }, "Verified source asked for another note password")
+        input("Enrollment name (e.g. Everyday or Backup)", in: dialog).stringValue = "Travel"
+        input("FIDO2 PIN", in: dialog).stringValue = "synthetic-pin"
+        click("Continue", in: dialog)
+    }
+}
+func startStrongRecovery() {
+    onAlert("Protect this note with YubiKey and recovery?") { dialog in
+        expect(Note.fixture.rotations.isEmpty, "Rotation before confirmation")
+        click("Set Up Recovery", in: dialog)
+    }
+    onAlert("Save this recovery password offline") { dialog in
+        expect(provider.operations.isEmpty && Note.fixture.rotations.isEmpty, "Hardware or note changed before recovery")
+        expect(views(dialog).compactMap { $0 as? NSTextField }.contains { $0.stringValue == "synthetic-recovery-password" }, "Recovery secret missing")
+        click("I Saved It Offline", in: dialog)
+    }
+}
 switch scenario {
+case "wrong-note":
+    Note.fixture.acceptsPassword = false
+    beginEnrollment()
+    onAlert("YubiKey was not added") { dialog in
+        expect(Note.fixture.verificationCalls == 1 && provider.operations.isEmpty, "Wrong note password reached hardware")
+        verifyUnchanged(); click("Close", in: dialog)
+    }
+case "test-enrollment", "test-wrong-note":
+    Note.fixture.acceptsPassword = scenario == "test-enrollment"
+    managementAction("Test Enrollment…"); beginUnlock(fixedSelection: true)
+    onAlert(scenario == "test-enrollment" ? "Enrollment verified" : "This enrollment does not unlock the selected note") { dialog in
+        expect(Note.fixture.verificationCalls == 1 && Note.fixture.rotations.isEmpty, "Test did not authenticate without mutation")
+        expect(provider.operations == ["unlock:backup"], "Test retried hardware")
+        click("OK", in: dialog)
+    }
+case "add-backup", "backup-wrong-note":
+    Note.fixture.acceptsPassword = scenario == "add-backup"
+    managementAction("Add Backup Key…"); beginUnlock(fixedSelection: true)
+    if scenario == "backup-wrong-note" {
+        onAlert("YubiKey request could not be completed") { dialog in
+            verifyUnchanged(); expect(provider.operations == ["unlock:backup"], "Wrong backup password began enrollment")
+            click("OK", in: dialog)
+        }
+    } else {
+        onAlert("Connect your backup YubiKey") { dialog in
+            expect(Note.fixture.verificationCalls == 1, "Backup did not authenticate selected note")
+            click("Backup Key Connected", in: dialog)
+        }
+        sourceEnrollment()
+        for step in 1...3 { activation(step, offset: 1) }
+        onAlert("“Travel” is ready") { dialog in
+            expect(provider.operations == ["unlock:backup", "enroll-1", "enroll-2", "enroll-3"], "Backup activation sequence")
+            expect((try! provider.enrollments()).count == 3, "Backup replaced previous enrollment")
+            click("Done", in: dialog)
+        }
+    }
+case "strong", "strong-wrong-recovery", "strong-cancel", "strong-hardware-failure", "strong-lock-recovery", "strong-durability-warning":
+    let strongSuccess = ["strong", "strong-durability-warning"].contains(scenario)
+    if scenario == "strong-durability-warning" { Note.fixture.lastWriteError = "The new secret applies; an encrypted recovery snapshot was retained." }
+    startStrongRecovery()
+    onAlert("Verify your saved recovery password") { dialog in
+        let entered = input("Recovery password", in: dialog)
+        entered.stringValue = scenario == "strong-wrong-recovery" ? "wrong" : "synthetic-recovery-password"
+        if scenario == "strong-lock-recovery" {
+            FIDO2UnlockUI.cancelPendingRequests()
+            expect(entered.stringValue.isEmpty, "Lock retained recovery password")
+        } else { click("Verify Recovery", in: dialog) }
+    }
+    if scenario == "strong-lock-recovery" {
+        pause("recovery lock settled") { verifyUnchanged(); expect(provider.operations.isEmpty && Note.fixture.rotations.isEmpty, "Locked recovery changed note or key") }
+    } else if scenario == "strong-wrong-recovery" {
+        onAlert("YubiKey request could not be completed") { dialog in
+            expect(provider.operations.isEmpty && Note.fixture.rotations.isEmpty, "Wrong recovery changed note or key")
+            click("OK", in: dialog)
+        }
+    } else {
+        sourceEnrollment()
+        activation(1); activation(2)
+        if scenario == "strong-cancel" {
+            activation(3, cancel: true)
+            pause("strong cancellation settled") { verifyUnchanged(); expect(Note.fixture.rotations.isEmpty, "Cancelled setup rotated note") }
+        } else {
+            provider.failEnrollment = scenario == "strong-hardware-failure"
+            activation(3)
+            onAlert(strongSuccess ? "Note protection updated" : "YubiKey was not added") { dialog in
+                expect(provider.operations.count == 3, "Strong mode missing verified hardware operations")
+                if strongSuccess {
+                    expect(Note.fixture.rotations == ["synthetic-recovery-password"], "Strong mode used wrong or repeated secret")
+                    if let warning = Note.fixture.lastWriteError { expect(views(dialog).compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains(warning) }, "Successful publication lost durability warning") }
+                }
+                else { verifyUnchanged(); expect(Note.fixture.rotations.isEmpty, "Failed hardware verification rotated note") }
+                click(strongSuccess ? "OK" : "Close", in: dialog)
+            }
+        }
+    }
 case "enroll":
     beginEnrollment()
     for step in 1...3 { activation(step) }
@@ -212,6 +363,49 @@ case "close-window":
     beginEnrollment()
     onAlert("Activation 1 of 3: Create this key's credential") { _ in window.orderOut(nil) }
     stage("closed parent cancellation", when: { window.attachedSheet == nil }) { verifyUnchanged(); expect(provider.operations.isEmpty, "Closed parent allowed an activation") }
+case "lock-management":
+    onAlert("YubiKey enrollments") { dialog in picker(in: dialog).selectItem(at: 1); click("Rename…", in: dialog) }
+    onAlert("Rename enrollment") { dialog in
+        let name = input("Enrollment name", in: dialog)
+        name.stringValue = "private key name"
+        FIDO2UnlockUI.cancelPendingRequests()
+        expect(name.stringValue.isEmpty, "Lock retained enrollment name")
+    }
+    pause("management cancellation settled") {
+        verifyUnchanged()
+        expect(alert("YubiKey enrollments") == nil && alert("Rename enrollment") == nil, "Cancelled settings reopened")
+    }
+case "lock-initial":
+    onAlert("YubiKey enrollments") { click("Add YubiKey…", in: $0) }
+    onAlert("Add a YubiKey") { dialog in
+        let pin = input("FIDO2 PIN", in: dialog)
+        let password = input("Existing note password", in: dialog)
+        pin.stringValue = "synthetic-pin"; password.stringValue = "synthetic-password"
+        FIDO2UnlockUI.cancelPendingRequests()
+        expect(pin.stringValue.isEmpty && password.stringValue.isEmpty, "Lock retained prompt secrets")
+    }
+    stage("initial lock dismissed", when: { window.attachedSheet == nil }) {
+        verifyUnchanged(); expect(provider.operations.isEmpty, "Initial lock activated hardware")
+    }
+case "lock-activation":
+    beginEnrollment(); activation(1, release: false)
+    onAlert("Activation 1 of 3: Touch your YubiKey now") { _ in
+        FIDO2UnlockUI.cancelPendingRequests()
+        expect(window.attachedSheet == nil, "Lock left activation prompt visible")
+        provider.releaseActivation()
+    }
+    pause("locked worker settles") { verifyUnchanged(); expect(provider.operations == ["enroll-1"], "Locked worker advanced") }
+case "close-initial":
+    onAlert("YubiKey enrollments") { click("Add YubiKey…", in: $0) }
+    onAlert("Add a YubiKey") { dialog in
+        let pin = input("FIDO2 PIN", in: dialog)
+        pin.stringValue = "synthetic-pin"
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: window)
+        expect(pin.stringValue.isEmpty, "Window close retained PIN")
+    }
+    stage("initial closed window dismissed", when: { window.attachedSheet == nil }) {
+        verifyUnchanged(); expect(provider.operations.isEmpty, "Window close activated hardware")
+    }
 case "rename-remove":
     onAlert("YubiKey enrollments") { dialog in picker(in: dialog).selectItem(at: 1); click("Rename…", in: dialog) }
     onAlert("Rename enrollment") { dialog in
@@ -269,7 +463,8 @@ RunLoop.main.add(timer, forMode: .modalPanel)
 DispatchQueue.main.async {
     if scenario == "unlock" || scenario == "fallback" || scenario == "cancel-unlock" {
         FIDO2UnlockUI.unlock(from: controller, completion: { received.append($0) }, manualFallback: { fallbackCount += 1 })
-    } else { FIDO2UnlockUI.settings(from: controller) }
+    } else if scenario.hasPrefix("strong") { FIDO2UnlockUI.protectSelectedNote(from: controller) }
+    else { FIDO2UnlockUI.settings(from: controller) }
 }
 app.run()
 '''
@@ -284,7 +479,7 @@ def main():
             str(ROOT / "FSNotes/Preferences/FIDO2UnlockUI.swift"),
             str(work / "main.swift"), "-o", str(work / "test")
         ], check=True)
-        for scenario in ["enroll", "cancel-first", "cancel-between", "cancel-running", "external-cancel", "close-window", "rename-remove", "unlock", "cancel-unlock", "fallback"]:
+        for scenario in sys.argv[1:] or ["enroll", "cancel-first", "cancel-between", "cancel-running", "external-cancel", "close-window", "rename-remove", "unlock", "cancel-unlock", "fallback", "lock-initial", "lock-activation", "close-initial", "lock-management", "wrong-note", "test-enrollment", "test-wrong-note", "add-backup", "backup-wrong-note", "strong", "strong-wrong-recovery", "strong-cancel", "strong-hardware-failure", "strong-lock-recovery", "strong-durability-warning"]:
             subprocess.run([str(work / "test"), scenario], check=True, timeout=45)
 
 

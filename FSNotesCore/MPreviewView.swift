@@ -6,12 +6,14 @@ import Carbon.HIToolbox
 public typealias MPreviewViewClosure = () -> ()
 
 class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
-    private var editorVC: EditorViewController?
+    private weak var editorVC: EditorViewController?
     private weak var note: Note?
     private var closure: MPreviewViewClosure?
     private var rulesReady = false
     private var documentURL: URL?
     private var selectedText: String?
+    private var renderDeadline: DispatchWorkItem?
+    private var renderGeneration = 0
     private static let activeViews = NSHashTable<MPreviewView>.weakObjects()
     public static var template: String?
 
@@ -41,7 +43,10 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit { LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent()) }
+    deinit {
+        renderDeadline?.cancel()
+        LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent())
+    }
 
     public func setEditorVC(evc: EditorViewController? = nil) { editorVC = evc }
 
@@ -57,7 +62,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
 
     override func mouseDown(with event: NSEvent) {
         if let evc = editorVC, let note = evc.vcEditor?.note {
-            if note.container == .encryptedTextPack && !note.isUnlocked() {
+            if note.isEncryptedAndLocked() {
                 evc.unLock(notes: [note])
             } else if note.content.length == 0 {
                 evc.disablePreview()
@@ -78,8 +83,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if event.characters?.unicodeScalars.first == "c", event.modifierFlags.contains(.command), let text = selectedText {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
+            SensitiveClipboard.writeString(text)
             return true
         }
         return super.performKeyEquivalent(with: event)
@@ -89,15 +93,72 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         for item in menu.items where item.identifier?.rawValue == "WKMenuItemIdentifierReload" { item.isHidden = true }
     }
 
-    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { closure?() }
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard documentURL != nil, note?.isEncryptedAndLocked() == false else { return }
+        waitForRendering(generation: renderGeneration)
+        closure?()
+    }
+
+    /// The watchdog runs in the app, independently of the WebKit content process.
+    /// A stuck diagram must never keep the user from returning to the editor.
+    private func startRenderDeadline() {
+        renderDeadline?.cancel()
+        renderGeneration += 1
+        let generation = renderGeneration
+        let deadline = DispatchWorkItem { [weak self] in
+            guard let self = self, self.renderGeneration == generation,
+                  self.documentURL != nil, let editor = self.editorVC else { return }
+            self.isHidden = true
+            self.clean()
+            if #available(macOS 11.0, *) {
+                self.configuration.userContentController.removeScriptMessageHandler(forName: "preview", contentWorld: .defaultClient)
+            }
+            self.configuration.userContentController.removeAllUserScripts()
+            self.navigationDelegate = nil
+            self.uiDelegate = nil
+            self.closure = nil
+            self.editorVC = nil
+            editor.disablePreview(captureScroll: false)
+            let alert = NSAlert()
+            alert.messageText = "Preview stopped"
+            alert.informativeText = "This preview took too long to render. Your note is unchanged. You can edit the note and try Preview again."
+            alert.addButton(withTitle: "Close")
+            if let window = editor.view.window { alert.beginSheetModal(for: window) }
+        }
+        renderDeadline = deadline
+        DispatchQueue.main.asyncAfter(deadline: .now() + LocalPreviewSecurity.maximumRenderSeconds, execute: deadline)
+    }
+
+    private func waitForRendering(generation: Int) {
+        guard generation == renderGeneration, documentURL != nil else { return }
+        evaluateJavaScript("window.consolinotesPreviewReady === true") { [weak self] result, _ in
+            guard let self = self, generation == self.renderGeneration else { return }
+            if result as? Bool == true {
+                self.renderDeadline?.cancel()
+                self.renderDeadline = nil
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                    self?.waitForRendering(generation: generation)
+                }
+            }
+        }
+    }
+
+    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        guard documentURL != nil else { return }
+        clean()
+        editorVC?.disablePreview(captureScroll: false)
+    }
 
     public func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { decisionHandler(.cancel); return }
         if action.navigationType == .linkActivated {
             decisionHandler(.cancel)
             guard action.sourceFrame.isMainFrame, let documentURL = documentURL else { return }
-            if url.isFileURL, url.deletingFragment == documentURL, let fragment = url.fragment {
+            if url.deletingFragment == documentURL, let fragment = url.fragment {
                 openAnchor(anchor: fragment.removingPercentEncoding ?? fragment)
+            } else if let attachment = MemoryPreview.attachment(url, document: documentURL), let note = note {
+                PlaintextDisclosure.exportAttachment(attachment, from: note, window: window)
             } else if let attachment = LocalPreviewSecurity.attachment(for: url, directory: documentURL.deletingLastPathComponent()) {
                 NSWorkspace.shared.activateFileViewerSelecting([attachment])
             } else if ["https", "http", "mailto"].contains(url.scheme?.lowercased() ?? "") {
@@ -126,10 +187,15 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             return
         }
         documentURL = index
-        loadFileURL(index, allowingReadAccessTo: index.deletingLastPathComponent())
+        isHidden = false
+        startRenderDeadline()
+        LocalPreviewSecurity.load(index, in: self)
     }
 
     public func clean() {
+        renderGeneration += 1
+        renderDeadline?.cancel()
+        renderDeadline = nil
         stopLoading()
         LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent())
         documentURL = nil
@@ -150,8 +216,20 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
     }
 
     public static func buildPage(for note: Note, print: Bool = false) -> URL? {
-        guard !note.isEncryptedAndLocked(), let rendered = renderMarkdownHTML(markdown: note.getPrettifiedContent()),
-              let directory = try? LocalPreviewSecurity.makeDirectory() else { return nil }
+        guard !note.isEncryptedAndLocked() else { return nil }
+        let content = note.getPrettifiedContent()
+        guard content.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes else { return nil }
+        let rendered: String
+        if note.isMarkdown() {
+            guard let html = renderMarkdownHTML(markdown: content) else { return nil }
+            rendered = html
+        } else { rendered = "<pre>" + LocalPreviewSecurity.escapeHTML(content) + "</pre>" }
+        if note.hasMemoryWorkspace, let assets = note.memoryAttachmentSnapshot() {
+            return MemoryPreview.create(rendered: rendered, assets: assets, attachmentURL: { note.getAttachmentFileUrl(name: $0) }, printing: print) {
+                try htmlFromTemplate($0, print: print, note: note)
+            }
+        }
+        guard !note.isEncrypted(), let directory = try? LocalPreviewSecurity.makeDirectory() else { return nil }
         var success = false
         defer { if !success { LocalPreviewSecurity.remove(directory) } }
         let root = note.isTextBundle() ? note.getURL() : note.project.url
@@ -178,8 +256,8 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
     public static func getMathJaxJS() -> String {
         guard UserDefaultsManagement.mathJaxPreview else { return "" }
         return """
-        <script nonce="{NONCE}">MathJax = {tex: {inlineMath: [['$', '$'], ['\\\\(', '\\\\)'], ['$$', '$$'], ['\\\\((', '\\\\))']]}};</script>
-        <script nonce="{NONCE}" id="MathJax-script" defer src="js/tex-mml-chtml.js"></script>
+        <script nonce="{NONCE}" src="js/mathjax-config.js"></script>
+        <script nonce="{NONCE}" id="MathJax-script" defer src="js/mathjax/tex-mml-chtml.js"></script>
         """
     }
 
@@ -213,8 +291,7 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
             if let value = body["value"] as? String, value.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes { selectedText = value }
         case "clipboard":
             guard let value = body["value"] as? String, value.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(value, forType: .string)
+            SensitiveClipboard.writeString(value)
         case "checkbox":
             guard let index = body["value"] as? Int, index >= 0, index < 100_000 else { return }
             let content = note.content.unloadAttachments()

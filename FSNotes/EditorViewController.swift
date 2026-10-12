@@ -13,11 +13,18 @@ import UserNotifications
 
 class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemValidation {
     private static var passwordRequestGeneration: UInt64 = 0
+    private static let passwordControllers = NSHashTable<EditorViewController>.weakObjects()
+    private var passwordAlert: NSAlert?
+    private var passwordWindowObserver: NSObjectProtocol?
 
     /// A pending password prompt must not undo a later lock request.
     public static func cancelPasswordRequests() {
         passwordRequestGeneration &+= 1
-        FIDO2PasswordProvider.shared.cancel()
+        for controller in passwordControllers.allObjects { controller.teardownPasswordPrompt() }
+        FIDO2UnlockUI.cancelPendingRequests()
+        EncryptedNoteRecoveryController.cancel()
+        PlaintextDisclosure.cancel()
+        PrivateNoteArchive.cancelOperations()
     }
     
     public var alert: NSAlert?
@@ -53,6 +60,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         initScrollObserver()
         
         editor.isGrammarCheckingEnabled = UserDefaultsManagement.grammarChecking
+        PrivateTextServices.apply(to: editor)
         editor.isContinuousSpellCheckingEnabled = UserDefaultsManagement.continuousSpellChecking
         editor.smartInsertDeleteEnabled = UserDefaultsManagement.smartInsertDelete
         editor.isAutomaticSpellingCorrectionEnabled = UserDefaultsManagement.automaticSpellingCorrection
@@ -64,6 +72,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
         
     deinit {
+        if let observer = passwordWindowObserver { NotificationCenter.default.removeObserver(observer) }
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -366,13 +375,13 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         guard let first = notes?.first, let notes = notes else { return }
         
         // Lock unlocked
-        if first.isUnlocked() {
+        if first.isUnlocked() && !first.isPrivacyShielded {
             _ = lockUnlocked(notes: notes)
             return
         }
         
         // Unlock encrypted
-        if first.container == .encryptedTextPack {
+        if first.isEncryptedAndLocked() {
             getMasterPassword(allowHardware: true) { password in
                 guard password.count > 0 else { return }
                 
@@ -531,10 +540,9 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
         
     @IBAction func shareSheet(_ sender: NSButton) {
-        if let note = vcEditor?.note {
+        if let note = vcEditor?.note, !note.isEncryptedAndLocked(), PlaintextDisclosure.confirm("Share", note: note) {
             let sharingPicker = NSSharingServicePicker(items: [
-                note.content,
-                note.url
+                note.getPrettifiedContent()
             ])
             sharingPicker.delegate = self
             sharingPicker.show(relativeTo: NSZeroRect, of: sender, preferredEdge: .minY)
@@ -544,9 +552,10 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     // MARK: File menu
     
     @IBAction func printNotes(_ sender: NSMenuItem) {
-        guard let notes = getSelectedNotes(), let note = notes.first else { return }
+        guard let notes = getSelectedNotes(), let note = notes.first, !note.isEncryptedAndLocked(),
+              PlaintextDisclosure.confirm("Print", note: note) else { return }
         
-        if note.isMarkdown() {
+        if note.isMarkdown() || note.isEncrypted() {
             printMarkdownPreview()
             return
         }
@@ -593,14 +602,12 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
     
     @IBAction func copyURL(_ sender: Any) {
-        guard let note = getSelectedNotes()?.first else { return }
+        guard let note = getSelectedNotes()?.first, !note.isEncryptedAndLocked() else { return }
         
         if let title = note.title.addingPercentEncoding(withAllowedCharacters: .alphanumerics) {
 
             let name = AppLink.findPrefix + title
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-            pasteboard.setString(name, forType: NSPasteboard.PasteboardType.string)
+            SensitiveClipboard.writeString(name)
             
             UNUserNotificationCenter.current().getNotificationSettings { settings in
                 guard settings.authorizationStatus == .notDetermined else { return }
@@ -612,7 +619,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
             let content = UNMutableNotificationContent()
             content.title = NSLocalizedString("URL has been copied to clipboard", comment: "")
-            content.body = name
+            content.body = "The note link is available on this Mac's clipboard."
             content.sound = .default
 
             UNUserNotificationCenter.current().add(
@@ -625,16 +632,13 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
     
     @IBAction func copyTitle(_ sender: Any) {
-        guard let note = getSelectedNotes()?.first else { return }
-        
-        let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-        pasteboard.setString(note.title, forType: NSPasteboard.PasteboardType.string)
+        guard let note = getSelectedNotes()?.first, !note.isEncryptedAndLocked() else { return }
+        SensitiveClipboard.writeString(note.title)
     }
     
     @IBAction func upgradeNoteEncryption(_ sender: Any) {
         guard let selected = getSelectedNotes(), selected.count == 1,
-              let note = selected.first, note.usesLegacyEncryption,
+              let note = selected.first, !note.isEncryptedAndLocked(), note.usesLegacyEncryption,
               let password = note.password else { return }
         let alert = NSAlert()
         alert.messageText = "Upgrade this note's encryption?"
@@ -659,7 +663,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
         getMasterPassword(allowHardware: true) { password in
             for note in notes {
-                if note.container == .encryptedTextPack {
+                if note.isEncrypted() {
                     let success = note.unEncrypt(password: password)
                     if success && notes.count == 0x01 {
                         note.password = nil
@@ -775,7 +779,9 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     @IBAction func duplicate(_ sender: Any) {
         guard let notes = getSelectedNotes() else { return }
         
+        if notes.contains(where: { !$0.isEncrypted() }), !PlaintextDisclosure.allowUnencryptedCopy("Duplicate Unencrypted") { return }
         for note in notes {
+            if note.isUnlocked(), !note.save() { note.presentSaveFailure(); return }
             let src = note.url
             let dst = NameHelper.generateCopy(file: note.url)
 
@@ -851,7 +857,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
         
         for note in notes {
-            if note.container == .encryptedTextPack {
+            if note.isEncrypted() {
                 continue
             }
             
@@ -969,7 +975,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     @IBAction func showBackLinks(_ sender: NSMenuItem) {
         if let appDelegate = NSApplication.shared.delegate as? AppDelegate,
             let cvc = NSApplication.shared.keyWindow?.contentViewController as? EditorViewController,
-            let note = cvc.vcEditor?.note {
+            let note = cvc.vcEditor?.note, !note.isEncryptedAndLocked() {
             ViewController.shared()?.editor.clear()
             appDelegate.search(query: "[[" + note.title + "]]")
         }
@@ -1015,13 +1021,15 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         vcEditor?.performTextFinderAction(menu)
     }
 
-    func disablePreview() {
+    func disablePreview(captureScroll: Bool = true) {
         guard let textView = self.vcEditor else { return }
         
         textView.disablePreviewEditorAndNote()
         
-        textView.markdownView?.getScrollPosition { point in
-            self.vcEditor?.note?.contentOffsetWeb = point
+        if captureScroll {
+            textView.markdownView?.getScrollPosition { point in
+                self.vcEditor?.note?.contentOffsetWeb = point
+            }
         }
         
         textView.markdownView?.removeFromSuperview()
@@ -1051,6 +1059,11 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     public func updateTitle(note: Note) {
         guard let vcTitleLabel = vcTitleLabel else { return }
         
+        if note.isPrivacyShielded {
+            vcTitleLabel.stringValue = "Locked — unsaved changes protected"
+            view.window?.title = "consolinotes — Locked"
+            return
+        }
         var titleString = note.getFileName()
 
         if titleString.isValidUUID {
@@ -1088,9 +1101,9 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                 let success = note.unLock(password: password)
                 if success {
 
-                    let insertTags = note.scanContentTags().0
                     DispatchQueue.main.async {
-                        ViewController.shared()?.sidebarOutlineView?.addTags(insertTags)
+                        guard !note.isEncryptedAndLocked() else { return }
+                        ViewController.shared()?.sidebarOutlineView?.addTags(note.scanContentTags().0)
                         ViewController.shared()?.notesTableView.reloadRow(note: note)
                     }
 
@@ -1139,6 +1152,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
 
     public func getMasterPassword(forEncrypt: Bool = false, allowHardware: Bool = false, completion requestCompletion: @escaping (String) -> ()) {
+        Self.passwordControllers.add(self)
         let generation = Self.passwordRequestGeneration
         let completion: (String) -> Void = { password in
             guard generation == Self.passwordRequestGeneration else { return }
@@ -1153,7 +1167,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             notice.addButton(withTitle: "Cancel")
             notice.showsSuppressionButton = true
             notice.suppressionButton?.title = "Do not ask again."
-            guard notice.runModal() == .alertFirstButtonReturn else { return }
+            guard runPasswordNotice(notice) == .alertFirstButtonReturn,
+                  generation == Self.passwordRequestGeneration else { return }
             if notice.suppressionButton?.state == .on {
                 UserDefaultsManagement.suppressNewEncryptionFormatNotice = true
             }
@@ -1167,9 +1182,12 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                     choice.addButton(withTitle: "Use YubiKey…")
                     choice.addButton(withTitle: "Enter Password…")
                     choice.addButton(withTitle: "Cancel")
-                    switch choice.runModal() {
+                    let answer = runPasswordNotice(choice)
+                    guard generation == Self.passwordRequestGeneration else { return }
+                    switch answer {
                     case .alertFirstButtonReturn:
                         FIDO2UnlockUI.unlock(from: self, completion: completion, manualFallback: {
+                            guard generation == Self.passwordRequestGeneration else { return }
                             self.masterPasswordPrompt(validation: false, completion: completion)
                         }); return
                     case .alertSecondButtonReturn: break
@@ -1184,142 +1202,166 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         masterPasswordPrompt(validation: forEncrypt, completion: completion)
     }
 
-    @IBAction func onOkClick(_ sender: Any?) {
-        guard
-            let passwordField = encPassword,
-            let verifyPasswordField = encVerifyPassword,
-            let window = self.view.window
-        else { return }
-        
-        if passwordField.stringValue.count == 0 {
-            let alert = NSAlert()
-            alert.alertStyle = .critical
-            alert.informativeText = NSLocalizedString("Please try again", comment: "")
-            alert.messageText = NSLocalizedString("Empty password", comment: "")
-            alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in }
-            return
+    /// All application-owned prompt references are released before invoking a caller.
+    /// AppKit and Swift can still make temporary copies; this is lifetime reduction,
+    /// not a promise of complete memory erasure.
+    func teardownPasswordPrompt() {
+        let prompt = passwordAlert
+        passwordAlert = nil
+        if let observer = passwordWindowObserver {
+            NotificationCenter.default.removeObserver(observer)
+            passwordWindowObserver = nil
         }
-        
-        if !passwordField.stringValue.utf8.elementsEqual(verifyPasswordField.stringValue.utf8) {
-            let alert = NSAlert()
-            alert.alertStyle = .critical
-            alert.informativeText = NSLocalizedString("Please try again", comment: "")
-            alert.messageText = NSLocalizedString("Wrong repeated password", comment: "")
-            alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in }
-            return
+        for field in [encPassword, encVerifyPassword].compactMap({ $0 }) {
+            field.currentEditor()?.string = ""
+            field.stringValue = ""
         }
-        
-        if let encCompletionHandler = encCompletionHandler {
-            encCompletionHandler(passwordField.stringValue)
-        }
-        
-        self.alert?.window.close()
+        encPassword = nil
+        encVerifyPassword = nil
+        encCompletionHandler = nil
+        if alert === prompt { alert = nil }
+        guard let prompt = prompt else { return }
+        prompt.accessoryView = nil
+        if NSApp.modalWindow === prompt.window { NSApp.abortModal() }
+        if let parent = prompt.window.sheetParent { parent.endSheet(prompt.window, returnCode: .abort) }
+        prompt.window.orderOut(nil)
     }
-    
+
+    private func observePasswordWindow(_ window: NSWindow) {
+        passwordWindowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { _ in Self.cancelPasswordRequests() }
+    }
+
+    private func runPasswordNotice(_ prompt: NSAlert) -> NSApplication.ModalResponse {
+        teardownPasswordPrompt()
+        passwordAlert = prompt
+        if let window = view.window { observePasswordWindow(window) }
+        let response = prompt.runModal()
+        if passwordAlert === prompt { teardownPasswordPrompt() }
+        return response
+    }
+
+    @IBAction func onOkClick(_ sender: Any?) {
+        guard let field = encPassword, let prompt = passwordAlert else { return }
+        guard !field.stringValue.isEmpty else {
+            prompt.informativeText = "Enter a non-empty password."
+            prompt.window.makeFirstResponder(field)
+            return
+        }
+        if let repeated = encVerifyPassword, !field.stringValue.utf8.elementsEqual(repeated.stringValue.utf8) {
+            prompt.informativeText = "The passwords do not match. Please enter them again."
+            repeated.stringValue = ""
+            prompt.window.makeFirstResponder(repeated)
+            return
+        }
+        let password = field.stringValue
+        let completion = encCompletionHandler
+        teardownPasswordPrompt()
+        completion?(password)
+    }
+
     private func masterPasswordPrompt(validation: Bool = false, reason: String? = nil, completion: @escaping (String) -> ()) {
-        DispatchQueue.main.async {
-            guard var window = self.view.window else { return }
-            
-            if NSApplication.shared.keyWindow?.contentViewController?.isKind(of: NoteViewController.self) == true,
-               let evc = NSApplication.shared.keyWindow?.contentViewController as? EditorViewController,
-               let currentWin = evc.view.window {
-                
-                window = currentWin
-            }
+        let generation = Self.passwordRequestGeneration
+        Self.passwordControllers.add(self)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, generation == Self.passwordRequestGeneration,
+                  var window = self.view.window else { return }
+            if let editor = NSApplication.shared.keyWindow?.contentViewController as? NoteViewController,
+               let current = editor.view.window { window = current }
+            self.teardownPasswordPrompt()
+            let prompt = NSAlert()
+            self.passwordAlert = prompt
+            self.alert = prompt
+            self.observePasswordWindow(window)
+            prompt.alertStyle = .informational
+            prompt.messageText = validation ? "Enter an encryption password:" : "Note password:"
+            prompt.informativeText = reason ?? (validation
+                ? "Keep this password. It cannot be recovered if you lose it."
+                : "Enter the password used to encrypt the current note. If a save failed while locking, the password reveals the retained changes.")
+            prompt.addButton(withTitle: "OK")
+            prompt.addButton(withTitle: "Cancel")
+            prompt.buttons[0].target = self
+            prompt.buttons[0].action = #selector(self.onOkClick(_:))
 
-            self.alert = NSAlert()
-            guard let alert = self.alert else { return }
-            alert.alertStyle = .informational
-        
+            let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 290, height: 24))
+            field.placeholderString = "Password"
+            field.setAccessibilityLabel("Note password")
+            self.encPassword = field
+            self.encCompletionHandler = completion
             if validation {
-                alert.messageText = NSLocalizedString("Enter an encryption password:", comment: "")
-                alert.informativeText = reason ?? "Keep this password. It cannot be recovered if you lose it."
-                
-                alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
-                alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
-                
-                alert.buttons[0].target = self
-                alert.buttons[0].action = #selector(self.onOkClick(_:))
-
-                // Create the NSTextFields and labels
-                let newPasswordLabel = NSTextField(labelWithString: NSLocalizedString("Password:", comment: ""))
-                let newPasswordField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-                let repeatPasswordLabel = NSTextField(labelWithString: NSLocalizedString("Verify Password:", comment: ""))
-                let repeatPasswordField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-                
-                self.encPassword = newPasswordField
-                self.encVerifyPassword = repeatPasswordField
-                self.encCompletionHandler = completion
-                
-                newPasswordLabel.alignment = .right
-                repeatPasswordLabel.alignment = .right
-
-                // Add the labels and text fields to a custom view
-                let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 60))
-                containerView.translatesAutoresizingMaskIntoConstraints = false
-
-                newPasswordLabel.translatesAutoresizingMaskIntoConstraints = false
-                newPasswordField.translatesAutoresizingMaskIntoConstraints = false
-                repeatPasswordLabel.translatesAutoresizingMaskIntoConstraints = false
-                repeatPasswordField.translatesAutoresizingMaskIntoConstraints = false
-
-                containerView.addSubview(newPasswordLabel)
-                containerView.addSubview(newPasswordField)
-                containerView.addSubview(repeatPasswordLabel)
-                containerView.addSubview(repeatPasswordField)
-
-                // Set the custom view as the accessory view for the NSAlert
-                alert.accessoryView = containerView
-
-                // Define constraints
-                NSLayoutConstraint.activate([
-                    newPasswordLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-                    newPasswordLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8),
-                    newPasswordField.leadingAnchor.constraint(equalTo: newPasswordLabel.trailingAnchor, constant: 8),
-                    newPasswordField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: 0),
-                    newPasswordField.widthAnchor.constraint(equalToConstant: 200),
-                    newPasswordField.centerYAnchor.constraint(equalTo: newPasswordLabel.centerYAnchor),
-
-                    repeatPasswordLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-                    repeatPasswordLabel.topAnchor.constraint(equalTo: newPasswordLabel.bottomAnchor, constant: 8),
-                    repeatPasswordField.leadingAnchor.constraint(equalTo: repeatPasswordLabel.trailingAnchor, constant: 8),
-                    repeatPasswordField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: 0),
-                    repeatPasswordField.widthAnchor.constraint(equalToConstant: 200),
-                    repeatPasswordField.centerYAnchor.constraint(equalTo: repeatPasswordLabel.centerYAnchor),
-
-                    containerView.widthAnchor.constraint(equalToConstant: 400),
-                    containerView.heightAnchor.constraint(equalToConstant: 60),
-                ])
-
-                // Show the NSAlert
-                alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
-                    self.alert = nil
-                }
-
-                newPasswordField.becomeFirstResponder()
-                return
+                let repeated = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 290, height: 24))
+                repeated.placeholderString = "Repeat password"
+                repeated.setAccessibilityLabel("Repeat note password")
+                self.encVerifyPassword = repeated
+                let fields = NSStackView(views: [field, repeated])
+                fields.orientation = .vertical
+                fields.alignment = .leading
+                fields.spacing = 10
+                fields.frame = NSRect(x: 0, y: 0, width: 290, height: 58)
+                field.widthAnchor.constraint(equalToConstant: 290).isActive = true
+                repeated.widthAnchor.constraint(equalToConstant: 290).isActive = true
+                prompt.accessoryView = fields
+            } else { prompt.accessoryView = field }
+            prompt.beginSheetModal(for: window) { [weak self, weak prompt] _ in
+                guard let self = self, let prompt = prompt, self.passwordAlert === prompt else { return }
+                self.teardownPasswordPrompt()
             }
-            
-            let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 290, height: 20))
-            alert.accessoryView = field
-            alert.messageText = "Note password:"
-            alert.informativeText = reason ?? "Enter the password used to encrypt the current note."
-            alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
-            alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
-            alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
-                if returnCode == NSApplication.ModalResponse.alertFirstButtonReturn {
-                    completion(field.stringValue)
-                }
+            prompt.window.makeFirstResponder(field)
+        }
+    }
 
-                self.alert = nil
-            }
+    func dismissSensitiveDialog() {
+        guard let current = alert else { return }
+        alert = nil
+        func clearFields(_ view: NSView) {
+            if let field = view as? NSTextField {
+                field.currentEditor()?.string = ""
+                field.stringValue = ""
+            } else if let text = view as? NSTextView { text.string = "" }
+            for child in view.subviews { clearFields(child) }
+        }
+        if let accessory = current.accessoryView { clearFields(accessory) }
+        current.accessoryView = nil
+        current.messageText = ""
+        current.informativeText = ""
+        if NSApp.modalWindow === current.window { NSApp.abortModal() }
+        if let parent = current.window.sheetParent { parent.endSheet(current.window, returnCode: .abort) }
+        current.window.orderOut(nil)
+    }
 
-            field.becomeFirstResponder()
+    /// Shield every editor before any disk write, so a failed save never leaves
+    /// retained plaintext visible. The model remains available only for saving
+    /// and an explicit password-authenticated recovery action.
+    static func shieldForLock(notes: [Note]) {
+        cancelPasswordRequests()
+        SensitiveClipboard.clearOwned()
+        LocalFindState.query = ""
+        UserDefaultsManagement.recentSearches = nil
+        ViewController.shared()?.search.clearPrivateState()
+        for note in notes where note.isUnlocked() { note.isPrivacyShielded = true }
+        MPreviewView.purgeSensitivePreviews()
+        for editor in AppDelegate.getEditTextViews() {
+            editor.editorViewController?.dismissSensitiveDialog()
+            editor.clearPrivateFind()
+            guard let note = editor.note, notes.contains(where: { $0 === note }) else { continue }
+            editor.lockEncryptedView()
+            editor.editorViewController?.cancelTextSearch()
+            editor.editorViewController?.previewResizeTimer.invalidate()
+            editor.editorViewController?.updateTitle(note: note)
+            editor.editorViewController?.updateVimChrome()
+            editor.window?.displayIfNeeded()
+        }
+        if let vc = ViewController.shared() {
+            vc.updateCounters(note: vc.editor.note)
+            for note in notes { vc.notesTableView.reloadRow(note: note) }
+            vc.sidebarOutlineView.reloadTags()
+            vc.view.window?.displayIfNeeded()
         }
     }
 
     public func lockUnlocked(notes: [Note]) -> [Note] {
-        Self.cancelPasswordRequests()
+        Self.shieldForLock(notes: notes.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup })
         var remaining = notes
         var failures = 0
         for note in notes where note.isUnlocked() || note.hasPendingPlaintextCleanup {
@@ -1331,7 +1373,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
         ViewController.shared()?.sidebarOutlineView.reloadTags()
         if failures > 0 {
-            showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and try again.")
+            showProtectionFailure("Some notes could not finish saving or cleanup. Their content is hidden and unsaved changes have been retained. Resolve the storage problem and retry Lock All, or enter the note password to reveal the retained changes. Keep the app open until recovery is complete.")
         }
         return remaining
     }
@@ -1350,7 +1392,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         var notes = notes
 
         for note in notes {
-            if note.isUnlocked() {
+            if note.isUnlocked() && !note.isPrivacyShielded {
                 if note.unEncryptUnlocked() {
                     notes.removeAll { $0 === note }
                     ViewController.shared()?.notesTableView.reloadRow(note: note)
@@ -1378,7 +1420,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         guard let editor = vcEditor,
               let note = editor.note,
               !editor.isPreviewEnabled(),
-              note.container != .encryptedTextPack else { return }
+              !note.isEncryptedAndLocked() else { return }
 
         editor.window?.makeFirstResponder(editor)
 
@@ -1431,7 +1473,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
     }
     
-    public func createNote(name: String = "", content: String = "", folderName: String? = nil, openInNewWindow: Bool = false) -> Note? {
+    public func createNote(name: String = "", content: String = "", folderName: String? = nil, openInNewWindow: Bool = false, encryptionPassword: String? = nil, creationProject: Project? = nil) -> Note? {
         guard let vc = ViewController.shared() else { return nil }
         
         var text = String()
@@ -1446,7 +1488,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
         
         let selectedProjects = vc.sidebarOutlineView.getSidebarProjects()
-        var sidebarProject = project ?? selectedProjects?.first
+        var sidebarProject = creationProject ?? project ?? selectedProjects?.first
 
         
         if sidebarProject == nil {
@@ -1454,6 +1496,17 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
         
         guard let project = sidebarProject, !project.isLocked() else { return nil }
+        if PrivacyPreferences.encryptNewNotes, !project.isEncrypted, encryptionPassword == nil {
+            getMasterPassword(forEncrypt: true) { [weak self] password in
+                guard let self = self else { return }
+                if let note = self.createNote(name: name, content: content, folderName: folderName,
+                                               openInNewWindow: openInNewWindow, encryptionPassword: password, creationProject: project), openInNewWindow {
+                    self.openInNewWindow(note: note)
+                }
+            }
+            return nil
+        }
+
                 
         if !name.isEmpty, [.autoRename, .autoRenameNew].contains(UserDefaultsManagement.naming) && UserDefaultsManagement.autoInsertHeader {
             text.append("# " + name + "\n\n")
@@ -1474,12 +1527,17 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
         let note = Note(name: name, project: project)
         note.content = NSMutableAttributedString(string: text)
-        if project.isEncrypted {
-            guard let password = project.password, note.encrypt(password: password) else {
+        if project.isEncrypted || encryptionPassword != nil {
+            guard let password = encryptionPassword ?? project.password, note.encrypt(password: password) else {
                 showProtectionFailure("The encrypted note could not be created. No plaintext note was created in the folder. Resolve the storage problem and try again.")
                 return nil
             }
-            _ = note.unLock(password: password)
+            guard note.unLock(password: password) else {
+                Storage.shared().add(note)
+                vc.updateTable()
+                showProtectionFailure("The encrypted note was created and kept locked, but could not be opened. Your saved ciphertext is retained; try unlocking it again.")
+                return nil
+            }
         } else if !note.save() {
             note.presentSaveFailure()
             return nil

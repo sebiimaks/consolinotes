@@ -25,7 +25,7 @@ class ViewController: EditorViewController,
 
     private var isPreLoaded = false
     
-    let storage = Storage.shared()
+    var storage: Storage { Storage.shared() }
     
     private var sidebarTimer = Timer()
     private var selectRowTimer = Timer()
@@ -228,10 +228,10 @@ class ViewController: EditorViewController,
         if UserDefaultsManagement.fullScreen {
             view.window?.toggleFullScreen(nil)
         }
+        DispatchQueue.main.async { EncryptedNoteRecoveryController.presentIfNeeded() }
     }
 
     public func preLoadProjectsData() {
-        let projectsLoading = Date()
         let results = self.storage.getProjectDiffs()
 
         OperationQueue.main.addOperation {
@@ -240,9 +240,8 @@ class ViewController: EditorViewController,
             self.notesTableView.doVisualChanges(results: (results.2, results.3, []))
         }
 
-        print("0. Projects diff loading finished in \(projectsLoading.timeIntervalSinceNow * -1) seconds")
+        PrivacyLog.record("viewcontroller.event-1")
 
-        let diffLoading = Date()
         for project in self.storage.getProjects() {
             let changes = project.checkNotesCacheDiff()
             self.notesTableView.doVisualChanges(results: changes)
@@ -251,9 +250,8 @@ class ViewController: EditorViewController,
         // Reload added projects
         self.fsManager?.restart()
 
-        print("1. Notes diff loading finished in \(diffLoading.timeIntervalSinceNow * -1) seconds")
+        PrivacyLog.record("viewcontroller.event-2")
 
-        let tagsPoint = Date()
 
         // Schedule git actions
         self.scheduleSnapshots()
@@ -274,18 +272,16 @@ class ViewController: EditorViewController,
             self.sidebarOutlineView.loadAllTags()
         }
 
-        print("2. Tags loading finished in \(tagsPoint.timeIntervalSinceNow * -1) seconds")
+        PrivacyLog.record("viewcontroller.event-3")
 
-        let highlightCachePoint = Date()
         for note in self.storage.noteList {
             note.cache()
         }
         
-        print("3. Notes attributes cache for \(self.storage.noteList.count) notes in \(highlightCachePoint.timeIntervalSinceNow * -1) seconds")
+        PrivacyLog.record("viewcontroller.event-4")
 
-        let gitCachePoint = Date()
         self.cacheGitRepositories()
-        print("4. git history cached in \(gitCachePoint.timeIntervalSinceNow * -1) seconds")
+        PrivacyLog.record("viewcontroller.event-5")
 
     }
     
@@ -338,7 +334,7 @@ class ViewController: EditorViewController,
 
         NSWorkspace.shared.notificationCenter.addObserver(
             self, selector: #selector(onUserSwitch(note:)),
-            name: NSWorkspace.sessionDidBecomeActiveNotification, object: nil)
+            name: NSWorkspace.sessionDidResignActiveNotification, object: nil)
 
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -606,6 +602,7 @@ class ViewController: EditorViewController,
             }
 
             if note.isUnlocked() {
+                Self.shieldForLock(notes: [note])
                 guard note.lock() else {
                     note.presentSaveFailure()
                     succeeded = false
@@ -826,9 +823,7 @@ class ViewController: EditorViewController,
                     let textBefore = String(fullText[startIndex..<selectionStart])
                     
                     if !textBefore.isEmpty {
-                        let pb = NSPasteboard(name: .find)
-                        pb.declareTypes([.textFinderOptions, .string], owner: nil)
-                        pb.setString(textBefore, forType: .string)
+                        LocalFindState.query = textBefore
                     }
                 }
 
@@ -1050,7 +1045,7 @@ class ViewController: EditorViewController,
         
         do {
             try FileManager.default.moveItem(at: url, to: newUrl)
-            print("File moved from \"\(url.deletingPathExtension().lastPathComponent)\" to \"\(newUrl.deletingPathExtension().lastPathComponent)\"")
+            PrivacyLog.record("note.move.completed")
         } catch {
             note.overwrite(url: url)
         }
@@ -1161,8 +1156,9 @@ class ViewController: EditorViewController,
     }
         
     @IBAction func lockAll(_ sender: Any) {
-        Self.cancelPasswordRequests()
         let notes = storage.noteList.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
+        Self.shieldForLock(notes: notes)
+        for project in storage.getProjects() where project.isEncrypted { project.password = nil }
         var failures = 0
         for note in notes {
             if note.lock() {
@@ -1170,18 +1166,13 @@ class ViewController: EditorViewController,
                 notesTableView.reloadRow(note: note)
             } else { failures += 1 }
         }
-        for project in storage.getProjects() where project.isEncrypted {
-            if storage.getNotesBy(project: project).allSatisfy({ !$0.isUnlocked() }) {
-                project.password = nil
-            }
-        }
         sidebarOutlineView.reloadTags()
         sidebarOutlineView.reloadData()
         if let project = sidebarOutlineView.getSelectedProject(), project.isLocked() {
             notesTableView.enableLockedProject()
         }
         if failures > 0 {
-            showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry before closing the app.")
+            showProtectionFailure("Some notes could not finish saving or cleanup. Their content is hidden and unsaved changes have been retained. Resolve the storage problem and retry Lock All, or enter the note password to reveal the retained changes. Keep the app open until recovery is complete.")
         }
         if let window = notesTableView.window, window == view.window {
             window.makeFirstResponder(notesTableView)
@@ -1284,9 +1275,10 @@ class ViewController: EditorViewController,
             return
         }
 
-        guard let note = note else {
+        guard let note = note, !note.isEncryptedAndLocked() else {
+            counterQueue.cancelAllOperations()
             self.counter.stringValue = String()
-            updateTUIEditorPane(note: nil, info: nil)
+            updateTUIEditorPane(note: note, info: nil)
             return
         }
 
@@ -1315,6 +1307,7 @@ class ViewController: EditorViewController,
             if operation.isCancelled { return }
             
             DispatchQueue.main.async {
+                guard !operation.isCancelled, !note.isEncryptedAndLocked(), self?.editor.note === note else { return }
                 self?.counter.stringValue = title
                 self?.updateTUIEditorPane(note: note, info: info)
             }
@@ -1799,7 +1792,12 @@ class ViewController: EditorViewController,
         return AppDelegate.mainWindowController?.window?.contentViewController as? ViewController
     }
 
-    public func copy(project: Project, url: URL) -> URL {
+    public func copy(project: Project, url: URL) -> URL? {
+        guard !project.isLocked() else { return nil }
+        if url.pathExtension.lowercased() != "etp" {
+            guard !project.isEncrypted else { return nil }
+            guard PlaintextDisclosure.allowUnencryptedCopy("Import Unencrypted") else { return nil }
+        }
         let fileName = url.lastPathComponent
         let destination = project.url.appendingPathComponent(fileName)
 
@@ -1808,8 +1806,8 @@ class ViewController: EditorViewController,
             return destination
         } catch {
             let dst = NameHelper.generateCopy(file: url, dstDir: project.url)
-            try? FileManager.default.copyItem(at: url, to: dst)
-            return dst
+            do { try FileManager.default.copyItem(at: url, to: dst); return dst }
+            catch { return nil }
         }
     }
 

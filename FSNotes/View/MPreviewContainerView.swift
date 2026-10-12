@@ -18,6 +18,7 @@ class MPreviewContainerView: NSView {
     // Search state
     private var currentMatchIndex = 0
     private var totalMatches = 0
+    private var findGeneration: UInt64 = 0
     public var isFindPanelVisible = false
     
     // MARK: - Initialization
@@ -90,21 +91,27 @@ class MPreviewContainerView: NSView {
         
         isFindPanelVisible = true
         
-        let pasteboard = NSPasteboard(name: .find)
-        if let searchText = pasteboard.string(forType: .string) {
-            pasteboard.clearContents()
-            findPanel.searchField.stringValue = searchText
-            findPanel.onSearch?(searchText)
-        }
-        
+        let searchText = LocalFindState.query
+        findPanel.searchField.stringValue = searchText
+        if !searchText.isEmpty { findPanel.onSearch?(searchText) }
+
         findPanel.show()
     }
 
     func hideFindPanel() {
+        findGeneration &+= 1
         isFindPanelVisible = false
         
         findPanel.hide()
         clearHighlights()
+    }
+
+    /// Revoke pending WebKit results before clearing the visible field editor.
+    func clearPrivateFind() {
+        findGeneration &+= 1
+        isFindPanelVisible = false
+        clearHighlights()
+        findPanel.clearAndHide()
     }
     
     func toggleFindPanel() {
@@ -118,6 +125,9 @@ class MPreviewContainerView: NSView {
     // MARK: - Search Implementation
     
     private func performSearch(_ searchText: String) {
+        guard isFindPanelVisible else { return }
+        findGeneration &+= 1
+        let generation = findGeneration
         guard !searchText.isEmpty else {
             clearHighlights()
             return
@@ -211,15 +221,15 @@ class MPreviewContainerView: NSView {
         """
         
         webView.evaluateJavaScript(jsCode) { [weak self] result, error in
+            guard let self = self, generation == self.findGeneration, self.isFindPanelVisible else { return }
             if error != nil {
-                print("Search error: \\(error)")
+                PrivacyLog.record("mpreviewcontainerview.event-212")
             }
             
             if let count = result as? Int {
-                self?.totalMatches = count
-                self?.currentMatchIndex = count > 0 ? 1 : 0
-                self?.findPanel.updateStatus(current: self?.currentMatchIndex ?? 0,
-                                            total: self?.totalMatches ?? 0)
+                self.totalMatches = count
+                self.currentMatchIndex = count > 0 ? 1 : 0
+                self.findPanel.updateStatus(current: self.currentMatchIndex, total: self.totalMatches)
             }
         }
         
@@ -227,11 +237,13 @@ class MPreviewContainerView: NSView {
     }
     
     func getSelectedText(completion: @escaping (String?) -> Void) {
+        let generation = findGeneration
         let javascript = "window.getSelection().toString()"
         
-        webView.evaluateJavaScript(javascript) { (result, error) in
-            if let error = error {
-                print("Error: \(error)")
+        webView.evaluateJavaScript(javascript) { [weak self] result, error in
+            guard let self = self, generation == self.findGeneration else { return }
+            if error != nil {
+                PrivacyLog.record("mpreviewcontainerview.event-231")
                 completion(nil)
             } else {
                 completion(result as? String)
@@ -273,7 +285,8 @@ class MPreviewContainerView: NSView {
     }
     
     public func findNext() {
-        guard totalMatches > 0 else { return }
+        guard isFindPanelVisible, totalMatches > 0 else { return }
+        let generation = findGeneration
         
         let jsCode = """
         (function() {
@@ -296,15 +309,17 @@ class MPreviewContainerView: NSView {
         """
         
         webView.evaluateJavaScript(jsCode) { [weak self] result, error in
+            guard let self = self, generation == self.findGeneration, self.isFindPanelVisible else { return }
             if let index = result as? Int {
-                self?.currentMatchIndex = index
-                self?.findPanel.updateStatus(current: index, total: self?.totalMatches ?? 0)
+                self.currentMatchIndex = index
+                self.findPanel.updateStatus(current: index, total: self.totalMatches)
             }
         }
     }
     
     private func findPrevious() {
-        guard totalMatches > 0 else { return }
+        guard isFindPanelVisible, totalMatches > 0 else { return }
+        let generation = findGeneration
         
         let jsCode = """
         (function() {
@@ -328,9 +343,10 @@ class MPreviewContainerView: NSView {
         """
         
         webView.evaluateJavaScript(jsCode) { [weak self] result, error in
+            guard let self = self, generation == self.findGeneration, self.isFindPanelVisible else { return }
             if let index = result as? Int {
-                self?.currentMatchIndex = index
-                self?.findPanel.updateStatus(current: index, total: self?.totalMatches ?? 0)
+                self.currentMatchIndex = index
+                self.findPanel.updateStatus(current: index, total: self.totalMatches)
             }
         }
     }

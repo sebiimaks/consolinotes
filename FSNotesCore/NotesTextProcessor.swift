@@ -1357,8 +1357,8 @@ public struct MarklightRegex {
         // should be valid, so this probably means that a pattern
         // valid for .NET Regex is not valid for NSRegularExpression.
         if re == nil {
-            if let error = error {
-                print("Regular expression error: \(error.userInfo)")
+            if error != nil {
+                PrivacyLog.record("notestextprocessor.event-1361")
             }
             assert(re != nil)
         }

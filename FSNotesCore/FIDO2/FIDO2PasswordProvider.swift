@@ -20,11 +20,92 @@ final class FIDO2PasswordProvider {
         let publicKey: Data
         let salt: Data
         let ciphertext: Data
-        var aad: Data { Data("consolinotes.fido2.envelope.v1\0".utf8) + credential + publicKey + salt }
-        func validate() throws {
-            guard version == 1, (1...1024).contains(credential.count), publicKey.count == 64,
-                  salt.count == 32, (29...8192).contains(ciphertext.count) else { throw Failure("Invalid YubiKey enrollment. Enter your note password instead.") }
+        let protection: Protection?
+        init(version: Int, credential: Data, publicKey: Data, salt: Data, ciphertext: Data, protection: Protection? = nil) {
+            self.version = version; self.credential = credential; self.publicKey = publicKey
+            self.salt = salt; self.ciphertext = ciphertext; self.protection = protection
         }
+        var aad: Data {
+            let base = Data("consolinotes.fido2.envelope.v\(version)\0".utf8) + credential + publicKey + salt
+            guard let protection = protection else { return base }
+            return base + Data((protection.group + "\0" + protection.mode.rawValue).utf8)
+        }
+        func validate() throws {
+            guard (version == 1 && protection == nil) || (version == 2 && protection != nil),
+                  (1...1024).contains(credential.count), publicKey.count == 64,
+                  salt.count == 32, (29...8192).contains(ciphertext.count) else { throw Failure("Invalid YubiKey enrollment. Enter your note password instead.") }
+            try protection?.validate()
+        }
+    }
+    struct Protection: Codable, Equatable {
+        enum Mode: String, Codable { case password, hardwareWithRecovery }
+        let group: String
+        let mode: Mode
+        func validate() throws {
+            guard UUID(uuidString: group)?.uuidString == group else { throw Failure("Invalid password-group identifier.") }
+        }
+    }
+    /// A short-lived witness that the candidate was checked before USB access.
+    /// It contains no reusable password hash and is never serialized.
+    struct PasswordProof {
+        fileprivate let nonce: Data
+        fileprivate let digest: Data
+        fileprivate let protection: Protection
+        fileprivate func matches(_ password: String) -> Bool {
+            Data(SHA256.hash(data: nonce + Data(password.utf8))) == digest
+        }
+    }
+    static func verifyPassword(_ password: String, group: String? = nil,
+                               using verify: (String) -> Bool) throws -> PasswordProof {
+        guard !password.isEmpty, password.utf8.count <= 4096, verify(password) else {
+            throw Failure("That password did not unlock the selected encrypted note. No YubiKey enrollment was created.")
+        }
+        return try proof(password, protection: Protection(group: group ?? UUID().uuidString, mode: .password))
+    }
+    static func verifyBackupPassword(_ password: String, of enrollment: Enrollment,
+                                     using verify: (String) -> Bool) throws -> PasswordProof {
+        _ = try verifyPassword(password, using: verify)
+        return try proof(password, protection: enrollment.envelope.protection
+            ?? Protection(group: UUID().uuidString, mode: .password))
+    }
+    private static func proof(_ password: String, protection: Protection) throws -> PasswordProof {
+        try protection.validate()
+        let nonce = try random(32)
+        return PasswordProof(nonce: nonce, digest: Data(SHA256.hash(data: nonce + Data(password.utf8))), protection: protection)
+    }
+    /// The random note secret is also the offline recovery password. It is only
+    /// exposed during setup and must be read back before a hardware enrollment
+    /// can qualify for an encryption-secret change.
+    final class StrongProtectionPlan {
+        private let lock = NSLock()
+        private var secret: String
+        var recoverySecret: String { lock.lock(); defer { lock.unlock() }; return secret }
+        private let protection = Protection(group: UUID().uuidString, mode: .hardwareWithRecovery)
+        private var verificationBox: Data
+        private var challenge: Data
+        init() throws {
+            var random = try FIDO2PasswordProvider.random(32)
+            defer { random.resetBytes(in: 0..<random.count) }
+            secret = "CN1-" + stride(from: 0, to: random.count, by: 4).map { offset in
+                random[offset..<offset + 4].map { String(format: "%02X", $0) }.joined()
+            }.joined(separator: "-")
+            challenge = try FIDO2PasswordProvider.random(32)
+            verificationBox = try AES.GCM.seal(challenge, using: SymmetricKey(data: SHA256.hash(data: Data(secret.utf8)))).combined!
+        }
+        func verifyRecovery(_ entered: String) throws -> PasswordProof {
+            lock.lock(); defer { lock.unlock() }
+            guard !secret.isEmpty, entered.utf8.count <= 4096,
+                  let opened = try? AES.GCM.open(AES.GCM.SealedBox(combined: verificationBox), using: SymmetricKey(data: SHA256.hash(data: Data(entered.utf8)))),
+                  opened == challenge else { throw Failure("The recovery password did not match. Re-enter the copy you saved offline before changing this note.") }
+            return try FIDO2PasswordProvider.proof(entered, protection: protection)
+        }
+        func clear() {
+            lock.lock(); defer { lock.unlock() }
+            secret = ""
+            challenge.resetBytes(in: 0..<challenge.count)
+            verificationBox.resetBytes(in: 0..<verificationBox.count)
+        }
+        deinit { clear() }
     }
     struct Enrollment: Codable {
         let id: String
@@ -96,11 +177,11 @@ final class FIDO2PasswordProvider {
         HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: secret), salt: salt,
             info: Data("consolinotes.fido2.password.aes256gcm.v1".utf8), outputByteCount: 32)
     }
-    static func seal(password: String, credential: Data, publicKey: Data, salt: Data, secret: Data) throws -> Envelope {
+    static func seal(password: String, credential: Data, publicKey: Data, salt: Data, secret: Data, protection: Protection? = nil) throws -> Envelope {
         guard !password.isEmpty, password.utf8.count <= 4096, secret.count == 32 else { throw Failure("Invalid password or hardware secret.") }
-        let metadata = Envelope(version: 1, credential: credential, publicKey: publicKey, salt: salt, ciphertext: Data())
+        let metadata = Envelope(version: protection == nil ? 1 : 2, credential: credential, publicKey: publicKey, salt: salt, ciphertext: Data(), protection: protection)
         let box = try AES.GCM.seal(Data(password.utf8), using: key(secret: secret, salt: salt), authenticating: metadata.aad)
-        let envelope = Envelope(version: 1, credential: credential, publicKey: publicKey, salt: salt, ciphertext: box.combined!)
+        let envelope = Envelope(version: metadata.version, credential: credential, publicKey: publicKey, salt: salt, ciphertext: box.combined!, protection: protection)
         try envelope.validate(); return envelope
     }
     static func open(_ envelope: Envelope, secret: Data) throws -> String {
@@ -125,8 +206,10 @@ final class FIDO2PasswordProvider {
     }
     /// The callback runs on the worker immediately before each hardware activation.
     /// It may wait for explicit UI confirmation; returning false cancels the transaction.
-    func enroll(name: String, password: String, pin: String, ticket: UInt64,
-                beforeActivation: @escaping (Int) -> Bool) throws {
+    @discardableResult
+    func enroll(name: String, password: String, proof: PasswordProof, pin: String, ticket: UInt64,
+                beforeActivation: @escaping (Int) -> Bool) throws -> Enrollment {
+        guard proof.matches(password) else { throw Failure("The verified password changed. Verify it against the selected note again.") }
         guard !password.isEmpty, password.utf8.count <= 4096, !pin.isEmpty, pin.utf8.count <= 63, !pin.utf8.contains(0) else { throw Failure("Enter your note password and the key's FIDO2 PIN.") }
         let name = try Self.validName(name)
         guard current(ticket) else { throw Failure("Canceled.") }
@@ -149,7 +232,7 @@ final class FIDO2PasswordProvider {
         try activate(2)
         var secret = try derive(path: path, pin: pin, envelope: metadata)
         defer { secret.resetBytes(in: 0..<secret.count) }
-        let envelope = try Self.seal(password: password, credential: metadata.credential, publicKey: metadata.publicKey, salt: metadata.salt, secret: secret)
+        let envelope = try Self.seal(password: password, credential: metadata.credential, publicKey: metadata.publicKey, salt: metadata.salt, secret: secret, protection: proof.protection)
         // A second private operation verifies reproducibility before committing enrollment.
         try activate(3)
         var verification = try derive(path: path, pin: pin, envelope: envelope)
@@ -160,8 +243,10 @@ final class FIDO2PasswordProvider {
         // Read again under the commit lock so another addition or rename is preserved.
         var records = try readEnrollments()
         guard records.count < 16 else { throw Failure("You can enroll up to 16 YubiKeys. Remove one before adding another.") }
-        records.append(Enrollment(id: Enrollment.identifier(for: envelope.credential), name: name, envelope: envelope))
+        let record = Enrollment(id: Enrollment.identifier(for: envelope.credential), name: name, envelope: envelope)
+        records.append(record)
         try save(records)
+        return record
     }
     func unlock(id: String, pin: String, ticket: UInt64, beforeActivation: () -> Bool) throws -> String {
         guard !pin.isEmpty, pin.utf8.count <= 63, !pin.utf8.contains(0) else { throw Failure("Enter the key's FIDO2 PIN.") }
@@ -269,5 +354,113 @@ final class FIDO2PasswordProvider {
         let record = records[index]
         records[index] = Enrollment(id: record.id, name: name, envelope: record.envelope)
         try save(records)
+    }
+
+    private struct PortableCollection: Codable {
+        let format: String
+        let version: Int
+        let enrollments: [Enrollment]
+        func validate() throws {
+            guard format == "consolinotes-yubikey-enrollments", version == 1 else {
+                throw Failure("This is not a supported consolinotes YubiKey backup.")
+            }
+            try Collection(version: 2, enrollments: enrollments).validate()
+        }
+    }
+    struct ImportSummary {
+        let added: Int
+        let alreadyPresent: Int
+    }
+    func exportData() throws -> Data {
+        lock.lock(); defer { lock.unlock() }
+        let document = PortableCollection(format: "consolinotes-yubikey-enrollments", version: 1, enrollments: try readEnrollments())
+        try document.validate()
+        let data = try JSONEncoder().encode(document)
+        guard data.count <= 262144 else { throw Failure("The YubiKey backup is too large.") }
+        return data
+    }
+    func mergeImport(_ data: Data, ticket: UInt64) throws -> ImportSummary {
+        guard !data.isEmpty, data.count <= 262144 else { throw Failure("This YubiKey backup is empty or exceeds the 256 KB limit.") }
+        let document: PortableCollection
+        do { document = try JSONDecoder().decode(PortableCollection.self, from: data); try document.validate() }
+        catch { throw Failure("The YubiKey backup is invalid. No enrollments were changed.") }
+        lock.lock(); defer { lock.unlock() }
+        guard ticket == generation else { throw Failure("Canceled.") }
+        var records = try readEnrollments()
+        var skipped = 0, added = 0
+        for incoming in document.enrollments {
+            if let existing = records.first(where: { $0.id == incoming.id }) {
+                // A backup may predate a local rename. Keep the local name, but
+                // never silently replace a credential's encrypted password.
+                guard existing.envelope.version == incoming.envelope.version,
+                      existing.envelope.credential == incoming.envelope.credential,
+                      existing.envelope.publicKey == incoming.envelope.publicKey,
+                      existing.envelope.salt == incoming.envelope.salt,
+                      existing.envelope.ciphertext == incoming.envelope.ciphertext,
+                      existing.envelope.protection == incoming.envelope.protection else {
+                    throw Failure("This backup conflicts with an existing enrollment. Nothing was replaced. Keep both backups and test the current enrollment before deciding which record to retain.")
+                }
+                skipped += 1
+                continue
+            }
+            guard !records.contains(where: { Self.nameKey($0.name) == Self.nameKey(incoming.name) }) else {
+                throw Failure("An imported key name is already in use. Rename the local enrollment first, then import again. Nothing was changed.")
+            }
+            records.append(incoming); added += 1
+        }
+        try Collection(version: 2, enrollments: records).validate()
+        if added > 0 { try save(records) }
+        return ImportSummary(added: added, alreadyPresent: skipped)
+    }
+    func importFile(_ url: URL, ticket: UInt64) throws -> ImportSummary {
+        let fd = Darwin.open(url.path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard fd >= 0 else { throw Failure("Cannot open this YubiKey backup.") }
+        defer { close(fd) }
+        var status = stat()
+        guard fstat(fd, &status) == 0, status.st_mode & S_IFMT == S_IFREG,
+              status.st_size > 0, status.st_size <= 262144 else { throw Failure("This is not a regular YubiKey backup within the 256 KB limit.") }
+        var bytes = Data(count: Int(status.st_size))
+        try bytes.withUnsafeMutableBytes { buffer in
+            var offset = 0
+            while offset < buffer.count {
+                let amount = read(fd, buffer.baseAddress!.advanced(by: offset), buffer.count - offset)
+                if amount < 0 && errno == EINTR { continue }
+                guard amount > 0 else { throw Failure("The YubiKey backup could not be read completely.") }
+                offset += amount
+            }
+        }
+        var extra: UInt8 = 0
+        guard read(fd, &extra, 1) == 0 else { throw Failure("The YubiKey backup changed while being read.") }
+        return try mergeImport(bytes, ticket: ticket)
+    }
+    func exportFile(_ url: URL, ticket: UInt64) throws {
+        let data = try exportData()
+        let parent = Darwin.open(url.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard parent >= 0 else { throw Failure("Cannot access the chosen backup folder.") }
+        defer { close(parent) }
+        let temporary = ".consolinotes-yubikey-" + UUID().uuidString + ".tmp"
+        let fd = openat(parent, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard fd >= 0 else { throw Failure("Cannot create the YubiKey backup.") }
+        defer { close(fd); unlinkat(parent, temporary, 0) }
+        try data.withUnsafeBytes { bytes in
+            var offset = 0
+            while offset < bytes.count {
+                let amount = write(fd, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                if amount < 0 && errno == EINTR { continue }
+                guard amount > 0 else { throw Failure("The YubiKey backup could not be written.") }
+                offset += amount
+            }
+        }
+        lock.lock(); defer { lock.unlock() }
+        guard ticket == generation, fsync(fd) == 0 else { throw Failure("The YubiKey backup was cancelled or could not be saved.") }
+        // The Save panel authorizes replacement of an ordinary chosen file.
+        // Reject links, special files and multiply linked destinations.
+        var existing = stat()
+        let result = fstatat(parent, url.lastPathComponent, &existing, AT_SYMLINK_NOFOLLOW)
+        guard (result != 0 && errno == ENOENT) || (result == 0 && existing.st_mode & S_IFMT == S_IFREG && existing.st_nlink == 1 && existing.st_uid == getuid()) else {
+            throw Failure("The chosen backup destination is not a safe ordinary file.")
+        }
+        guard renameat(parent, temporary, parent, url.lastPathComponent) == 0 else { throw Failure("The YubiKey backup could not be saved.") }
+        _ = fsync(parent)
     }
 }

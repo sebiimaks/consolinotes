@@ -1,0 +1,268 @@
+{
+  "upstream": "https://github.com/github/cmark-gfm",
+  "revision": "27d942c8b0a62d192f616e5bf3578f4b6a89e180",
+  "base_version": "0.29.0.gfm.13",
+  "source_archive": "https://api.github.com/repos/github/cmark-gfm/tarball/27d942c8b0a62d192f616e5bf3578f4b6a89e180",
+  "archive_sha256": "c958a1cd2466ea80c8809a52e6beeddb05a1ee6f7193b33473a11cf76169d638",
+  "files": {
+    "Sources/arena.c": {
+      "upstream_path": "src/arena.c",
+      "sha256": "cd815bc59d20838782f0aaf5c8ca09b220fac85200fd38441861f2a7b3332896"
+    },
+    "Sources/blocks.c": {
+      "upstream_path": "src/blocks.c",
+      "sha256": "464266209ed2c94b42ba6c9c4d2768f0f7bda3d668f4e5fa86bcf47b18b7f0ff"
+    },
+    "Sources/buffer.c": {
+      "upstream_path": "src/buffer.c",
+      "sha256": "3f458b3947a6595c06963e52489e0e0fc8b43e1edb316a192a42df3fd986b2d5"
+    },
+    "Sources/include/buffer.h": {
+      "upstream_path": "src/buffer.h",
+      "sha256": "8341c1780679b29b20127af8a52de5b97886660d8bc7cf2ad7c21edff7ceb123"
+    },
+    "Sources/case_fold_switch.inc": {
+      "upstream_path": "src/case_fold_switch.inc",
+      "sha256": "37726f404907e68a2c044c78f7c1559e46fbaf91f691989985264ddc58251579"
+    },
+    "Sources/include/chunk.h": {
+      "upstream_path": "src/chunk.h",
+      "sha256": "33ee10c88d18a91e943cb7b418e51bf661ae371dd74d8f51cefc802620df1164"
+    },
+    "Sources/include/cmark-gfm-extension_api.h": {
+      "upstream_path": "src/cmark-gfm-extension_api.h",
+      "sha256": "58f47cef48d08915d51ed37990b60e7fe96af33c5d726e8654cc3770a5f62476"
+    },
+    "Sources/include/cmark-gfm.h": {
+      "upstream_path": "src/cmark-gfm.h",
+      "sha256": "6502e5b58a822af20e2540819fb2c05cfcd8446c1c837881892da57f29d3cd88"
+    },
+    "Sources/cmark.c": {
+      "upstream_path": "src/cmark.c",
+      "sha256": "d9fd116cf77890dab19f7f29f1d261865454cf4e51d57ec2d21f7592b211bfde"
+    },
+    "Sources/cmark_ctype.c": {
+      "upstream_path": "src/cmark_ctype.c",
+      "sha256": "556d662fa2f1513630bc1d76023e1e17bb8c185eab1b6936c14e59af0c3c3148"
+    },
+    "Sources/include/cmark_ctype.h": {
+      "upstream_path": "src/cmark_ctype.h",
+      "sha256": "fd4966af7e19a5fe826e4c1376e1b9b0269a86b88912696299cecc8f1957bde3"
+    },
+    "Sources/commonmark.c": {
+      "upstream_path": "src/commonmark.c",
+      "sha256": "4bc0ad862b16bb5e4c07537f63172847a5962a8008a3a31582766373f5058e2f"
+    },
+    "Sources/entities.inc": {
+      "upstream_path": "src/entities.inc",
+      "sha256": "3932dfa630067813f47be6ae0072e1645c1183bde41140b51443f50857c88909"
+    },
+    "Sources/footnotes.c": {
+      "upstream_path": "src/footnotes.c",
+      "sha256": "da853b3ca7f27bbabadb48596457243489dbeb1782a385795733ab8066dd181b"
+    },
+    "Sources/include/footnotes.h": {
+      "upstream_path": "src/footnotes.h",
+      "sha256": "cd3137246058d58b3325969f96472b8e3c39ae2de93e0b07fddfb22bad952401"
+    },
+    "Sources/include/houdini.h": {
+      "upstream_path": "src/houdini.h",
+      "sha256": "1de38a17d59e2df294ea949b0ac5982a016f582b507aaf1cad1278b8c27704e9"
+    },
+    "Sources/houdini_href_e.c": {
+      "upstream_path": "src/houdini_href_e.c",
+      "sha256": "812efd5dfa898335f43b09fd101d00574d9af0476146961ee82f8c8195c1e8a4"
+    },
+    "Sources/houdini_html_e.c": {
+      "upstream_path": "src/houdini_html_e.c",
+      "sha256": "14c268cbd8707d2ec01eec726780886cb27d85caf6fff79455e687c6d774c1c7"
+    },
+    "Sources/houdini_html_u.c": {
+      "upstream_path": "src/houdini_html_u.c",
+      "sha256": "5738d88a576c807c99905405833057411329ce61fa784f4db3a55d5fb5f3ac7b"
+    },
+    "Sources/html.c": {
+      "upstream_path": "src/html.c",
+      "sha256": "e2f61240a135e34d595cde1fae9063bbc3ff033720eb52d3acb77fde3cddeb29"
+    },
+    "Sources/include/html.h": {
+      "upstream_path": "src/html.h",
+      "sha256": "16f4f3d19a9ef411ae14664b49d5c02b48e696f2baaf5aa8740357e90c98166e"
+    },
+    "Sources/inlines.c": {
+      "upstream_path": "src/inlines.c",
+      "sha256": "89b0c0fb10bba478b0bf71910f1c1a417d60bd8ac2b09134f76a84862a81805e"
+    },
+    "Sources/include/inlines.h": {
+      "upstream_path": "src/inlines.h",
+      "sha256": "856a7827a3f7b11360dd861b740c407d1b09a596a0370b1254d8f46b0da80b6b"
+    },
+    "Sources/iterator.c": {
+      "upstream_path": "src/iterator.c",
+      "sha256": "6b40d13a66a432d26685bc6677881a1e3e23510a82a0b247f7d0f6fa91c347ca"
+    },
+    "Sources/include/iterator.h": {
+      "upstream_path": "src/iterator.h",
+      "sha256": "a4add6ee1194027aaea64d9545b00118faa308b78471d5eab3c9b566a919f1fe"
+    },
+    "Sources/latex.c": {
+      "upstream_path": "src/latex.c",
+      "sha256": "5a38c56f2b6ec46a7eeb9a3d6edb8346cf4556299923eca800f7b1a90b589e37"
+    },
+    "Sources/linked_list.c": {
+      "upstream_path": "src/linked_list.c",
+      "sha256": "2303117852800795764a04c24726388405aa5794c26e1cd3ccbabf6c6f805789"
+    },
+    "Sources/man.c": {
+      "upstream_path": "src/man.c",
+      "sha256": "5d0113404b8114cea4d0ada01effd987976f60499d34b7ef2df06a274118b30d"
+    },
+    "Sources/map.c": {
+      "upstream_path": "src/map.c",
+      "sha256": "8d7909cab6a7e893223d20aae69d90a9b7891fbeaea8dcf57e4f0dca08f6a213"
+    },
+    "Sources/include/map.h": {
+      "upstream_path": "src/map.h",
+      "sha256": "5dbbada38f11efd95bf1da887b87a1e067eaf4e1bcd8df6e7f6fd1642fe46010"
+    },
+    "Sources/node.c": {
+      "upstream_path": "src/node.c",
+      "sha256": "3b17902d88e3d12f0d70855a7cabed836d74bd7df065e6a696f4a3d01b308490"
+    },
+    "Sources/include/node.h": {
+      "upstream_path": "src/node.h",
+      "sha256": "bb27530fbacf902176f25ad13df63f888bd4f249991583c489fe508a74ac0753"
+    },
+    "Sources/include/parser.h": {
+      "upstream_path": "src/parser.h",
+      "sha256": "ebb7107c3a256ba4859f8aefdbaad73c53e592cce7f3f09f5ddfef6739253832"
+    },
+    "Sources/plaintext.c": {
+      "upstream_path": "src/plaintext.c",
+      "sha256": "b021366747e23ccaa94cbddda3f942b0d110457377bd50385442c6d8ed3b88ff"
+    },
+    "Sources/plugin.c": {
+      "upstream_path": "src/plugin.c",
+      "sha256": "daeeefcb721709b5ae87cd0ef0158a1aa82c963e07b4a316d986f05e0b6a6ee9"
+    },
+    "Sources/include/plugin.h": {
+      "upstream_path": "src/plugin.h",
+      "sha256": "394a8bb69b298dd8f8bfecc74fbfce226e148a680228a702d978430b12fb003d"
+    },
+    "Sources/references.c": {
+      "upstream_path": "src/references.c",
+      "sha256": "a83acb7dde757a3203a6a3cc501fcbddb4aee05a77c24de7a3dc9f3d5d5647d3"
+    },
+    "Sources/include/references.h": {
+      "upstream_path": "src/references.h",
+      "sha256": "772904488c706bf672c4f671737dd7d2315c67be2213ccbf6bde93dd47aa1930"
+    },
+    "Sources/registry.c": {
+      "upstream_path": "src/registry.c",
+      "sha256": "d17cb2734ddf21825fdc110e5042ce8ac1498d32e1f670619356ba227b6070cf"
+    },
+    "Sources/include/registry.h": {
+      "upstream_path": "src/registry.h",
+      "sha256": "ec94a72c7e6244cfe1d220d1a6dfe658eee1d8e65bfafc09baefd45ef69f3b35"
+    },
+    "Sources/render.c": {
+      "upstream_path": "src/render.c",
+      "sha256": "b9a177edb5973e1af9b2975e6b899995eb581da62162c45b776809b10a0f3dcd"
+    },
+    "Sources/include/render.h": {
+      "upstream_path": "src/render.h",
+      "sha256": "158ae470be43040c20b2268143b59a5406354b3894fd9c666b399683d00e39e0"
+    },
+    "Sources/scanners.c": {
+      "upstream_path": "src/scanners.c",
+      "sha256": "7e0d16ca84acf11219bc3a4a5ad4bfd9891ae319ffec60552c67d2f6ecbc3cac"
+    },
+    "Sources/include/scanners.h": {
+      "upstream_path": "src/scanners.h",
+      "sha256": "c0cc707d1c3c0daaa78f79fa0ed47c625b25f6e6e9004f09be6d8979472bd630"
+    },
+    "Sources/syntax_extension.c": {
+      "upstream_path": "src/syntax_extension.c",
+      "sha256": "551cc3710ff2796afc32bf9e4878cc5ff61e12ed8e62464c9530915585962275"
+    },
+    "Sources/include/syntax_extension.h": {
+      "upstream_path": "src/syntax_extension.h",
+      "sha256": "f8520fd19b5cddcef0984eb8323bf7b4635fefb632fe5f405674d8c9ab4e379c"
+    },
+    "Sources/utf8.c": {
+      "upstream_path": "src/utf8.c",
+      "sha256": "8565221e756c1e8dbb545725911704564937956b06b8ff00ec473cd32413a6f3"
+    },
+    "Sources/include/utf8.h": {
+      "upstream_path": "src/utf8.h",
+      "sha256": "34aa29b8756685437dd330ba8cbea4df97cce70bac9254bdbde093361dacc291"
+    },
+    "Sources/xml.c": {
+      "upstream_path": "src/xml.c",
+      "sha256": "141241bf7f80b2f675fdbca6ab5ed40c2531e4b1a3d40b425109c86d25bc12a9"
+    },
+    "Sources/autolink.c": {
+      "upstream_path": "extensions/autolink.c",
+      "sha256": "1e63757813ce22c6947da16acdbdb76fc10b9712d8dbea858225e343a6bd38ce"
+    },
+    "Sources/include/autolink.h": {
+      "upstream_path": "extensions/autolink.h",
+      "sha256": "32b32d557c19d18c30b8fa01a5b8475f910a3fae48ef78fbde4e089c48f1e216"
+    },
+    "Sources/include/cmark-gfm-core-extensions.h": {
+      "upstream_path": "extensions/cmark-gfm-core-extensions.h",
+      "sha256": "0430e1348124d7f84576ec626ef8d49d38f5b41bd1ea7708dca5967b5e49cfae"
+    },
+    "Sources/core-extensions.c": {
+      "upstream_path": "extensions/core-extensions.c",
+      "sha256": "281a5514746d541eea3a26c6ce55d35c9594d62661396a458b4385be698436a2"
+    },
+    "Sources/ext_scanners.c": {
+      "upstream_path": "extensions/ext_scanners.c",
+      "sha256": "449e5bff8031b213ae43b353900b5b3f11f0123a36379ef634f7ed5fe05b4b6a"
+    },
+    "Sources/include/ext_scanners.h": {
+      "upstream_path": "extensions/ext_scanners.h",
+      "sha256": "a7fa1df781d227e84a0f41db22a8c544037611241dad82fed2c6e1e16acf7780"
+    },
+    "Sources/strikethrough.c": {
+      "upstream_path": "extensions/strikethrough.c",
+      "sha256": "47ce340067b63eb062b2b6b40212f86e7734627b0affb82902a935125e88927e"
+    },
+    "Sources/include/strikethrough.h": {
+      "upstream_path": "extensions/strikethrough.h",
+      "sha256": "76957f0e97d1e51227b05a48efaa879a349c7123b74510a2741d832435096644"
+    },
+    "Sources/table.c": {
+      "upstream_path": "extensions/table.c",
+      "sha256": "2f021e64aed145578322c767475399138e76b94ec07599696a5a15ee14133ed1"
+    },
+    "Sources/include/table.h": {
+      "upstream_path": "extensions/table.h",
+      "sha256": "e054b8c846fcedff9b02981caa518c01ac93c09237267eb57f6959fecaf1fced"
+    },
+    "Sources/tagfilter.c": {
+      "upstream_path": "extensions/tagfilter.c",
+      "sha256": "9657363955756efc83539a5a852d37545853c2893bbcb7d70d31a4f31b4e27d0"
+    },
+    "Sources/include/tagfilter.h": {
+      "upstream_path": "extensions/tagfilter.h",
+      "sha256": "bf5a55e109c9fa98be9499adf95992ba5281ded4a3dcc34633b2a45446530f19"
+    },
+    "Sources/tasklist.c": {
+      "upstream_path": "extensions/tasklist.c",
+      "sha256": "9869288ae527b81849b631051d79ca73931d25dc1ef43e53268f9c6e54c04c29"
+    },
+    "Sources/include/tasklist.h": {
+      "upstream_path": "extensions/tasklist.h",
+      "sha256": "a789f46d72bfd702a6bcbfdf2377ccd335256c020843c21e21706acea86a0560"
+    }
+  },
+  "generated_headers": {
+    "Sources/include/config.h": "21a359c3eb76e22c2bb4f2f5907a843d5aea144bb148d12f191efeea1389fc8b",
+    "Sources/include/cmark-gfm_version.h": "64d3fcaa338ce0767ee1782f5229b49906e10ef81a5c02aa6299581b3c8a550b",
+    "Sources/include/libcmark_gfm.h": "761a1e1f1ed2a29fcf5e994738b12e2addc63c754393f4b97ce8618000fa2fd6",
+    "Sources/include/cmark-gfm-extensions_export.h": "0308a1e0888162723996044bf5a2d5211ad0af96a5f796aee456c3d045b92e5e",
+    "Sources/include/cmark-gfm_export.h": "689cab7a6d8f34e43d30aaec93f54b9c8a5deb3dc712237aa32735b696ed54ec"
+  }
+}

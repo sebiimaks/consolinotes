@@ -1,3 +1,5 @@
+LICENSE:
+
 
 
 Copyright (c) 2016-2018, The Cytoscape Consortium.

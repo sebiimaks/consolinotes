@@ -54,6 +54,8 @@ func excludedFromBackup(_ directory: URL) throws -> Bool {
 final class Note {
     var locked = false
     func isEncryptedAndLocked() -> Bool { locked }
+    var memory = [URL: Data]()
+    func memoryAttachmentData(for url: URL) -> Data? { locked ? nil : memory[url] }
 }
 final class NoteCellView {
 ''' + method(CELL, "    public func getPreviewImage(") + r'''
@@ -116,15 +118,32 @@ for name in ["symlink", "special"] {
     expect(!fm.fileExists(atPath: destination.appendingPathComponent("forbidden").path), "Forbidden archive entry was written before rejection")
 }
 let traversal = working.appendingPathComponent("traversal")
-expect(PrivateNoteArchive.extract(root.appendingPathComponent("traversal.zip"), to: traversal), "Pinned library must sanitize traversal paths")
+expect(!PrivateNoteArchive.extract(root.appendingPathComponent("traversal.zip"), to: traversal), "Traversal must be refused")
+expect(!fm.fileExists(atPath: traversal.path), "Rejected archive left partial plaintext")
 expect(try! String(contentsOf: outside, encoding: .utf8) == "outside", "Archive escaped its working directory")
-expect(try! String(contentsOf: traversal.appendingPathComponent("outside.txt"), encoding: .utf8) == "sanitized", "Traversal path was not sanitized within destination")
-var info = unz_file_info()
-info.size_filename = 7
-info.uncompressed_size = UInt32(PrivateNoteArchive.maximumExpandedBytes + 1)
-expect(!PrivateNoteArchive().zipArchiveShouldUnzipFile(at: 0, totalFiles: 1, archivePath: "fixture", fileInfo: info), "Oversized expansion accepted")
-info.uncompressed_size = 1
-expect(!PrivateNoteArchive().zipArchiveShouldUnzipFile(at: 0, totalFiles: PrivateNoteArchive.maximumEntries + 1, archivePath: "fixture", fileInfo: info), "Excessive member count accepted")
+for name in ["oversize", "zip64", "deep", "duplicate", "implicit", "badcrc"] {
+    let destination = working.appendingPathComponent(name)
+    expect(!PrivateNoteArchive.extract(root.appendingPathComponent(name + ".zip"), to: destination,
+        limits: .init(bytes: 32, entries: 4, depth: 3)), "Archive budget/corruption guard missed " + name)
+    expect(!fm.fileExists(atPath: destination.path), "Rejected archive left files: " + name)
+}
+var checks = 0
+let cancelled = working.appendingPathComponent("cancelled")
+expect(!PrivateNoteArchive.extract(root.appendingPathComponent("cancel.zip"), to: cancelled, isCancelled: {
+    checks += 1
+    return checks >= 5
+}), "Mid-stream cancellation ignored")
+expect(!fm.fileExists(atPath: cancelled.path), "Cancellation left partial output")
+let generation = PrivateNoteArchive.cancellationCheck()
+expect(!generation(), "New operation already cancelled")
+PrivateNoteArchive.cancelOperations()
+expect(generation(), "Operation generation not cancelled")
+let bounded = working.appendingPathComponent("bounded")
+try Data(repeating: 1, count: 65).write(to: bounded)
+expectFailure("Bounded read accepted oversize file") { _ = try PrivateWorkingDirectory.readBoundedFile(bounded, maximumBytes: 64) }
+expect(try! PrivateWorkingDirectory.readBoundedFile(bounded, maximumBytes: 65).count == 65, "Exact bounded read failed")
+expectFailure("Bounded read ignored cancellation") { _ = try PrivateWorkingDirectory.readBoundedFile(bounded, maximumBytes: 65, isCancelled: { true }) }
+expectFailure("Bounded read followed symlink") { _ = try PrivateWorkingDirectory.readBoundedFile(unsafe.appendingPathComponent("ConsolinotesEncryption.noindex"), maximumBytes: 65) }
 let oversized = working.appendingPathComponent("oversized")
 try fm.createDirectory(at: oversized, withIntermediateDirectories: false)
 let sparse = oversized.appendingPathComponent("large.dat")
@@ -140,7 +159,11 @@ try png.write(to: image)
 let note = Note()
 expect(NoteAttachment.getImage(url: image, size: CGSize(width: 70, height: 70)) != nil, "Editor attachment render failed")
 expect(NoteCellView().getPreviewImage(imageUrl: image, note: note) != nil, "Sidebar thumbnail render failed")
+let opaque = URL(string: "consolinotes-memory://fixture/assets/image.png")!
+note.memory[opaque] = png
+expect(NoteCellView().getPreviewImage(imageUrl: opaque, note: note) != nil, "Memory-only sidebar thumbnail render failed")
 note.locked = true
+expect(NoteCellView().getPreviewImage(imageUrl: opaque, note: note) == nil, "Locked memory attachment rendered")
 expect(NoteCellView().getPreviewImage(imageUrl: image, note: note) == nil, "Locked note rendered a thumbnail")
 for name in ["MainNotesList", "Preview", "ThumbnailsBig"] {
     expect(!fm.fileExists(atPath: URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(name).path), "Thumbnail cache was written to disk")
@@ -162,12 +185,37 @@ def main():
                 archive.writestr(info, body)
         with zipfile.ZipFile(work / "traversal.zip", "w") as archive:
             archive.writestr("../../outside.txt", "sanitized")
+        for name, entries in {
+            "oversize": [("a", b"first"), ("b", b"X" * 64)],
+            "deep": [("a/b/c/d/e", b"data")],
+            "duplicate": [("a", b"first"), ("a", b"second")],
+            "implicit": [("a/b/c", b"x"), ("d/e/f", b"x")],
+            "badcrc": [("a", b"first")],
+            "cancel": [("large", b"X" * 200_000)],
+        }.items():
+            with zipfile.ZipFile(work / (name + ".zip"), "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for path, payload in entries: archive.writestr(path, payload)
+        broken = bytearray((work / "badcrc.zip").read_bytes())
+        central = broken.index(b"PK\x01\x02")
+        broken[central + 16] ^= 0xff
+        (work / "badcrc.zip").write_bytes(broken)
+        # A genuine ZIP64-size member with forged small compressed input.
+        import struct
+        with zipfile.ZipFile(work / "zip64.zip", "w") as archive:
+            info = zipfile.ZipInfo("large")
+            info.extra = struct.pack("<HHQQ", 1, 16, 0x100000000, 1)
+            archive.writestr(info, b"x")
+        oversized = bytearray((work / "zip64.zip").read_bytes())
+        central = oversized.index(b"PK\x01\x02")
+        oversized[central + 24:central + 28] = struct.pack("<I", 0xffffffff)
+        (work / "zip64.zip").write_bytes(oversized)
         source = work / "main.swift"
         source.write_text(FIXTURE)
         executable = work / "check-private-storage"
         subprocess.run([
             "swiftc", "-module-cache-path", str(work / "modules"),
             "-Xcc", "-fmodule-map-file=" + str(MODULES / "ZipArchive.modulemap"),
+            "-import-objc-header", str(ROOT / "FSNotesCore/PrivateNoteArchiveBridge.h"),
             str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"),
             str(ROOT / "FSNotesCore/PrivateNoteArchive.swift"),
             str(ROOT / "FSNotes/Extensions/NSImage+.swift"), str(source), str(ARCHIVE),

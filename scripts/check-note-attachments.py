@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
+PRODUCTS = ROOT / "build/DerivedData/Build/Products/Release"
+MODULES = ROOT / "build/DerivedData/Build/Intermediates.noindex/GeneratedModuleMaps"
 note = (ROOT / "FSNotesCore/Business/Note.swift").read_text()
 start = note.index("    public func getAttachmentFileUrl(name:")
 end = note.index("\n    }", start) + len("\n    }")
@@ -15,6 +17,7 @@ struct Project { let url: URL }
 final class Note {
     let project: Project; let body: URL
     var encrypted = false; var locked = false; var bundle = false
+    var memoryWorkspace: MemoryNoteWorkspace?
     init(root: URL, body: URL) { project = Project(url: root); self.body = body }
     func isEncrypted() -> Bool { encrypted }
     func isEncryptedAndLocked() -> Bool { locked }
@@ -48,14 +51,33 @@ expect(note.getAttachmentFileUrl(name: "inside.png") == bundled.resolvingSymlink
 expect(note.getAttachmentFileUrl(name: "../local.png") == nil, "bundle traversal must be rejected")
 note.encrypted = true
 expect(note.getAttachmentFileUrl(name: "/i/legacy.png") == legacy.resolvingSymlinksInPath(), "legacy image must resolve within project only")
+let workspace = try MemoryNoteWorkspace(entries: [
+    "info.json": Data(#"{"version":2,"type":"net.daringfireball.markdown"}"#.utf8),
+    "text.md": Data("synthetic encrypted body".utf8),
+    "assets/私的 %.png": Data("memory asset".utf8)
+])
+note.memoryWorkspace = workspace
+let memoryURL = note.getAttachmentFileUrl(name: "assets/私的 %.png")!
+expect(memoryURL.scheme == "consolinotes-memory" && !memoryURL.isFileURL, "Encrypted attachment escaped to a file URL")
+expect(workspace.attachmentData(for: memoryURL) == Data("memory asset".utf8), "Memory attachment data was not retained")
+let legacyMemoryURL = note.getAttachmentFileUrl(name: "/i/legacy.png")!
+expect(!legacyMemoryURL.isFileURL && workspace.attachmentData(for: legacyMemoryURL) == Data("synthetic".utf8), "Legacy asset was not imported into memory")
+for name in ["https://example.invalid/pixel.png", "../private.png", "%2e%2e/private.png", "escape.png", "/private.png"] {
+    expect(note.getAttachmentFileUrl(name: name) == nil, "Memory note accepted unsafe reference: " + name)
+}
 note.locked = true
+expect(note.getAttachmentFileUrl(name: "assets/私的 %.png") == nil, "Locked memory note exposed an attachment")
 expect(note.getAttachmentFileUrl(name: "inside.png") == nil, "locked note must not expose attachment files")
-print("Verified editor attachments: local files, bundle containment, legacy relative paths, locked notes, remote/traversal/symlink rejection.")
+print("Verified editor attachments: local files, bundle containment, legacy paths, memory-only encrypted assets, locked notes, remote/traversal/symlink rejection.")
 '''
 with tempfile.TemporaryDirectory(prefix="consolinotes-editor-attachment-check-") as temp:
     work = Path(temp)
     main = work / "main.swift"
     main.write_text(source)
     executable = work / "attachment-tests"
-    subprocess.run(["xcrun", "swiftc", "-module-cache-path", str(work / "module-cache"), str(ROOT / "FSNotesCore/PrivateWorkingDirectory.swift"), str(ROOT / "FSNotesCore/LocalPreviewSecurity.swift"), str(main), "-o", str(executable)], check=True)
+    subprocess.run(["xcrun", "swiftc", "-module-cache-path", str(work / "module-cache"), "-I", str(PRODUCTS),
+        "-Xcc", "-fmodule-map-file=" + str(MODULES / "ZipArchive.modulemap"),
+        "-import-objc-header", str(ROOT / "FSNotesCore/PrivateNoteArchiveBridge.h"),
+        *[str(ROOT / "FSNotesCore" / file) for file in ["PrivateWorkingDirectory.swift", "PrivateNoteArchive.swift", "MemoryNoteArchive.swift", "MemoryNoteWorkspace.swift", "LocalPreviewSecurity.swift", "MemoryPreview.swift"]],
+        str(main), str(PRODUCTS / "ZipArchive.o"), "-lz", "-liconv", "-o", str(executable)], check=True)
     subprocess.run([str(executable), str(work)], check=True)

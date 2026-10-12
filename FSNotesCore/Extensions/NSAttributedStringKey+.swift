@@ -9,6 +9,8 @@
 import Foundation
 
 public extension NSAttributedString.Key {
+    static let attachmentMemoryData = NSAttributedString.Key("consolinotes.attachment.memory-data")
+
     static var attachmentSave: NSAttributedString.Key {
         return NSAttributedString.Key(rawValue: "es.fsnot.attachment.save")
     }

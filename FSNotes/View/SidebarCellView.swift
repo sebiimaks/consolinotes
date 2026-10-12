@@ -13,7 +13,7 @@ class SidebarCellView: NSTableCellView {
     @IBOutlet weak var label: NSTextField!
 
     public var type: SidebarItemType?
-    public var storage = Storage.shared()
+    public var storage: Storage { Storage.shared() }
 
     @IBAction func projectName(_ sender: NSTextField) {
         let cell = sender.superview as? SidebarCellView

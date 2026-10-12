@@ -6,13 +6,14 @@
 //  Copyright © 2018 Oleksandr Glushchenko. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 class FileSystemEventManager {
     private var storage: Storage
-    private var delegate: ViewController
+    private weak var delegate: ViewController?
     private var watcher: FileWatcher?
     private var observedFolders: [String]
+    private var didReportWatchFailure = false
     private var textBundleItems = ["text.markdown", "text.md", "text.txt", "info.json"]
 
     init(storage: Storage, delegate: ViewController) {
@@ -22,8 +23,15 @@ class FileSystemEventManager {
     }
     
     public func start() {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.start() }
+            return
+        }
+        watcher?.stop()
+        self.observedFolders = self.storage.getProjectPaths()
         watcher = FileWatcher(self.observedFolders)
-        watcher?.callback = { event in
+        watcher?.callback = { [weak self] event in
+            guard let self = self else { return }
             guard let path = event.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
                 return
             }
@@ -82,8 +90,24 @@ class FileSystemEventManager {
             }
         }
         
-        watcher?.start()
+        guard watcher?.start() == true else {
+            PrivacyLog.record("watcher.start-failed")
+            guard !didReportWatchFailure else { return }
+            didReportWatchFailure = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                let alert = NSAlert()
+                alert.messageText = "Folder monitoring could not start"
+                alert.informativeText = "Your library can still be opened and edited. Changes made outside consolinotes may not appear until you reopen the app. Check that the library folder is available, then restart consolinotes."
+                alert.addButton(withTitle: "Continue")
+                if let window = self.delegate?.view.window { alert.beginSheetModal(for: window) }
+            }
+            return
+        }
+        didReportWatchFailure = false
     }
+
+    deinit { watcher?.stop() }
 
     private func handleDirEvents(event: FileWatcherEvent) {
         guard !event.path.contains("Trash") else { return }
@@ -100,7 +124,7 @@ class FileSystemEventManager {
             if event.dirChange {
                 if let project = project {
                     OperationQueue.main.addOperation {
-                        self.delegate.sidebarOutlineView.removeRows(projects: [project])
+                        self.delegate?.sidebarOutlineView.removeRows(projects: [project])
                     }
                 }
             }
@@ -113,14 +137,14 @@ class FileSystemEventManager {
                 // hack: occasionally get rename event when created
                 if !FileManager.default.fileExists(atPath: dirURL.path) {
                     OperationQueue.main.addOperation {
-                        self.delegate.sidebarOutlineView.removeRows(projects: [project])
+                        self.delegate?.sidebarOutlineView.removeRows(projects: [project])
                     }
                 }
             } else {
                 if FileManager.default.directoryExists(atUrl: dirURL) {
                     OperationQueue.main.addOperation {
                         if let projects = self.storage.insert(url: dirURL) {
-                            self.delegate.sidebarOutlineView.insertRows(projects: projects)
+                            self.delegate?.sidebarOutlineView.insertRows(projects: projects)
                         }
                     }
                 }
@@ -131,7 +155,7 @@ class FileSystemEventManager {
         if event.dirRemoved  {
             if let project = project {
                 OperationQueue.main.addOperation {
-                    self.delegate.sidebarOutlineView.removeRows(projects: [project])
+                    self.delegate?.sidebarOutlineView.removeRows(projects: [project])
                 }
             }
             return
@@ -143,7 +167,7 @@ class FileSystemEventManager {
         ) {
             OperationQueue.main.addOperation {
                 if let projects = self.storage.insert(url: dirURL) {
-                    self.delegate.sidebarOutlineView.insertRows(projects: projects)
+                    self.delegate?.sidebarOutlineView.insertRows(projects: projects)
                 }
             }
             return
@@ -182,8 +206,8 @@ class FileSystemEventManager {
         let n = storage.getBy(url: url)
         guard n == nil else {
             if let nUnwrapped = n, nUnwrapped.url == UserDataService.instance.focusOnImport {
-                self.delegate.updateTable() {
-                    self.delegate.notesTableView.setSelected(note: nUnwrapped)
+                self.delegate?.updateTable() {
+                    self.delegate?.notesTableView.setSelected(note: nUnwrapped)
                     UserDataService.instance.focusOnImport = nil
                 }
                 
@@ -201,14 +225,14 @@ class FileSystemEventManager {
             if let url = UserDataService.instance.focusOnImport,
                let note = self.storage.getBy(url: url)
             {
-                self.delegate.updateTable() {
-                    self.delegate.notesTableView.setSelected(note: note)
+                self.delegate?.updateTable() {
+                    self.delegate?.notesTableView.setSelected(note: note)
                     UserDataService.instance.focusOnImport = nil
                 }
             } else {
                 if !note.isTrash() {
                     OperationQueue.main.addOperation {
-                        self.delegate.notesTableView.insertRows(notes: [note])
+                        self.delegate?.notesTableView.insertRows(notes: [note])
                     }
                 }
             }
@@ -217,8 +241,8 @@ class FileSystemEventManager {
     
     private func renameNote(note: Note) {
         if note.url == UserDataService.instance.focusOnImport {
-            self.delegate.updateTable() {
-                self.delegate.notesTableView.setSelected(note: note)
+            self.delegate?.updateTable() {
+                self.delegate?.notesTableView.setSelected(note: note)
                 UserDataService.instance.focusOnImport = nil
             }
             
@@ -229,19 +253,20 @@ class FileSystemEventManager {
     }
     
     private func removeNote(note: Note) {
-        print("FSWatcher remove note: \"\(note.name)\"")
+        PrivacyLog.record("filesystemeventmanager.event-232")
         
         self.storage.removeNotes(notes: [note], fsRemove: false) { _ in
             DispatchQueue.main.async {
-                if !self.storage.noteList.contains(where: { $0 === note }), self.delegate.notesTableView.numberOfRows > 0 {
-                    self.delegate.notesTableView.removeRows(notes: [note])
+                if !self.storage.noteList.contains(where: { $0 === note }), (self.delegate?.notesTableView.numberOfRows ?? 0) > 0 {
+                    self.delegate?.notesTableView.removeRows(notes: [note])
                 }
             }
         }
     }
     
     private func reloadNote(note: Note) {
-        guard !note.isBlocked, note.container != .encryptedTextPack else {
+        guard !note.isBlocked, !note.isEncryptedAndLocked(),
+              !(note.isEncrypted() && note.lastWriteError != nil) else {
             return
         }
 
@@ -260,6 +285,7 @@ class FileSystemEventManager {
                 fsContent = note.content
             }
 
+            guard !note.isEncryptedAndLocked(), note.lastWriteError == nil else { return }
             note.content = fsContent
 
             // tags changes
@@ -267,20 +293,20 @@ class FileSystemEventManager {
             let result = note.scanContentTags()
             if result.0.count > 0 {
                 DispatchQueue.main.async {
-                    self.delegate.sidebarOutlineView.insertTags(note: note)
+                    self.delegate?.sidebarOutlineView.insertTags(note: note)
                 }
             }
 
             if result.1.count > 0 {
                 DispatchQueue.main.async {
-                    self.delegate.sidebarOutlineView.removeTags(result.1)
+                    self.delegate?.sidebarOutlineView.removeTags(result.1)
                 }
             }
 
             // reload view
 
-            self.delegate.notesTableView.reloadRow(note: note)
-            self.delegate.reSort(note: note)
+            self.delegate?.notesTableView.reloadRow(note: note)
+            self.delegate?.reSort(note: note)
 
             let editors = AppDelegate.getEditTextViews()
             for editor in editors {
@@ -295,8 +321,8 @@ class FileSystemEventManager {
         if creationDate != note.creationDate {
             note.creationDate = creationDate
                 
-            delegate.notesTableView.reloadDate(note: note)
-            delegate.reSort(note: note)
+            delegate?.notesTableView.reloadDate(note: note)
+            delegate?.reSort(note: note)
                 
             // Reload images if note moved (cache invalidated)
             note.loadPreviewInfo()
@@ -314,13 +340,13 @@ class FileSystemEventManager {
         return url
     }
     
-    public func restart() {
-        watcher?.stop()
-        self.observedFolders = self.storage.getProjectPaths()
-        start()
-    }
+    public func restart() { start() }
 
     public func reloadObservedFolders() {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.reloadObservedFolders() }
+            return
+        }
         self.observedFolders = self.storage.getProjectPaths()
     }
 
@@ -375,8 +401,8 @@ class FileSystemEventManager {
                     var attributes = [FileAttributeKey : Any]()
                     attributes[.posixPermissions] = 0o600
                     try FileManager.default.setAttributes(attributes, ofItemAtPath: to.path)
-                } catch let error {
-                    print("Conflict resolving error: ", error)
+                } catch {
+                    PrivacyLog.record("filesystemeventmanager.event-379")
                 }
 
                 conflict.isResolved = true
@@ -395,21 +421,21 @@ class FileSystemEventManager {
                 project.password = nil
             }
 
-            guard let selectedProject = self.delegate.sidebarOutlineView.getSelectedProject() else { return }
+            guard let selectedProject = self.delegate?.sidebarOutlineView.getSelectedProject() else { return }
 
-            self.delegate.sidebarOutlineView.reloadItem(project)
+            self.delegate?.sidebarOutlineView.reloadItem(project)
 
             // Selected at this moment
 
             if selectedProject.url.path == project.url.path {
                 if project.isEncrypted && project.isLocked() {
-                    self.delegate.notesTableView.enableLockedProject()
-                    self.delegate.editor.clear()
+                    self.delegate?.notesTableView.enableLockedProject()
+                    self.delegate?.editor.clear()
                 } else {
-                    self.delegate.notesTableView.disableLockedProject()
+                    self.delegate?.notesTableView.disableLockedProject()
                 }
 
-                self.delegate.updateTable()
+                self.delegate?.updateTable()
             }
         }
     }

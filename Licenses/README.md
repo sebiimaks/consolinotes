@@ -47,3 +47,29 @@ Dependency updates must update their original licences, version inventory and
 generated files together. libgit2 updates also require regenerating its bundled
 source archive and reviewing the source/binary provenance recorded in
 `SOURCE_CODE.md` and `libgit2-source.json`.
+
+The preview JavaScript build is pinned by `Vendor/Preview/package-lock.json`.
+Run `npm ci --ignore-scripts` and `npm run build` in that directory, then regenerate
+the aggregate notices. The build produces the offline Mermaid and highlight.js
+bundles, copies MathJax's local runtime and fonts, and records package integrity,
+output hashes and original licences. `npm audit --omit=dev` checks current
+published advisories; it does not replace reviewing reachable configurations.
+The build also inspects Mermaid source maps for embedded dependencies. Its
+published core contains js-yaml 4.3.0, so a hash-verified build alias replaces
+that entire standalone module with patched js-yaml 4.3.2. Embedded fastdom
+1.0.12 keeps its original licence. Unknown embedded versions fail the build.
+MathJax remains on the compatible patched 3.2.2 release, with its established TeX
+font family. Its SIL OFL notices and Reserved Font Names are extracted directly
+from the original WOFF files and shipped with the complete OFL text.
+
+`Vendor/CMark` is a local Swift package containing unmodified C sources from the
+official cmark-gfm revision recorded in `provenance.json`. The package includes
+upstream fixes newer than the 0.29.0.gfm.13 tag. Its five generated public build
+headers are recorded separately from upstream source hashes. The source archive
+hash, per-file mappings, original COPYING notice and static build definitions
+make that input reviewable without a moving remote branch.
+
+Run `python3 scripts/check-preview-dependencies.py` to verify these pins and
+generated outputs. The preview security and WebKit checks exercise pathological
+parser and diagram inputs using synthetic notes; the watchdog check confirms
+that a stalled WebKit page cannot prevent the app from returning to the editor.
