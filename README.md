@@ -20,7 +20,7 @@ consolinotes is an independent fork of [FSNotes](https://github.com/glushchenko/
 
 Everything else comes from FSNotes: plain-file storage, folders, tags and `[[wikilinks]]`, AES-256 encrypted notes, Git versioning, web publishing, Mermaid and MathJax.
 
-This branch contains the macOS app only. The previous iOS app and share extension are preserved in the [backup before iOS removal](https://github.com/sebiimaks/consolinotes/tree/codex/pre-ios-removal).
+This branch contains the macOS app only. The previous iOS app and share extension are preserved in the [backup before iOS removal](https://github.com/sebiimaks/consolinotes/tree/pre-ios-removal).
 
 ## Building
 
