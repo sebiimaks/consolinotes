@@ -7,41 +7,24 @@
 //
 
 import Cocoa
-import LocalAuthentication
 
 class PreferencesSecurityViewController: NSViewController {
 
     @IBOutlet weak var lockOnSleep: NSButton!
     @IBOutlet weak var lockOnScreenActivated: NSButton!
     @IBOutlet weak var lockWhenFastUser: NSButton!
-    @IBOutlet weak var allowTouchID: NSButton!
-    @IBOutlet weak var masterPassword: NSButton!
 
     override func viewDidLoad() {
         lockOnSleep.state = UserDefaultsManagement.lockOnSleep ? .on : .off
         lockOnScreenActivated.state = UserDefaultsManagement.lockOnScreenActivated ? .on : .off
         lockWhenFastUser.state = UserDefaultsManagement.lockOnUserSwitch ? .on : .off
-        
-        allowTouchID.title = "Use saved unlock password"
-        allowTouchID.toolTip = "macOS authentication protects the saved password on this Mac. You can always enter each note's password manually."
-        masterPassword.title = "Saved Unlock Password…"
-        masterPassword.toolTip = "Save a device-only password with macOS authentication. This does not change any encrypted note's password."
-        allowTouchID.state = UserDefaultsManagement.allowTouchID ? .on : .off
-        let available = LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
-        allowTouchID.isEnabled = available
-        masterPassword.isEnabled = available
-        if !available { allowTouchID.state = .off }
-
-        let yubikey = NSButton(title: "Unlock with YubiKey…", target: self, action: #selector(openPIVUnlockWindow))
-        yubikey.bezelStyle = .rounded
-        yubikey.toolTip = "Encrypt a saved note password for an existing PIV identity on your security key."
-        yubikey.setAccessibilityIdentifier("security.yubikey")
-        yubikey.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(yubikey)
+        let button = NSButton(title: "YubiKey Unlock…", target: self, action: #selector(openYubiKey))
+        button.bezelStyle = .rounded
+        button.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(button)
         NSLayoutConstraint.activate([
-            yubikey.leadingAnchor.constraint(equalTo: masterPassword.trailingAnchor, constant: 12),
-            yubikey.centerYAnchor.constraint(equalTo: masterPassword.centerYAnchor),
-            yubikey.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -30)
+            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 35),
+            button.topAnchor.constraint(equalTo: lockWhenFastUser.bottomAnchor, constant: 30)
         ])
     }
 
@@ -50,18 +33,7 @@ class PreferencesSecurityViewController: NSViewController {
         preferredContentSize = NSSize(width: 550, height: 352)
     }
 
-    @IBAction func openMasterPasswordWindow(_ sender: Any) {
-        guard let vc = ViewController.shared() else { return }
-
-        if let controller = vc.storyboard?.instantiateController(withIdentifier: "MasterPasswordViewController") as? MasterPasswordViewController {
-
-            presentAsSheet(controller)
-        }
-    }
-
-    @objc private func openPIVUnlockWindow() {
-        presentAsSheet(PIVUnlockViewController())
-    }
+    @objc private func openYubiKey() { FIDO2UnlockUI.settings(from: self) }
 
     @IBAction func lockOnSleep(_ sender: NSButton) {
         UserDefaultsManagement.lockOnSleep = (sender.state == .on)
@@ -73,12 +45,6 @@ class PreferencesSecurityViewController: NSViewController {
 
     @IBAction func lockWhenSwitched(_ sender: NSButton) {
         UserDefaultsManagement.lockOnUserSwitch = (sender.state == .on)
-    }
-
-    @IBAction func allowTouchID(_ sender: NSButton) {
-        UserDefaultsManagement.allowTouchID = (sender.state == .on)
-
-        // Turning this off stops convenience unlocking; it does not erase a saved password.
     }
 
 }

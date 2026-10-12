@@ -156,7 +156,8 @@ int history_test_isolate_config(const char *path) {
 if args.app:
     executable = args.app / 'Contents/MacOS/consolinotes'
     symbols = subprocess.check_output(['xcrun', 'nm', '-j', executable], text=True)
-    assert not re.search(r'(?m)^_(?:libssh2_|SSL_|OPENSSL_|EVP_|git_socket_stream_|git_smart_subtransport_|git_transport_smart)', symbols), 'legacy crypto or remote transport symbols in app'
+    # libcrypto includes SSL_str_reasons (an error-string table), not libssl/TLS.
+    assert not re.search(r'(?m)^_(?:libssh2_|SSL_(?!str_reasons$)|git_socket_stream_|git_smart_subtransport_|git_transport_smart)', symbols), 'legacy crypto or remote transport symbols in app'
     libraries = subprocess.check_output(['xcrun', 'otool', '-L', executable], text=True)
     assert not re.search(r'(?i)(libssh2|openssl|libssl[.]|libcrypto[.])', libraries), 'legacy dynamic crypto dependency in app'
     strings = subprocess.check_output(['/usr/bin/strings', '-a', executable], text=True)

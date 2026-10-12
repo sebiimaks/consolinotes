@@ -15,7 +15,7 @@ class ClickableTextField: NSTextField {
         guard let vc = ViewController.shared(),
             let projects = vc.sidebarOutlineView.getSelectedProjects() else { return }
 
-        vc.getMasterPassword(allowPIV: false) { password in
+        vc.getMasterPassword() { password in
             vc.sidebarOutlineView.unlock(projects: projects, password: password, action: nil)
         }
     }

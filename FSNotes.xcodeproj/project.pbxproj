@@ -102,8 +102,6 @@
 		D726DE8A287ACC1E00F8406C /* NSWindow+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D726DE89287ACC1E00F8406C /* NSWindow+.swift */; };
 		D72DAF0829B27D75001243BB /* ProjectSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72DAF0729B27D75001243BB /* ProjectSettings.swift */; };
 		D730829223084340003185D1 /* MPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730829123084340003185D1 /* MPreviewView.swift */; };
-		D730BD27222BF30700E69C93 /* KeychainConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730BD26222BF30700E69C93 /* KeychainConfiguration.swift */; };
-		D730BD2A222BF32A00E69C93 /* KeychainPasswordItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730BD29222BF32A00E69C93 /* KeychainPasswordItem.swift */; };
 		D730BD2E222DABA100E69C93 /* NoteContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730BD2D222DABA100E69C93 /* NoteContainer.swift */; };
 		D730BD35222DB11E00E69C93 /* TextBundleInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730BD34222DB11E00E69C93 /* TextBundleInfo.swift */; };
 		D730BD3C222DB9FC00E69C93 /* NameHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D730BD3B222DB9FC00E69C93 /* NameHelper.swift */; };
@@ -114,7 +112,6 @@
 		D735E5BD1F2EF66000173215 /* NoteCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D735E5BC1F2EF66000173215 /* NoteCellView.swift */; };
 		D735E5BF1F2F001500173215 /* NoteRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D735E5BE1F2F001500173215 /* NoteRowView.swift */; };
 		9A9C447B0A113AE5ACAC0B63 /* TUIBars.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B5CB00275B102BDE5EBBBD /* TUIBars.swift */; };
-		D738356D2242871400B260DD /* MasterPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D738356C2242871400B260DD /* MasterPasswordViewController.swift */; };
 		D73BCC8C28EB5EC3008B3BBC /* Commit.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73BCC5428EB5EBE008B3BBC /* Commit.swift */; };
 		D73BCC8F28EB5EC3008B3BBC /* Branch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73BCC5628EB5EBE008B3BBC /* Branch.swift */; };
 		D73BCC9228EB5EC3008B3BBC /* Branches.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73BCC5728EB5EBE008B3BBC /* Branches.swift */; };
@@ -263,8 +260,9 @@
 		CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000001 /* EncryptedNoteCodec.swift */; };
 		CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000003 /* PrivateWorkingDirectory.swift */; };
 		CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1200000000000000000005 /* PrivateNoteArchive.swift */; };
-		CC1300000000000000000002 /* PIVPasswordProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1300000000000000000001 /* PIVPasswordProvider.swift */; };
-		CC1300000000000000000004 /* PIVUnlockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1300000000000000000003 /* PIVUnlockViewController.swift */; };
+		CC1400000000000000000002 /* FIDO2Bridge.c in Sources */ = {isa = PBXBuildFile; fileRef = CC1400000000000000000001 /* FIDO2Bridge.c */; };
+		CC1400000000000000000004 /* FIDO2PasswordProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1400000000000000000003 /* FIDO2PasswordProvider.swift */; };
+		CC1400000000000000000006 /* FIDO2UnlockUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1400000000000000000005 /* FIDO2UnlockUI.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -388,8 +386,6 @@
 		D72DAF0729B27D75001243BB /* ProjectSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettings.swift; sourceTree = "<group>"; };
 		D72E05861F5220D300977D02 /* Down.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Down.framework; sourceTree = "<group>"; };
 		D730829123084340003185D1 /* MPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPreviewView.swift; sourceTree = "<group>"; };
-		D730BD26222BF30700E69C93 /* KeychainConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainConfiguration.swift; sourceTree = "<group>"; };
-		D730BD29222BF32A00E69C93 /* KeychainPasswordItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainPasswordItem.swift; sourceTree = "<group>"; };
 		D730BD2D222DABA100E69C93 /* NoteContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteContainer.swift; sourceTree = "<group>"; };
 		D730BD34222DB11E00E69C93 /* TextBundleInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBundleInfo.swift; sourceTree = "<group>"; };
 		D730BD3B222DB9FC00E69C93 /* NameHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameHelper.swift; sourceTree = "<group>"; };
@@ -401,7 +397,6 @@
 		D735E5BE1F2F001500173215 /* NoteRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteRowView.swift; sourceTree = "<group>"; };
 		78B5CB00275B102BDE5EBBBD /* TUIBars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TUIBars.swift"; sourceTree = "<group>"; };
 		D736DDAC27BAC7940012ED70 /* Note+History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Note+History.swift"; sourceTree = "<group>"; };
-		D738356C2242871400B260DD /* MasterPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterPasswordViewController.swift; sourceTree = "<group>"; };
 		D73BCC5428EB5EBE008B3BBC /* Commit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Commit.swift; sourceTree = "<group>"; };
 		D73BCC5628EB5EBE008B3BBC /* Branch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Branch.swift; sourceTree = "<group>"; };
 		D73BCC5728EB5EBE008B3BBC /* Branches.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Branches.swift; sourceTree = "<group>"; };
@@ -550,8 +545,9 @@
 		CC1200000000000000000001 /* EncryptedNoteCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptedNoteCodec.swift; sourceTree = "<group>"; };
 		CC1200000000000000000003 /* PrivateWorkingDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateWorkingDirectory.swift; sourceTree = "<group>"; };
 		CC1200000000000000000005 /* PrivateNoteArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateNoteArchive.swift; sourceTree = "<group>"; };
-		CC1300000000000000000001 /* PIVPasswordProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIVPasswordProvider.swift; sourceTree = "<group>"; };
-		CC1300000000000000000003 /* PIVUnlockViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIVUnlockViewController.swift; sourceTree = "<group>"; };
+		CC1400000000000000000001 /* FIDO2Bridge.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "FSNotesCore/FIDO2/FIDO2Bridge.c"; sourceTree = SOURCE_ROOT; };
+		CC1400000000000000000003 /* FIDO2PasswordProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FSNotesCore/FIDO2/FIDO2PasswordProvider.swift"; sourceTree = SOURCE_ROOT; };
+		CC1400000000000000000005 /* FIDO2UnlockUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FSNotes/Preferences/FIDO2UnlockUI.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -572,6 +568,9 @@
 		111013172EC9B46800B6CF1B /* SourceCodePro */ = {
 			isa = PBXGroup;
 			children = (
+				CC1400000000000000000005 /* FIDO2UnlockUI.swift */,
+				CC1400000000000000000003 /* FIDO2PasswordProvider.swift */,
+				CC1400000000000000000001 /* FIDO2Bridge.c */,
 				D7DD79561F4E606600D5724B /* SourceCodePro-Black.ttf */,
 				D7CD5F671F508E6A006AA35D /* SourceCodePro-Bold.ttf */,
 				D7CD5F661F508E6A006AA35D /* SourceCodePro-BoldIt.ttf */,
@@ -655,7 +654,6 @@
 				CC1200000000000000000001 /* EncryptedNoteCodec.swift */,
 				CC1200000000000000000003 /* PrivateWorkingDirectory.swift */,
 				CC1200000000000000000005 /* PrivateNoteArchive.swift */,
-				CC1300000000000000000001 /* PIVPasswordProvider.swift */,
 				CC1100000000000000000001 /* LegacyNetworkCleanup.swift */,
 				D7C52B8028C7A8C2001B2065 /* Cgit2 */,
 				11D943172E643ECF0010CC2B /* SwiftHighlighter */,
@@ -663,8 +661,6 @@
 				6F13BB2720FEDE230005E120 /* Extensions */,
 				1166D1F62E91BA7F00B061CA /* CodeBlockDetector.swift */,
 				D7470D062170E890006B2A92 /* NSTextStorage++.swift */,
-				D730BD26222BF30700E69C93 /* KeychainConfiguration.swift */,
-				D730BD29222BF32A00E69C93 /* KeychainPasswordItem.swift */,
 				D730BD3B222DB9FC00E69C93 /* NameHelper.swift */,
 				D752D80723454750006842F9 /* NSTextAttachment+.swift */,
 				D7EDEDFA219203C9000B8C1A /* NoteCellView+.swift */,
@@ -906,8 +902,6 @@
 				D7F5C0F4223ED5620038F172 /* PreferencesEditorViewController.swift */,
 				D7F5C0F7223ED57D0038F172 /* PreferencesSecurityViewController.swift */,
 				D7F5C0FA223ED58F0038F172 /* PreferencesAdvancedViewController.swift */,
-				D738356C2242871400B260DD /* MasterPasswordViewController.swift */,
-				CC1300000000000000000003 /* PIVUnlockViewController.swift */,
 				D7CA7FD3232652E300E9717A /* PreferencesGitViewController.swift */,
 				D79798A129C0FE6A00B9A878 /* SettingsViewController.swift */,
 			);
@@ -1239,6 +1233,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CC1400000000000000000006 /* FIDO2UnlockUI.swift in Sources */,
+				CC1400000000000000000004 /* FIDO2PasswordProvider.swift in Sources */,
+				CC1400000000000000000002 /* FIDO2Bridge.c in Sources */,
 				A1B2C3D42F56789000112233 /* GlobalShortcut.swift in Sources */,
 				D73BCCAA28EB5EC3008B3BBC /* OID.swift in Sources */,
 				D7D97F3C290437A200C651D4 /* NSWindowController+.swift in Sources */,
@@ -1300,7 +1297,6 @@
 				11F3F4832EDB0E0B00435CBF /* URL+.swift in Sources */,
 				D73BCC8C28EB5EC3008B3BBC /* Commit.swift in Sources */,
 				D796EB41251E127300CE5C80 /* Pasteboard.swift in Sources */,
-				D730BD2A222BF32A00E69C93 /* KeychainPasswordItem.swift in Sources */,
 				D75EE7FD2078C5460055F159 /* SidebarCellView.swift in Sources */,
 				D797004C1F3DD10700BAD94D /* EditTextView.swift in Sources */,
 				D73BCCC228EB5EC3008B3BBC /* DiffEntry.swift in Sources */,
@@ -1313,7 +1309,6 @@
 				D7CB9905207E5AE300037E91 /* SidebarTableRowView.swift in Sources */,
 				D7B4AC5E2471253100F3888A /* NoteMeta.swift in Sources */,
 				11D6C0C72EE2256B006017F0 /* Python.swift in Sources */,
-				D730BD27222BF30700E69C93 /* KeychainConfiguration.swift in Sources */,
 				D7487FD821738A1900D09383 /* NSImage+.swift in Sources */,
 				11D9431A2E643EF40010CC2B /* JavaScript.swift in Sources */,
 				110BE0262EE8C5B000C5E456 /* Lisp.swift in Sources */,
@@ -1432,11 +1427,8 @@
 				CC1200000000000000000002 /* EncryptedNoteCodec.swift in Sources */,
 				CC1200000000000000000004 /* PrivateWorkingDirectory.swift in Sources */,
 				CC1200000000000000000006 /* PrivateNoteArchive.swift in Sources */,
-				CC1300000000000000000002 /* PIVPasswordProvider.swift in Sources */,
-				CC1300000000000000000004 /* PIVUnlockViewController.swift in Sources */,
 				CC1100000000000000000002 /* LegacyNetworkCleanup.swift in Sources */,
 				D7F5C0F5223ED5620038F172 /* PreferencesEditorViewController.swift in Sources */,
-				D738356D2242871400B260DD /* MasterPasswordViewController.swift in Sources */,
 				113685652EC869950033767F /* URL+Image.swift in Sources */,
 				11D9431F2E643F250010CC2B /* Swift.swift in Sources */,
 				11BF067F2EE4968C006C7336 /* Erlang.swift in Sources */,
@@ -1502,6 +1494,9 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
+                SWIFT_OBJC_BRIDGING_HEADER = "FSNotesCore/FIDO2/FIDO2Bridge.h";
+                HEADER_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/include");
+                OTHER_LDFLAGS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libfido2.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcbor.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcrypto.a", "-framework", IOKit, "-framework", CoreFoundation, "-framework", Security, "-lz");
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -1565,6 +1560,9 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
+                SWIFT_OBJC_BRIDGING_HEADER = "FSNotesCore/FIDO2/FIDO2Bridge.h";
+                HEADER_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/include");
+                OTHER_LDFLAGS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libfido2.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcbor.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcrypto.a", "-framework", IOKit, "-framework", CoreFoundation, "-framework", Security, "-lz");
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -1619,6 +1617,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = consolinotes;
 				CLANG_ENABLE_MODULES = YES;
+                SWIFT_OBJC_BRIDGING_HEADER = "FSNotesCore/FIDO2/FIDO2Bridge.h";
+                HEADER_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/include");
+                OTHER_LDFLAGS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libfido2.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcbor.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcrypto.a", "-framework", IOKit, "-framework", CoreFoundation, "-framework", Security, "-lz");
 				CODE_SIGN_ENTITLEMENTS = FSNotes/FSNotes.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -1637,8 +1638,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 1.3.0;
-				CURRENT_PROJECT_VERSION = 9;
+				MARKETING_VERSION = 1.5.1;
+				CURRENT_PROJECT_VERSION = 13;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;
@@ -1656,6 +1657,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = consolinotes;
 				CLANG_ENABLE_MODULES = YES;
+                SWIFT_OBJC_BRIDGING_HEADER = "FSNotesCore/FIDO2/FIDO2Bridge.h";
+                HEADER_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/include");
+                OTHER_LDFLAGS = ("$(inherited)", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libfido2.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcbor.a", "$(PROJECT_DIR)/Vendor/FIDO2/lib/libcrypto.a", "-framework", IOKit, "-framework", CoreFoundation, "-framework", Security, "-lz");
 				CODE_SIGN_ENTITLEMENTS = FSNotes/FSNotes.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -1678,8 +1682,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				ONLY_ACTIVE_ARCH = YES;
-				MARKETING_VERSION = 1.3.0;
-				CURRENT_PROJECT_VERSION = 9;
+				MARKETING_VERSION = 1.5.1;
+				CURRENT_PROJECT_VERSION = 13;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.sebiimaks.consolinotes;
 				PRODUCT_MODULE_NAME = FSNotes;
 				PRODUCT_NAME = consolinotes;

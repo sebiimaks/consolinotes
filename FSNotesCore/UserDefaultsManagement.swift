@@ -27,7 +27,6 @@ public class UserDefaultsManagement {
     static var DefaultBgColor = Color.white
 
     private struct Constants {
-        static let AllowTouchID = "allowTouchID"
         static let AppearanceTypeKey = "appearanceType"
         static let AskCommitMessage = "askCommitMessage"
         static let AutoInsertHeader = "autoInsertHeader"
@@ -90,7 +89,6 @@ public class UserDefaultsManagement {
         static let LockAfterIDLE = "lockAfterIdle"
         static let LockAfterUserSwitch = "lockAfterUserSwitch"
         static let MarginSizeKey = "marginSize"
-        static let MasterPasswordHint = "masterPasswordHint"
         static let SuppressNewEncryptionFormatNotice = "suppressNewEncryptionFormatNotice"
         static let MathJaxPreview = "mathJaxPreview"
         static let NonContiguousLayout = "allowsNonContiguousLayout"
@@ -99,7 +97,6 @@ public class UserDefaultsManagement {
         static let PreviewFontSize = "previewFontSize"
         static let ProjectsKey = "projects"
         static let RecentSearches = "recentSearches"
-        static let SaveInKeychain = "saveInKeychain"
         static let SearchHighlight = "searchHighlighting"
         static let SeparateRepo = "separateRepo"
         static let ShowDockIcon = "showDockIcon"
@@ -900,25 +897,9 @@ public class UserDefaultsManagement {
         }
     }
 
-    static var masterPasswordHint: String {
-        get {
-            if let hint = shared?.object(forKey: Constants.MasterPasswordHint) as? String {
-                return hint
-            }
-            return String()
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.MasterPasswordHint)
-        }
-    }
-
     static var suppressNewEncryptionFormatNotice: Bool {
-        get {
-            shared?.bool(forKey: Constants.SuppressNewEncryptionFormatNotice) ?? false
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SuppressNewEncryptionFormatNotice)
-        }
+        get { shared?.bool(forKey: Constants.SuppressNewEncryptionFormatNotice) ?? false }
+        set { shared?.set(newValue, forKey: Constants.SuppressNewEncryptionFormatNotice) }
     }
 
     static var lockOnSleep: Bool {
@@ -954,22 +935,6 @@ public class UserDefaultsManagement {
         }
         set {
             shared?.set(newValue, forKey: Constants.LockAfterUserSwitch)
-        }
-    }
-
-    static var allowTouchID: Bool {
-        get {
-            if NSClassFromString("NSTouchBar") == nil {
-            return false
-            }
-
-            if let result = shared?.object(forKey: Constants.AllowTouchID) as? Bool {
-                return result
-            }
-            return true
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.AllowTouchID)
         }
     }
 

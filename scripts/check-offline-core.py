@@ -23,9 +23,9 @@ def method(source, signature):
 
 def check_entitlements(data):
     assert data.get("com.apple.security.app-sandbox") is True, "Sandbox must remain enabled"
-    assert data.get("com.apple.security.smartcard") is True, "PIV inventory requires scoped smart-card access"
+    assert not data.get("com.apple.security.smartcard"), "FIDO2 must not request PIV smart-card access"
     for key in ["com.apple.security.network.client", "com.apple.security.network.server",
-                "com.apple.security.get-task-allow", "get-task-allow"]:
+                "com.apple.security.get-task-allow", "get-task-allow", "com.apple.security.cs.disable-library-validation"]:
         assert not data.get(key), f"Unexpected entitlement: {key}"
 
 

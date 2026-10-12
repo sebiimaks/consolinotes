@@ -75,8 +75,7 @@ final class ViewController {
     var failures = 0
     func showProtectionFailure(_ value: String) { failures += 1 }
     func reloadAllOpenedWindows(note: Note) { note.events.append("refresh") }
-    func getMasterPassword(allowPIV: Bool = false, completion: @escaping (String) -> ()) {
-        expect(!allowPIV, "A project move must not use the optional hardware envelope to choose a new encryption password")
+    func getMasterPassword(completion: @escaping (String) -> ()) {
         completion("test")
     }
 ''' + extract("    public func moveReq(notes:") + "\n" + extract("    private func move(notes:") + r'''

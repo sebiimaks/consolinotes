@@ -586,7 +586,7 @@ class ViewController: EditorViewController,
         }
 
         if project.isEncrypted && project.isLocked() {
-            getMasterPassword(allowPIV: false) { password in
+            getMasterPassword() { password in
                 self.sidebarOutlineView.unlock(projects: [project], password: password)
                 guard !project.isLocked() else { completion(false); return }
                 performMove(password: project.password)

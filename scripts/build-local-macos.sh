@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+python3 scripts/check-fido2-libraries.py
+
 # Build for this Mac with a separate app identity and an ad-hoc signature.
 # Keep the normal sandbox entitlements; no Apple account or upstream profile is needed.
 xcodebuild -project FSNotes.xcodeproj -scheme FSNotes \

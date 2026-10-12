@@ -10,7 +10,6 @@
 import Foundation
 import AppKit
 import ZipArchive
-import LocalAuthentication
 
 public class Note: NSObject  {
     @objc var title: String = ""

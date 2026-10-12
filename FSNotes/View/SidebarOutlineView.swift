@@ -835,7 +835,7 @@ class SidebarOutlineView: NSOutlineView,
         guard let firstProject = projects.first  else { return }
 
         if firstProject.isEncrypted {
-            vc.getMasterPassword(allowPIV: false) { password in
+            vc.getMasterPassword() { password in
                 vc.sidebarOutlineView.decrypt(projects: projects, password: password)
             }
         }
@@ -863,7 +863,7 @@ class SidebarOutlineView: NSOutlineView,
         // Unlock
         } else {
             let action = sender.identifier?.rawValue
-            vc.getMasterPassword(allowPIV: false) { password in
+            vc.getMasterPassword() { password in
                 vc.sidebarOutlineView.unlock(projects: projects, password: password, action: action)
             }
         }

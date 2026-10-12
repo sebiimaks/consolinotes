@@ -8,18 +8,16 @@
 
 import Foundation
 import AppKit
-import LocalAuthentication
 import WebKit
 import UserNotifications
 
 class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemValidation {
-    private static var retrievingPIVPassword = false
     private static var passwordRequestGeneration: UInt64 = 0
 
-    /// A delayed PIN/Keychain result must not undo a later lock request.
+    /// A pending password prompt must not undo a later lock request.
     public static func cancelPasswordRequests() {
         passwordRequestGeneration &+= 1
-        PIVPasswordProvider.shared.cancelPendingOperations()
+        FIDO2PasswordProvider.shared.cancel()
     }
     
     public var alert: NSAlert?
@@ -375,7 +373,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
         // Unlock encrypted
         if first.container == .encryptedTextPack {
-            getMasterPassword(allowPIV: true) { password in
+            getMasterPassword(allowHardware: true) { password in
                 guard password.count > 0 else { return }
                 
                 for note in notes {
@@ -659,7 +657,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         notes = decryptUnlocked(notes: notes)
         guard notes.count > 0 else { return }
 
-        getMasterPassword(allowPIV: true) { password in
+        getMasterPassword(allowHardware: true) { password in
             for note in notes {
                 if note.container == .encryptedTextPack {
                     let success = note.unEncrypt(password: password)
@@ -1082,7 +1080,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
     
     public func unLock(notes: [Note]) {
-        getMasterPassword(allowPIV: true) { password in
+        getMasterPassword(allowHardware: true) { password in
             guard password.count > 0 else { return }
 
             var i = 0
@@ -1140,7 +1138,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
     }
 
-    public func getMasterPassword(forEncrypt: Bool = false, allowPIV: Bool = false, completion requestCompletion: @escaping (String) -> ()) {
+    public func getMasterPassword(forEncrypt: Bool = false, allowHardware: Bool = false, completion requestCompletion: @escaping (String) -> ()) {
         let generation = Self.passwordRequestGeneration
         let completion: (String) -> Void = { password in
             guard generation == Self.passwordRequestGeneration else { return }
@@ -1150,7 +1148,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             let notice = NSAlert()
             notice.alertStyle = .informational
             notice.messageText = "Encrypt with the new note format?"
-            notice.informativeText = "New encrypted files require consolinotes 1.2 or later and cannot be opened by FSNotes. Existing history and backup copies are unchanged and may still contain plaintext. Keep the password so you can open these notes without a saved password."
+            notice.informativeText = "New encrypted files require consolinotes 1.2 or later and cannot be opened by FSNotes. Existing history and backup copies are unchanged and may still contain plaintext. Keep the password; it is required to open these notes."
             notice.addButton(withTitle: "Encrypt")
             notice.addButton(withTitle: "Cancel")
             notice.showsSuppressionButton = true
@@ -1160,106 +1158,32 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                 UserDefaultsManagement.suppressNewEncryptionFormatNotice = true
             }
         }
-        // A public-key envelope is an optional unlock source, not authority to
-        // choose passwords for new ciphertext. New encryption remains explicit.
-        if !forEncrypt && allowPIV {
+        if !forEncrypt && allowHardware {
             do {
-                if let enrollment = try PIVPasswordProvider.shared.enrollment() {
-                    choosePasswordSource(forEncrypt: false, enrollment: enrollment, completion: completion)
-                    return
+                if try FIDO2PasswordProvider.shared.load() != nil {
+                    let choice = NSAlert()
+                    choice.messageText = "Unlock encrypted notes"
+                    choice.informativeText = "Use your enrolled YubiKey, or enter the original note password."
+                    choice.addButton(withTitle: "Use YubiKey…")
+                    choice.addButton(withTitle: "Enter Password…")
+                    choice.addButton(withTitle: "Cancel")
+                    switch choice.runModal() {
+                    case .alertFirstButtonReturn:
+                        FIDO2UnlockUI.unlock(from: self, completion: completion, manualFallback: {
+                            self.masterPasswordPrompt(validation: false, completion: completion)
+                        }); return
+                    case .alertSecondButtonReturn: break
+                    default: return
+                    }
                 }
             } catch {
-                offerPasswordFallback(forEncrypt: false,
-                    reason: "The saved YubiKey password could not be read. You can enter the note's password manually or manage YubiKey setup in Security settings.", completion: completion)
+                masterPasswordPrompt(validation: false, reason: "The YubiKey enrollment could not be read. Enter your original note password.", completion: completion)
                 return
             }
         }
-        getSavedOrManualPassword(forEncrypt: forEncrypt, completion: completion)
-    }
-
-    private func choosePasswordSource(forEncrypt: Bool, enrollment: PIVPasswordProvider.Enrollment,
-                                      completion: @escaping (String) -> ()) {
-        let choice = NSAlert()
-        choice.messageText = forEncrypt ? "Choose an encryption password source" : "Unlock encrypted notes"
-        choice.informativeText = "Use the password protected by \(enrollment.displayName), or enter the original note password. macOS handles PIN requests; touch requirements follow the key's configured policy."
-        choice.addButton(withTitle: "Use YubiKey")
-        choice.addButton(withTitle: "Enter Password…")
-        if UserDefaultsManagement.allowTouchID { choice.addButton(withTitle: "Use Saved Password") }
-        choice.addButton(withTitle: "Cancel")
-        let response = choice.runModal()
-        if response == .alertFirstButtonReturn {
-            getYubiKeyPassword(forEncrypt: forEncrypt, completion: completion)
-        } else if response == .alertSecondButtonReturn {
-            masterPasswordPrompt(validation: forEncrypt, completion: completion)
-        } else if UserDefaultsManagement.allowTouchID && response == .alertThirdButtonReturn {
-            getSavedOrManualPassword(forEncrypt: forEncrypt, completion: completion)
-        }
-    }
-
-    private func getYubiKeyPassword(forEncrypt: Bool, completion: @escaping (String) -> ()) {
-        guard !Self.retrievingPIVPassword else { return }
-        Self.retrievingPIVPassword = true
-        let generation = Self.passwordRequestGeneration
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result = Result { try PIVPasswordProvider.shared.unlock() }
-            DispatchQueue.main.async {
-                Self.retrievingPIVPassword = false
-                guard generation == Self.passwordRequestGeneration else { return }
-                switch result {
-                case .success(let password): completion(password)
-                case .failure(let error):
-                    guard !PIVPasswordProvider.isCancellation(error) else { return }
-                    self.offerPasswordFallback(forEncrypt: forEncrypt,
-                        reason: error.localizedDescription, completion: completion)
-                }
-            }
-        }
-    }
-
-    /// Hardware failure never silently selects another saved secret or retries a PIN.
-    private func offerPasswordFallback(forEncrypt: Bool, reason: String, completion: @escaping (String) -> ()) {
-        let failure = NSAlert()
-        failure.alertStyle = .warning
-        failure.messageText = "YubiKey password unavailable"
-        failure.informativeText = reason + " Your original note password still works."
-        failure.addButton(withTitle: "Enter Password…")
-        failure.addButton(withTitle: "Cancel")
-        guard failure.runModal() == .alertFirstButtonReturn else { return }
         masterPasswordPrompt(validation: forEncrypt, completion: completion)
     }
 
-    private func getSavedOrManualPassword(forEncrypt: Bool, completion: @escaping (String) -> ()) {
-        guard UserDefaultsManagement.allowTouchID else {
-            masterPasswordPrompt(validation: forEncrypt, completion: completion)
-            return
-        }
-
-        let generation = Self.passwordRequestGeneration
-        // The Keychain item itself requires macOS authentication. No legacy
-        // password is fetched when protection is unavailable or access is denied.
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result = Result { try KeychainConfiguration.readMasterPassword() }
-            DispatchQueue.main.async {
-                guard generation == Self.passwordRequestGeneration else { return }
-                switch result {
-                case .success(let password):
-                    completion(password)
-                case .failure(let error):
-                    guard !KeychainConfiguration.isAuthenticationCancelled(error) else { return }
-                    let reason: String
-                    if KeychainConfiguration.isMissingEntitlement(error) {
-                        reason = "This local build cannot use protected saved passwords. Enter a password manually. Earlier versions' saved passwords are not used."
-                    } else if case KeychainPasswordItem.KeychainError.noPassword = error {
-                        reason = "No protected unlock password is saved. Passwords saved by earlier versions are not used. Enter a password here, or set up Saved Unlock Password in Security settings."
-                    } else {
-                        reason = "macOS did not release the protected saved password. Enter a password manually."
-                    }
-                    self.masterPasswordPrompt(validation: forEncrypt, reason: reason, completion: completion)
-                }
-            }
-        }
-    }
-    
     @IBAction func onOkClick(_ sender: Any?) {
         guard
             let passwordField = encPassword,
@@ -1309,7 +1233,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
             if validation {
                 alert.messageText = NSLocalizedString("Enter an encryption password:", comment: "")
-                alert.informativeText = reason ?? "Keep this password. A saved unlock password is optional."
+                alert.informativeText = reason ?? "Keep this password. It cannot be recovered if you lose it."
                 
                 alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
                 alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))

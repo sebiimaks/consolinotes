@@ -1,0 +1,37 @@
+{
+  "sources": [
+    {
+      "name": "libfido2",
+      "version": "1.17.0",
+      "url": "https://github.com/Yubico/libfido2/archive/refs/tags/1.17.0.tar.gz",
+      "sha256": "ace062d14a482ff9325410ff63d06c8b5fe87e79ebc18dda07add2bc0188c77f",
+      "directory": "libfido2-1.17.0"
+    },
+    {
+      "name": "libcbor",
+      "version": "0.14.0",
+      "url": "https://github.com/PJK/libcbor/archive/refs/tags/v0.14.0.tar.gz",
+      "sha256": "a8c1516e741562cf95aa4479c64916c3d4d2623e24fdc35e414e2320e7300aae",
+      "directory": "libcbor-0.14.0"
+    },
+    {
+      "name": "openssl",
+      "version": "4.0.3",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-4.0.3/openssl-4.0.3.tar.gz",
+      "sha256": "325b5c806167c13b40b1ffeadfe0248197c00eccc4cf123ec1e28d2d2fd216d9",
+      "directory": "openssl-4.0.3"
+    }
+  ],
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "minimum_macos": "12.4",
+  "recipe": "scripts/build-fido2-libraries.sh",
+  "notes": "Static libraries compiled locally from verified upstream archives. No PIV/PCSC transport. OpenSSL libcrypto only: no sockets, modules, DSO loading or config autoload. macOS system zlib is dynamically linked.",
+  "outputs": {
+    "Vendor/FIDO2/lib/libcrypto.a": "c4076b68576cd2d6034f3ba6a84704cb648c26b006d5fbb2bbdf06da983bff36",
+    "Vendor/FIDO2/lib/libcbor.a": "2338bc81db1ed173ca433dcbe79fd13422e867c84bb1e3c5c3965a869b34bd7e",
+    "Vendor/FIDO2/lib/libfido2.a": "528a6c246f09e82f61231ac57b84901bb50272c933fe26d6c1c3f0dfd2ad8c5d"
+  }
+}
