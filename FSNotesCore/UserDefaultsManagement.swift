@@ -27,7 +27,6 @@ public class UserDefaultsManagement {
     static var DefaultBgColor = Color.white
 
     private struct Constants {
-        static let AllowTouchID = "allowTouchID"
         static let AppearanceTypeKey = "appearanceType"
         static let AskCommitMessage = "askCommitMessage"
         static let AutoInsertHeader = "autoInsertHeader"
@@ -65,11 +64,6 @@ public class UserDefaultsManagement {
         static let NoteExtension = "noteExtension"
         static let GrammarChecking = "grammarChecking"
         static let GitStorage = "gitStorage"
-        static let GitUsername = "gitUsername"
-        static let GitPassword = "gitPassword"
-        static let GitOrigin = "gitOrigin"
-        static let GitPrivateKeyData = "gitPrivateKeyData"
-        static let GitPasspharse = "gitPasspharse"
         static let HideDate = "hideDate"
         static let HideOnDeactivate = "hideOnDeactivate"
         static let HideSidebar = "hideSidebar"
@@ -95,7 +89,7 @@ public class UserDefaultsManagement {
         static let LockAfterIDLE = "lockAfterIdle"
         static let LockAfterUserSwitch = "lockAfterUserSwitch"
         static let MarginSizeKey = "marginSize"
-        static let MasterPasswordHint = "masterPasswordHint"
+        static let SuppressNewEncryptionFormatNotice = "suppressNewEncryptionFormatNotice"
         static let MathJaxPreview = "mathJaxPreview"
         static let NonContiguousLayout = "allowsNonContiguousLayout"
         static let NoteContainer = "noteContainer"
@@ -103,20 +97,8 @@ public class UserDefaultsManagement {
         static let PreviewFontSize = "previewFontSize"
         static let ProjectsKey = "projects"
         static let RecentSearches = "recentSearches"
-        static let PullInterval = "pullInterval"
-        static let SaveInKeychain = "saveInKeychain"
         static let SearchHighlight = "searchHighlighting"
         static let SeparateRepo = "separateRepo"
-        static let SftpHost = "sftpHost"
-        static let SftpPort = "sftpPort"
-        static let SftpPath = "sftpPath"
-        static let SftpPasspharse = "sftpPassphrase"
-        static let SftpWeb = "sftpWeb"
-        static let SftpUsername = "sftpUsername"
-        static let SftpPassword = "sftpPassword"
-        static let SftpKeysAccessData = "sftpKeysAccessData"
-        static let SftpPublicKeyData = "sftpPublicKeyData"
-        static let SftpUploadBookmarksData = "sftpUploadBookmarksData"
         static let ShowDockIcon = "showDockIcon"
         static let shouldFocusSearchOnESCKeyDown = "shouldFocusSearchOnESCKeyDown"
         static let ShowInMenuBar = "showInMenuBar"
@@ -915,16 +897,9 @@ public class UserDefaultsManagement {
         }
     }
 
-    static var masterPasswordHint: String {
-        get {
-            if let hint = shared?.object(forKey: Constants.MasterPasswordHint) as? String {
-                return hint
-            }
-            return String()
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.MasterPasswordHint)
-        }
+    static var suppressNewEncryptionFormatNotice: Bool {
+        get { shared?.bool(forKey: Constants.SuppressNewEncryptionFormatNotice) ?? false }
+        set { shared?.set(newValue, forKey: Constants.SuppressNewEncryptionFormatNotice) }
     }
 
     static var lockOnSleep: Bool {
@@ -960,22 +935,6 @@ public class UserDefaultsManagement {
         }
         set {
             shared?.set(newValue, forKey: Constants.LockAfterUserSwitch)
-        }
-    }
-
-    static var allowTouchID: Bool {
-        get {
-            if NSClassFromString("NSTouchBar") == nil {
-            return false
-            }
-
-            if let result = shared?.object(forKey: Constants.AllowTouchID) as? Bool {
-                return result
-            }
-            return true
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.AllowTouchID)
         }
     }
 
@@ -1056,56 +1015,8 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var gitUsername: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.GitUsername) as? String {
-                if result.count == 0 {
-                    return nil
-                }
-                
-                return result
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.GitUsername)
-        }
-    }
     
-    static var gitPassword: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.GitPassword) as? String {
-                if result.count == 0 {
-                    return nil
-                }
-                
-                return result
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.GitPassword)
-        }
-    }
     
-    static var gitOrigin: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.GitOrigin) as? String {
-                if result.count == 0 {
-                    return nil
-                }
-                
-                return result
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.GitOrigin)
-        }
-    }
 
     static var snapshotsInterval: Int {
         get {
@@ -1120,18 +1031,6 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var pullInterval: Int {
-        get {
-            if let interval = shared?.object(forKey: Constants.PullInterval) as? Int {
-                return interval
-            }
-
-            return 10
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.PullInterval)
-        }
-    }
 
     static var snapshotsIntervalMinutes: Int {
         get {
@@ -1406,158 +1305,17 @@ public class UserDefaultsManagement {
         }
     }
     
-    static var sftpHost: String {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpHost) as? String {
-                return result
-            }
+    
+    
+    
+    
+    
+    
+    
+    
 
-            return ""
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpHost)
-        }
-    }
     
-    static var sftpPort: Int32 {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpPort) as? Int32 {
-                return result
-            }
-
-            return 22
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpPort)
-        }
-    }
     
-    static var sftpUsername: String {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpUsername) as? String {
-                return result
-            }
-
-            return ""
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpUsername)
-        }
-    }
-    
-    static var sftpPassword: String {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpPassword) as? String {
-                return result
-            }
-
-            return ""
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpPassword)
-        }
-    }
-    
-    static var sftpPath: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpPath) as? String {
-                if result.count == 0 {
-                    return nil
-                }
-                
-                let suffix = result.hasSuffix("/") ? "" : "/"
-                return result + suffix
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpPath)
-        }
-    }
-    
-    static var sftpPassphrase: String {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpPasspharse) as? String {
-                return result
-            }
-
-            return ""
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpPasspharse)
-        }
-    }
-    
-    static var sftpWeb: String? {
-        get {
-            if let result = shared?.object(forKey: Constants.SftpWeb) as? String {
-                if result.count == 0 {
-                    return nil
-                }
-                
-                if result.last != "/" {
-                    return result + "/"
-                }
-                
-                return result
-            }
-
-            return nil
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpWeb)
-        }
-    }
-    
-    static var sftpAccessData: Data? {
-        get {
-            return shared?.data(forKey: Constants.SftpKeysAccessData)
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpKeysAccessData)
-        }
-    }
-    
-    static var sftpPublicKeyData: Data? {
-        get {
-            return shared?.data(forKey: Constants.SftpPublicKeyData)
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpPublicKeyData)
-        }
-    }
-
-    static var sftpUploadBookmarksData: Data? {
-        get {
-            return shared?.data(forKey: Constants.SftpUploadBookmarksData)
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.SftpUploadBookmarksData)
-        }
-    }
-    
-    static var gitPrivateKeyData: Data? {
-        get {
-            return shared?.data(forKey: Constants.GitPrivateKeyData)
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.GitPrivateKeyData)
-        }
-    }
-    
-    static var gitPassphrase: String {
-        get {
-            if let result = shared?.object(forKey: Constants.GitPasspharse) as? String {
-                return result
-            }
-
-            return ""
-        }
-        set {
-            shared?.set(newValue, forKey: Constants.GitPasspharse)
-        }
-    }
     
     static var clickableLinks: Bool {
         get {

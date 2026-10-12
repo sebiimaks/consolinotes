@@ -8,27 +8,47 @@
     "notes": "Includes the upstream COPYING notices for Houdini, GitHub buffer/chunk code and utf8proc incorporated into the bundled C source. Notices for upstream tests and specification apply only to those files; the specification is not part of the app library."
   },
   {
-    "name": "libssh2",
-    "version": "1.11.0",
-    "license": "BSD-3-Clause",
-    "source": "https://raw.githubusercontent.com/libssh2/libssh2/libssh2-1.11.0/COPYING",
-    "file": "Licenses/native/libssh2.txt",
-    "notes": "Full COPYING copyright-holder block for 1.11.0. The earlier header-only block was incomplete."
-  },
-  {
-    "name": "Apple GenericKeychain",
-    "version": "4.0 (2016)",
-    "license": "Apple sample-code licence",
-    "source": "https://developer.apple.com/library/archive/samplecode/GenericKeychain/Listings/LICENSE_txt.html",
-    "file": "Licenses/native/Apple-GenericKeychain.txt",
-    "notes": "KeychainConfiguration.swift and KeychainPasswordItem.swift are adapted from this sample. The original Apple licence is reproduced below; these files are not relicensed by the fork under MIT."
-  },
-  {
     "name": "Git2Swift",
     "version": "bundled 2016-derived source",
     "license": "Apache-2.0",
     "source": "https://github.com/damicreabox/Git2Swift",
     "file": "Licenses/native/Git2Swift.txt",
     "notes": "The source files under FSNotesCore/Git retain their Creabox/Damien Giron copyright and authorship headers. They were adapted for FSNotes and are carried by consolinotes. This component is distinct from the separately listed swift-git package."
+  },
+  {
+    "name": "libgit2",
+    "version": "1.9.7 + consolinotes local-only patch",
+    "license": "GPL-2.0 with linking exception; incorporated permissive components",
+    "source": "https://github.com/libgit2/libgit2/tree/v1.9.7",
+    "file": "Licenses/native/libgit2.txt",
+    "used_for": "Local history; locally compiled with network transports excluded",
+    "notes": "The complete pinned source, local-only patch, build recipe and provenance ship in libgit2-source.tar.gz. This full upstream COPYING text also retains notices for optional components present in the source archive but excluded from our binary. See SOURCE_CODE.md."
+  },
+  {
+    "name": "libfido2",
+    "version": "1.17.0",
+    "license": "BSD-2-Clause",
+    "source": "https://github.com/Yubico/libfido2/archive/refs/tags/1.17.0.tar.gz",
+    "file": "Licenses/native/libfido2.txt",
+    "used_for": "Direct USB FIDO2 unlocking",
+    "notes": "Statically linked from pinned source; build recipe and hashes are in Vendor/FIDO2/provenance.json."
+  },
+  {
+    "name": "libcbor",
+    "version": "0.14.0",
+    "license": "MIT",
+    "source": "https://github.com/PJK/libcbor/archive/refs/tags/v0.14.0.tar.gz",
+    "file": "Licenses/native/libcbor.txt",
+    "used_for": "Direct USB FIDO2 unlocking",
+    "notes": "Statically linked from pinned source; build recipe and hashes are in Vendor/FIDO2/provenance.json."
+  },
+  {
+    "name": "OpenSSL (FIDO2 crypto)",
+    "version": "4.0.3",
+    "license": "Apache-2.0",
+    "source": "https://github.com/openssl/openssl/releases/download/openssl-4.0.3/openssl-4.0.3.tar.gz",
+    "file": "Licenses/native/OpenSSL-FIDO2.txt",
+    "used_for": "Direct USB FIDO2 unlocking",
+    "notes": "Statically linked from pinned source; build recipe and hashes are in Vendor/FIDO2/provenance.json."
   }
 ]

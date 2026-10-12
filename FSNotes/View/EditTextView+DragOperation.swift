@@ -77,16 +77,18 @@ extension EditTextView
         var results = Array<NSAttributedString?>(repeating: nil, count: total)
 
         for (index, url) in urls.enumerated() {
+            // A dropped web address is text, not permission to contact its server.
+            if url.isWebURL {
+                results[index] = NSAttributedString(string: url.absoluteString)
+                continue
+            }
+            guard url.isFileURL else { continue }
             group.enter()
-            fetchDataFromURL(url: url) { data, error in
+            readLocalAttachment(url: url) { data, error in
                 defer { group.leave() }
                 guard let data = data, error == nil else { return }
                 
-                if url.isWebURL {
-                    let title = self.getHTMLTitle(from: data) ?? url.lastPathComponent
-                    let text = "[\(title)](\(url.absoluteString))"
-                    results[index] = NSAttributedString(string: text)
-                } else if let filePath = ImagesProcessor.writeFile(data: data, url: url, note: note),
+                if let filePath = ImagesProcessor.writeFile(data: data, url: url, note: note),
                           let fileURL = note.getAttachmentFileUrl(
                             name: filePath.removingPercentEncoding ?? filePath
                           ) {

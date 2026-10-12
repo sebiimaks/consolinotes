@@ -268,10 +268,12 @@ class SidebarOutlineView: NSOutlineView,
             }
 
             if project.isTrash {
-                vc.editor.clear()
                 vc.storage.removeNotes(notes: notes) { _ in
                     DispatchQueue.main.async {
-                        vc.notesTableView.removeRows(notes: notes)
+                        let removed = notes.filter { note in !vc.storage.noteList.contains { $0 === note } }
+                        vc.notesTableView.removeRows(notes: removed)
+                        if let current = vc.editor.note, removed.contains(where: { $0 === current }) { vc.editor.clear() }
+                        for note in removed { vc.closeAllOpenedWindows(where: note) }
                     }
                 }
             } else {
@@ -868,85 +870,73 @@ class SidebarOutlineView: NSOutlineView,
     }
 
     public func decrypt(projects: [Project], password: String) {
-        var decryptedQty = 0
-        var total = 0
+        var incomplete = false
         for project in projects {
-            let notes = project.storage.getNotesBy(project: project)
-            total += notes.count
-
             let decrypted = project.decrypt(password: password)
-            decryptedQty = decrypted.count
             self.showTags(notes: decrypted)
+            if project.isEncrypted { incomplete = true }
         }
-        
         DispatchQueue.main.async {
-            guard decryptedQty > 0 || total == 0 else {
-                self.wrongPassAlert()
-                return
-            }
-
             guard let vc = ViewController.shared() else { return }
-
-            vc.notesTableView.disableLockedProject()
+            if self.getSelectedProject()?.isLocked() == true {
+                vc.notesTableView.enableLockedProject()
+            } else {
+                vc.notesTableView.disableLockedProject()
+            }
             vc.notesTableView.reloadData()
-            
             vc.updateTable()
-            
-            self.reloadData(forRowIndexes: self.selectedRowIndexes, columnIndexes: [0])
-        }
-    }
-    
-    public func encrypt(projects: [Project], password: String) {
-        for project in projects {
-            let encrypted = project.encrypt(password: password)
-            self.hideTags(notes: encrypted)
-        }
-        
-        DispatchQueue.main.async {
-            guard let vc = ViewController.shared() else { return }
-            vc.notesTableView.enableLockedProject()
-            
-            self.reloadData(forRowIndexes: self.selectedRowIndexes, columnIndexes: [0])
-            
-            // Lock all editors
-            let editors = AppDelegate.getEditTextViews()
-            for editor in editors {
-                if let evc = editor.editorViewController {
-                    evc.refillEditArea()
-                }
+            self.reloadData()
+            for editor in AppDelegate.getEditTextViews() {
+                editor.editorViewController?.refillEditArea(force: true)
+            }
+            if incomplete {
+                vc.showProtectionFailure("Some notes could not be decrypted, or the folder's protection marker could not be updated. Successfully decrypted notes are now plaintext; the remaining notes keep their encryption. Check the password and storage access, then retry.")
             }
         }
     }
-    
-    public func lock(projects: [Project]) {
-        guard let vc = ViewController.shared() else { return }
-        
-        var locked = [Note]()
+
+    public func encrypt(projects: [Project], password: String) {
+        var failures = 0
         for project in projects {
-            locked.append(contentsOf: project.lock())
+            _ = project.encrypt(password: password)
+            if !project.isEncrypted { failures += 1 }
         }
-        
-        hideTags(notes: locked)
-        
-        if let selectedProject = getSelectedProject(), projects.contains(selectedProject) {
+        DispatchQueue.main.async {
+            guard let vc = ViewController.shared() else { return }
+            if self.getSelectedProject()?.isLocked() == true {
+                vc.notesTableView.enableLockedProject()
+            }
+            self.reloadData()
+            self.reloadTags()
+            vc.updateTable()
+            for editor in AppDelegate.getEditTextViews() {
+                editor.editorViewController?.refillEditArea()
+            }
+            if failures > 0 {
+                vc.showProtectionFailure("Some folders could not be fully encrypted. Successfully converted notes are encrypted, but other notes remain unencrypted. The affected folders are not marked as protected. Resolve the storage problem and retry.")
+            }
+        }
+    }
+
+    public func lock(projects: [Project]) {
+        EditorViewController.cancelPasswordRequests()
+        guard let vc = ViewController.shared() else { return }
+        for project in projects { _ = project.lock() }
+        reloadTags()
+        if let selectedProject = getSelectedProject(), projects.contains(selectedProject), selectedProject.isLocked() {
             vc.notesTableView.enableLockedProject()
             vc.updateTable()
             vc.editor.clear()
         }
-        
-        for project in projects {
-            reloadItem(project)
+        for project in projects { reloadItem(project) }
+        for editor in AppDelegate.getEditTextViews() {
+            editor.editorViewController?.refillEditArea()
         }
-        
-        // Lock all editors
-        let editors = AppDelegate.getEditTextViews()
-        for editor in editors {
-            if let evc = editor.editorViewController {
-                evc.refillEditArea()
-            }
+        if projects.contains(where: { !$0.isLocked() }) {
+            vc.showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry.")
         }
     }
-    
+
     public func unlock(projects: [Project], password: String, action: String? = nil) {
         var unlocked = [Note]()
         var isEmptyDir = false

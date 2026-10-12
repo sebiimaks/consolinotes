@@ -233,7 +233,7 @@ class FileSystemEventManager {
         
         self.storage.removeNotes(notes: [note], fsRemove: false) { _ in
             DispatchQueue.main.async {
-                if self.delegate.notesTableView.numberOfRows > 0 {
+                if !self.storage.noteList.contains(where: { $0 === note }), self.delegate.notesTableView.numberOfRows > 0 {
                     self.delegate.notesTableView.removeRows(notes: [note])
                 }
             }
@@ -256,7 +256,7 @@ class FileSystemEventManager {
             _ = fsContent.loadAttachments(note)
 
             // Trying load content from encrypted note with current password
-            if note.url.pathExtension == "etp", let password = note.password, note.unLock(password: password) {
+            if note.url.pathExtension == "etp", let password = note.password, note.unLock(password: password, reload: true) {
                 fsContent = note.content
             }
 
@@ -361,7 +361,7 @@ class FileSystemEventManager {
                 for editor in editors {
                     if let currentNote = editor.note, currentNote.url == url {
                         if let password = currentNote.password, ext == "etp" {
-                            _ = currentNote.unLock(password: password)
+                            _ = currentNote.unLock(password: password, reload: true)
                         }
 
                         DispatchQueue.main.async {
@@ -373,7 +373,7 @@ class FileSystemEventManager {
                 do {
                     try FileManager.default.copyItem(at: conflict.url, to: to)
                     var attributes = [FileAttributeKey : Any]()
-                    attributes[.posixPermissions] = 0o777
+                    attributes[.posixPermissions] = 0o600
                     try FileManager.default.setAttributes(attributes, ofItemAtPath: to.path)
                 } catch let error {
                     print("Conflict resolving error: ", error)

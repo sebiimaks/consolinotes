@@ -1,74 +1,62 @@
-//
-//  MPreviewView.swift
-//  FSNotes
-//
-//  Created by Олександр Глущенко on 8/17/19.
-//  Copyright © 2019 Oleksandr Glushchenko. All rights reserved.
-//
+// Copyright (c) 2019 Oleksandr Glushchenko; 2026 sebiimaks. MIT license.
 
 import WebKit
-import ZipArchive
-
 import Carbon.HIToolbox
 
 public typealias MPreviewViewClosure = () -> ()
 
 class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
-
     private var editorVC: EditorViewController?
     private weak var note: Note?
     private var closure: MPreviewViewClosure?
+    private var rulesReady = false
+    private var documentURL: URL?
+    private var selectedText: String?
+    private static let activeViews = NSHashTable<MPreviewView>.weakObjects()
     public static var template: String?
-    
+
     init(frame: CGRect, note: Note, closure: MPreviewViewClosure?, force: Bool = false) {
         self.closure = closure
-        let userContentController = WKUserContentController()
-        userContentController.add(HandlerSelection(), name: "newSelectionDetected")
-        
-        let handlerCheckbox = HandlerCheckbox(note: note)
-        userContentController.add(handlerCheckbox, name: "checkbox")
-        
-        userContentController.add(HandlerMouse(), name: "mouse")
-        userContentController.add(HandlerClipboard(), name: "clipboard")
-        
-        let handlerOpener = HandlerOpen(note: note)
-        userContentController.add(handlerOpener, name: "open")
-        
-        userContentController.add(HandlerQuickLook(), name: "quicklook")
-        
-        let handlerScroll = PreviewScrollHandler(note: note)
-        userContentController.add(handlerScroll, name: "scrollPosition")
-
-        let configuration = WKWebViewConfiguration()
-        configuration.userContentController = userContentController
+        self.note = note
+        let configuration = LocalPreviewSecurity.configuration()
         configuration.suppressesIncrementalRendering = true
-        
         super.init(frame: frame, configuration: configuration)
-
         navigationDelegate = self
-        
-        if #available(macOS 10.14, *) {
-              setValue(false, forKey: "drawsBackground")
+        uiDelegate = self
+        setValue(false, forKey: "drawsBackground")
+        Self.activeViews.add(self)
+
+        // Page scripts cannot access this bridge. On older macOS the preview is read-only.
+        if #available(macOS 11.0, *) {
+            let bridge = PreviewBridge(view: self)
+            configuration.userContentController.add(bridge, contentWorld: .defaultClient, name: "preview")
+            configuration.userContentController.addUserScript(WKUserScript(source: Self.bridgeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
         }
-
-        load(note: note, force: force)
+        LocalPreviewSecurity.prepare(self) { [weak self] ready in
+            guard let self = self else { return }
+            self.rulesReady = ready
+            if ready, let note = self.note { self.load(note: note, force: true) }
+        }
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    public func setEditorVC(evc: EditorViewController? = nil) {
-        self.editorVC = evc
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    deinit { LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent()) }
+
+    public func setEditorVC(evc: EditorViewController? = nil) { editorVC = evc }
+
+    /// Disk cleanup is synchronous even when a background encryption operation calls this.
+    public static func purgeSensitivePreviews() {
+        LocalPreviewSecurity.purge()
+        let clearViews = {
+            for view in activeViews.allObjects { view.clean() }
+            if #available(macOS 11.0, *) { Printer.purgeSensitivePreviews() }
+        }
+        if Thread.isMainThread { clearViews() } else { DispatchQueue.main.async(execute: clearViews) }
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let evc = editorVC else {
-            super.mouseDown(with: event)
-            return
-        }
-        
-        if let note = evc.vcEditor?.note {
+        if let evc = editorVC, let note = evc.vcEditor?.note {
             if note.container == .encryptedTextPack && !note.isUnlocked() {
                 evc.unLock(notes: [note])
             } else if note.content.length == 0 {
@@ -76,547 +64,203 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
                 evc.focusEditArea()
             }
         }
-        
         super.mouseDown(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == kVK_Return {
-            DispatchQueue.main.async {
-                if let evc = self.editorVC {
-                    evc.disablePreview()
-                    evc.focusEditArea()
-                }
-            }
+            editorVC?.disablePreview()
+            editorVC?.focusEditArea()
             return
         }
         super.keyDown(with: event)
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.characters?.unicodeScalars.first == "c" && event.modifierFlags.contains(.command) {
-            DispatchQueue.main.async {
-                guard let string = HandlerSelection.selectionString else { return }
-                let pasteboard = NSPasteboard.general
-                pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-                pasteboard.setString(string, forType: NSPasteboard.PasteboardType.string)
-            }
-
-            return false
+        if event.characters?.unicodeScalars.first == "c", event.modifierFlags.contains(.command), let text = selectedText {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            return true
         }
-
         return super.performKeyEquivalent(with: event)
     }
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
-        for item in menu.items {
-            if item.identifier?.rawValue == "WKMenuItemIdentifierReload" {
-                item.isHidden = true
-            }
-        }
+        for item in menu.items where item.identifier?.rawValue == "WKMenuItemIdentifierReload" { item.isHidden = true }
     }
 
-    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        closure?()
-    }
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { closure?() }
 
-    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        guard let url = navigationAction.request.url else { return }
-
-        switch navigationAction.navigationType {
-        case .linkActivated:
+    public func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = action.request.url else { decisionHandler(.cancel); return }
+        if action.navigationType == .linkActivated {
             decisionHandler(.cancel)
-
-            if isFootNotes(url: url) {
-                return
+            guard action.sourceFrame.isMainFrame, let documentURL = documentURL else { return }
+            if url.isFileURL, url.deletingFragment == documentURL, let fragment = url.fragment {
+                openAnchor(anchor: fragment.removingPercentEncoding ?? fragment)
+            } else if let attachment = LocalPreviewSecurity.attachment(for: url, directory: documentURL.deletingLastPathComponent()) {
+                NSWorkspace.shared.activateFileViewerSelecting([attachment])
+            } else if ["https", "http", "mailto"].contains(url.scheme?.lowercased() ?? "") {
+                NSWorkspace.shared.open(url)
+            } else if ["consolinotes", "fsnotes"].contains(url.scheme?.lowercased() ?? ""),
+                      ["open", "find"].contains(url.host ?? ""), url["txt"] == nil, url["html"] == nil {
+                _ = AppDelegate.openAppLink(url)
             }
-
-            if AppDelegate.openAppLink(url) {
-                return
-            }
-
-            NSWorkspace.shared.open(url)
-        default:
-            decisionHandler(.allow)
+            return
         }
-    }
-
-    public static func loadAttachments(html: String, note: Note, showButton: Bool = true) -> String {
-        guard let urls = note.attachments, urls.count > 0  else { return html }
-
-        var htmlString = html
-        var imagesStorage = note.project.url
-
-        if note.isTextBundle() {
-            imagesStorage = note.getURL()
-        }
-
-        do {
-            let regex = try NSRegularExpression(pattern: "<img.*?src=\"([^\"]*)\"")
-            let results = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
-
-            let images = results.map {
-                String(html[Range($0.range, in: html)!])
-            }
-
-            for image in images {
-                let localPath = image.replacingOccurrences(of: "<img src=\"", with: "").dropLast()
-
-                guard !localPath.starts(with: "http://") && !localPath.starts(with: "https://") else { continue }
-
-                let localPathClean = localPath.removingPercentEncoding ?? String(localPath)
-                let fullImageURL = imagesStorage
-                let imageURL = fullImageURL.appendingPathComponent(localPathClean)
-
-                guard !imageURL.isImage && !imageURL.isVideo else { continue }
-
-                let editor = ViewController.shared()?.editor
-
-                if let editor = editor {
-                    let attachment = NoteAttachment(url: imageURL)
-
-                    if let imageData = attachment.getAttachmentImage()?.jpgData {
-                        let base64 = imageData.base64EncodedString()
-                        var imPath = "<img class=\"attachment\" data-url=\"" + imageURL.path + "\" src=\"" + "data:image;base64," + base64 + "\""
-
-                        if !showButton {
-                            imPath = "<img "
-                        }
-
-                        htmlString = htmlString.replacingOccurrences(of: image, with: imPath)
-                    }
-                }
-            }
-        } catch let error {
-            print("Images regex: \(error.localizedDescription)")
-        }
-
-        return htmlString
+        // Includes redirects, form submissions, subframes and script-driven navigation.
+        let initialDocument = action.targetFrame?.isMainFrame == true && url == documentURL
+        decisionHandler(initialDocument || (documentURL == nil && url.absoluteString == "about:blank") ? .allow : .cancel)
     }
 
     public func load(note: Note, force: Bool = false) {
-        /// Do not re-load already loaded view
+        if !rulesReady { self.note = note; return }
         guard self.note != note || force else { return }
+        stopLoading()
+        LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent())
+        documentURL = nil
+        selectedText = nil
         self.note = note
-        
-        let markdownString = note.getPrettifiedContent()
-
-        if let urls = note.imageUrl, urls.count > 0 {
-            cleanCache()
-            
-            let dst = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("wkPreview")
-            
-            if let i = MPreviewView.buildPage(for: note, at: dst) {
-                if getppid() != 1 {
-                    print("Web view loaded from: \(i)")
-                }
-                
-                let accessURL = i.deletingLastPathComponent()
-                loadFileURL(i, allowingReadAccessTo: accessURL)
-            }
-        } else {
-            var htmlString = renderMarkdownHTML(markdown: markdownString)!
-            htmlString = MPreviewView.loadAttachments(html: htmlString, note: note)
-
-            if let pageHTMLString = try? MPreviewView.htmlFromTemplate(htmlString),
-               let baseURL = Bundle.main.url(forResource: "MPreview", withExtension: "bundle") {
-                loadHTMLString(pageHTMLString, baseURL: baseURL)
-            }
+        guard !note.isEncryptedAndLocked(), let index = Self.buildPage(for: note) else {
+            loadHTMLString("", baseURL: nil)
+            return
         }
-    }
-    
-    public func cleanCache() {
-        URLCache.shared.removeAllCachedResponses()
-
-        DispatchQueue.global(qos: .background).async {
-            HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
-        }
-
-        WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
-            records.forEach { record in
-                WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {})
-            }
-        }
+        documentURL = index
+        loadFileURL(index, allowingReadAccessTo: index.deletingLastPathComponent())
     }
 
-    public static func getMathJaxJS() -> String {
-        if !UserDefaultsManagement.mathJaxPreview {
-            return String()
-        }
-
-        return """
-            <script>
-            MathJax = {
-              tex: {
-                inlineMath: [
-                    ['$', '$'],
-                    ['\\\\(', '\\\\)'],
-                    ['$$', '$$'],
-                    ['\\\\((', '\\\\))']
-                ]
-              }
-            };
-            </script>
-            <script id="MathJax-script" async src="{WEB_PATH}js/tex-mml-chtml.js"></script>
-        """
-    }
-
-    private func isFootNotes(url: URL) -> Bool {
-        let link = url.absoluteString.components(separatedBy: "/index.html#")
-        if link.count == 2 {
-            openAnchor(anchor: link[1])
-            return true
-        }
-
-        let bundleLink = url.absoluteString.components(separatedBy: "/MPreview.bundle/#")
-        if bundleLink.count == 2 {
-            openAnchor(anchor: bundleLink[1])
-            return true
-        }
-
-        return false
+    public func clean() {
+        stopLoading()
+        LocalPreviewSecurity.remove(documentURL?.deletingLastPathComponent())
+        documentURL = nil
+        selectedText = nil
+        note = nil
+        loadHTMLString("", baseURL: nil)
     }
 
     private func openAnchor(anchor: String) {
-        evaluateJavaScript("document.getElementById('\(anchor)').offsetTop") { [weak self] (result, error) in
-            if let offset = result as? CGFloat {
-                self?.evaluateJavaScript("window.scrollTo(0,\(offset))", completionHandler: nil)
-            }
-        }
-
-        evaluateJavaScript("getElementsByText('\(anchor)')[0].offsetTop") { [weak self] (result, error) in
-            if let offset = result as? CGFloat {
-                self?.evaluateJavaScript("window.scrollTo(0,\(offset))", completionHandler: nil)
-            }
-        }
-
-        let textQuery = anchor.replacingOccurrences(of: "-", with: " ")
-        evaluateJavaScript("getElementsByTextContent('\(textQuery)').offsetTop") { [weak self] (result, error) in
-            if let offset = result as? CGFloat {
-                self?.evaluateJavaScript("window.scrollTo(0,\(offset))", completionHandler: nil)
-            }
-        }
+        let argument = LocalPreviewSecurity.javaScriptString(anchor)
+        evaluateJavaScript("""
+        (() => {
+            const anchor = \(argument);
+            const element = document.getElementById(anchor) || Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).find(e => e.textContent.trim() === anchor.replace(/[-_]/g, ' '));
+            if (element) element.scrollIntoView();
+        })()
+        """)
     }
 
-    public static func buildPage(for note: Note, at dst: URL, web: Bool = false, print: Bool = false) -> URL? {
-        let markdownString = note.getPrettifiedContent()
-        
-        var htmlString = renderMarkdownHTML(markdown: markdownString)!
-        
-        var imagesStorage = note.project.url
-        if note.isTextBundle() {
-            imagesStorage = note.getURL()
-        }
-        
-        var webPath: String?
-        var zipName: String?
-        
-        // For uploaded content
-        if web {
-            // Generate zip
-            zipName = "\(note.getLatinName()).zip"
-            
-            let zipURL = dst.appendingPathComponent(note.getLatinName()).appendingPathExtension("zip")
-            try? FileManager.default.createDirectory(at: dst, withIntermediateDirectories: true, attributes: nil)
-            
-            if note.container == .none {
-                SSZipArchive.createZipFile(atPath: zipURL.path, withFilesAtPaths: [note.url.path])
-            } else {
-                SSZipArchive.createZipFile(atPath: zipURL.path, withContentsOfDirectory: note.url.path, keepParentDirectory: true)
-            }
-            
-            webPath = UserDefaultsManagement.sftpWeb
-        }
-
-        let state = !(web || print)
-        htmlString = MPreviewView.loadAttachments(html: htmlString, note: note, showButton: state)
-
-        if let urls = note.imageUrl, urls.count > 0 {
-            htmlString = MPreviewView.loadImages(imagesStorage: imagesStorage, html: htmlString, at: dst, web: web)
-        }
-
-        if let pageHTMLString = try? htmlFromTemplate(htmlString, webPath: webPath, print: print, archivePath: zipName, note: note) {
-            let indexURL = createTemporaryBundle(pageHTMLString: pageHTMLString, at: dst)
-            
-            return indexURL
-        }
-        
-        return nil
+    public static func buildPage(for note: Note, print: Bool = false) -> URL? {
+        guard !note.isEncryptedAndLocked(), let rendered = renderMarkdownHTML(markdown: note.getPrettifiedContent()),
+              let directory = try? LocalPreviewSecurity.makeDirectory() else { return nil }
+        var success = false
+        defer { if !success { LocalPreviewSecurity.remove(directory) } }
+        let root = note.isTextBundle() ? note.getURL() : note.project.url
+        let html = LocalPreviewSecurity.localResources(in: rendered, root: root, directory: directory, interactive: !print)
+        guard let page = try? htmlFromTemplate(html, print: print, note: note),
+              let index = createTemporaryBundle(pageHTMLString: page, at: directory) else { return nil }
+        success = true
+        return index
     }
 
-    public static func createTemporaryBundle(pageHTMLString: String, at: URL) -> URL? {
-        let path = Bundle.main.path(forResource: "MPreview", ofType: ".bundle")
-        let url = NSURL.fileURL(withPath: path!)
-        let bundle = Bundle(url: url)
-
-        guard let bundleResourceURL = bundle?.resourceURL else { return nil }
-
-        let webkitPreview = at
-        try? FileManager.default.createDirectory(at: webkitPreview, withIntermediateDirectories: true, attributes: nil)
-
-        let indexURL = webkitPreview.appendingPathComponent("index.html")
-        let mainCssUrl = webkitPreview.appendingPathComponent("main.css")
-
-        // If updating markdown contents, no need to re-copy bundle.
-        if !FileManager.default.fileExists(atPath: indexURL.path) || !FileManager.default.fileExists(atPath: mainCssUrl.path) {
-            // Copy bundle resources to temporary location.
-            do {
-                let fileList = try FileManager.default.contentsOfDirectory(atPath: bundleResourceURL.path)
-                for file in fileList {
-                    let tmpURL = webkitPreview.appendingPathComponent(file)
-
-                    if ["css", "js"].contains(file) {
-                        try? FileManager.default.removeItem(at: tmpURL)
-                    }
-
-                    try? FileManager.default.copyItem(atPath: bundleResourceURL.appendingPathComponent(file).path, toPath: tmpURL.path)
-                }
-            } catch {
-                print(error)
-            }
-        }
-
-        // Write generated index.html to temporary location.
-        try? pageHTMLString.write(to: indexURL, atomically: true, encoding: .utf8)
-
-        return indexURL
-    }
-
-    public static func loadImages(imagesStorage: URL, html: String, at: URL, web: Bool = false) -> String {
-        var htmlString = html
-        
+    public static func createTemporaryBundle(pageHTMLString: String, at directory: URL) -> URL? {
+        guard let bundle = Bundle.main.url(forResource: "MPreview", withExtension: "bundle") else { return nil }
+        let index = directory.appendingPathComponent("index.html")
         do {
-            let regex = try NSRegularExpression(pattern: "<img.*?src=\"([^\"]*)\"")
-            let results = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
-
-            let images = results.map {
-                String(html[Range($0.range, in: html)!])
+            for resource in try FileManager.default.contentsOfDirectory(at: bundle, includingPropertiesForKeys: nil) where resource.lastPathComponent != "index.html" {
+                try FileManager.default.copyItem(at: resource, to: directory.appendingPathComponent(resource.lastPathComponent))
             }
-
-            for image in images {
-                var localPath = image.replacingOccurrences(of: "<img src=\"", with: "").dropLast()
-
-                guard !localPath.starts(with: "http://") && !localPath.starts(with: "https://") else {
-                    continue
-                }
-
-                let localPathClean = localPath.removingPercentEncoding ?? String(localPath)
-
-                let fullImageURL = imagesStorage
-                let imageURL = fullImageURL.appendingPathComponent(localPathClean)
-
-                guard imageURL.isImage else { continue }
-
-                let webkitPreview = at
-
-                let create = webkitPreview
-                    .appendingPathComponent(localPathClean)
-                    .deletingLastPathComponent()
-                let destination = webkitPreview.appendingPathComponent(localPathClean)
-
-                try? FileManager.default.createDirectory(atPath: create.path, withIntermediateDirectories: true, attributes: nil)
-                try? FileManager.default.removeItem(at: destination)
-                try? FileManager.default.copyItem(at: imageURL, to: destination)
-
-                var orientation = 0
-                let url = NSURL(fileURLWithPath: imageURL.path)
-                if let imageSource = CGImageSourceCreateWithURL(url, nil) {
-                    let imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as Dictionary?
-                    if let orientationProp = imageProperties?[kCGImagePropertyOrientation] as? Int {
-                        orientation = orientationProp
-                    }
-                }
-
-                if localPath.first == "/" {
-                    localPath.remove(at: localPath.startIndex)
-                }
-                
-                // Uploaded over API or SSH
-                if web {
-                    localPath = "i/\(imageURL.lastPathComponent)"
-                }
-
-                let imPath = "<img data-orientation=\"\(orientation)\" class=\"fsnotes-preview\" src=\"" + localPath + "\""
-
-                htmlString = htmlString.replacingOccurrences(of: image, with: imPath)
-            }
-        } catch let error {
-            print("Images regex: \(error.localizedDescription)")
-        }
-
-        return htmlString
+            try pageHTMLString.write(to: index, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: index.path)
+            return index
+        } catch { return nil }
     }
 
-    public static func htmlFromTemplate(_ htmlString: String, webPath: String? = nil, print: Bool = false, archivePath: String? = nil, note: Note? = nil) throws -> String {
-        let webPath = webPath ?? ""
-
-        var htmlString = htmlString
-        let path = Bundle.main.path(forResource: "MPreview", ofType: ".bundle")
-        let url = NSURL.fileURL(withPath: path!)
-        let bundle = Bundle(url: url)
-        let baseURL = bundle!.url(forResource: "index", withExtension: "html")!
-
-        var template = try String(contentsOf: baseURL, encoding: .utf8)
-        var platform = String()
-        var appearance = String()
-        
-        let isWeb = webPath.count > 0
-        let preview = String(webPath.count == 0)
-
-        platform = "macos"
-        if UserDataService.instance.isDark && archivePath == nil && print == false {
-            appearance = "darkmode"
-        }
-
-        // The in-app preview on macOS matches the consolinotes window; published pages and prints keep the stock look.
-        var theme = String()
-        if !isWeb && archivePath == nil && print == false {
-            theme = "consolinotes"
-        }
-        let themeCss = theme.isEmpty ? "" : "<link charset=\"utf-8\" href=\"{WEB_PATH}\(theme).css\" rel=\"stylesheet\">"
-
-        // Footer credit on published pages.
-        let poweredBy = "Published with <a href=\"https://github.com/sebiimaks/consolinotes\" target=\"_blank\">consolinotes</a>, an independent fork of <a href=\"https://github.com/glushchenko/fsnotes\" target=\"_blank\">FSNotes</a>"
-        
-        if webPath.count > 0 {
-             htmlString = """
-                <style>
-                    
-                    article {
-                        max-width: 1280px;
-                        margin: 0 auto;
-                        margin-bottom: 70px;
-                    }
-            
-                    footer {
-                        max-width: 1280px;
-                        margin: 0 auto;
-                        background: white;
-                        position: fixed;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        height: 60px;
-                        width: 100%;
-                        padding: 10px 20px 20px 20px;
-                        border-top: 1px solid gray;
-                    }
-            
-                    img.logo {
-                        display: inline-block;
-                        height: 32px;
-                        width: 32px;
-                    }
-            
-                    .footer__span {
-                        display: inline-block;
-                        line-height: 32px;
-                        margin: 3px 0 0 0;
-                    }
-                        .footer__span__archive {
-                            float: right;
-                        }
-            
-                    .share-button {
-                      border: 1px solid #eee;
-                      border-radius: 4px;
-                      color: #999;
-                      cursor: pointer;
-                      display: inline-block;
-                      font-weight: 600;
-                      line-height: 1.7;
-                      padding: 6px 17px;
-                      text-decoration: none;
-                    }
-                        .share-button .label i {
-                          margin-right: 0.4em;
-                        }
-                        .share-button .sites {
-                          display: none;
-                          line-height: 1;
-                          vertical-align: middle;
-                        }
-                        .share-button .sites a {
-                          color: #777;
-                          font-size: 1.2em;
-                          margin-left: 0.3em;
-                        }
-                        .share-button .sites a:hover.facebook {
-                          color: #385797;
-                        }
-                        .share-button .sites a:hover.twitter {
-                          color: #03abea;
-                        }
-            
-                        .share-button .sites a:hover.linkedin {
-                          color: #0078a8;
-                        }
-                        .share-button .sites a:hover.pinterest {
-                          color: #c91515;
-                        }
-                        .share-button:hover {
-                          border-color: #ddd;
-                          box-shadow: 0.1em 0.1em 0.3em rgba(0, 0, 0, 0.05);
-                          color: #777;
-                        }
-                        .share-button:hover .sites {
-                          display: inline-block;
-                        }
-
-                        h1 {
-                            margin-top: 0px;
-                        }
-
-                        body {
-                            margin: 0 20px;
-                        }
-            
-                        @media screen and (max-width: 600px) {
-                            .share-button .label {
-                                display: none;
-                            }
-                        }
-            
-                    .macos ul.cb {
-                        margin-left: 0;
-                    }
-                </style>
-                <article>\(htmlString)</article>
-                
-                <footer>
-                    <span class="footer__span">\(poweredBy)</span>
-                    <a class="share-button" href="\(archivePath!)" style="float: right; text-decoration: none;">
-                        <span class="label" style="vertical-align: middle;">Download</span>
-                        <span style="display: inline-block; height: 22px; width: 22px; vertical-align: middle;">
-                            <svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M4 19h16v-7h2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-8h2v7zM14 9h5l-7 7-7-7h5V3h4v6z"/></svg>
-                        </span>
-                    </a>
-                </footer>
-            """
-        }
-        
-        var title = String()
-        if let unwrapped = note?.getTitle() {
-            title = unwrapped
-        }
-        
-        let inlineCss = MPreviewView.getPreviewStyle(print: print, forceLightTheme: isWeb)
-        
-        template = template
-            .replacingOccurrences(of: "{TITLE}", with: title)
-            .replacingOccurrences(of: "{INLINE_CSS}", with: inlineCss)
-            .replacingOccurrences(of: "{THEME_CSS}", with: themeCss)
-            .replacingOccurrences(of: "{FSNOTES_THEME}", with: theme)
-            .replacingOccurrences(of: "{MATH_JAX_JS}", with: MPreviewView.getMathJaxJS())
-            .replacingOccurrences(of: "{FSNOTES_APPEARANCE}", with: appearance)
-            .replacingOccurrences(of: "{FSNOTES_PLATFORM}", with: platform)
-            .replacingOccurrences(of: "{FSNOTES_PREVIEW}", with: preview)
-            .replacingOccurrences(of: "{NOTE_BODY}", with: htmlString)
-            .replacingOccurrences(of: "{WEB_PATH}", with: webPath)
-        
-        return template
+    public static func getMathJaxJS() -> String {
+        guard UserDefaultsManagement.mathJaxPreview else { return "" }
+        return """
+        <script nonce="{NONCE}">MathJax = {tex: {inlineMath: [['$', '$'], ['\\\\(', '\\\\)'], ['$$', '$$'], ['\\\\((', '\\\\))']]}};</script>
+        <script nonce="{NONCE}" id="MathJax-script" defer src="js/tex-mml-chtml.js"></script>
+        """
     }
 
+    public static func htmlFromTemplate(_ html: String, print: Bool = false, note: Note? = nil) throws -> String {
+        guard let bundle = Bundle.main.url(forResource: "MPreview", withExtension: "bundle") else { throw CocoaError(.fileNoSuchFile) }
+        var page = try String(contentsOf: bundle.appendingPathComponent("index.html"), encoding: .utf8)
+        let dark = UserDataService.instance.isDark && !print
+        let theme = print ? "" : "consolinotes"
+        let nonce = UUID().uuidString.replacingOccurrences(of: "-", with: "") + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let replacements = [
+            "{TITLE}": LocalPreviewSecurity.escapeHTML(note?.getTitle() ?? ""),
+            "{INLINE_CSS}": getPreviewStyle(print: print),
+            "{THEME_CSS}": print ? "" : "<link href=\"consolinotes.css\" rel=\"stylesheet\">",
+            "{FSNOTES_THEME}": theme,
+            "{MATH_JAX_JS}": getMathJaxJS(),
+            "{FSNOTES_APPEARANCE}": dark ? "darkmode" : "",
+            "{FSNOTES_PLATFORM}": "macos"
+        ]
+        for (token, replacement) in replacements { page = page.replacingOccurrences(of: token, with: replacement) }
+        page = page.replacingOccurrences(of: "{NONCE}", with: nonce)
+        // Note content is inserted last; it cannot substitute template control tokens.
+        return page.replacingOccurrences(of: "{NOTE_BODY}", with: html)
+    }
+
+    fileprivate func receive(_ message: WKScriptMessage) {
+        guard message.frameInfo.isMainFrame, message.frameInfo.request.url?.deletingFragment == documentURL,
+              message.webView === self, let note = note, !note.isEncryptedAndLocked(),
+              let body = message.body as? [String: Any], let kind = body["kind"] as? String else { return }
+        switch kind {
+        case "selection":
+            if let value = body["value"] as? String, value.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes { selectedText = value }
+        case "clipboard":
+            guard let value = body["value"] as? String, value.utf8.count <= LocalPreviewSecurity.maximumMarkdownBytes else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(value, forType: .string)
+        case "checkbox":
+            guard let index = body["value"] as? Int, index >= 0, index < 100_000 else { return }
+            let content = note.content.unloadAttachments()
+            let string = content.string
+            var position = 0
+            var changed = false
+            NotesTextProcessor.allTodoInlineRegex.matches(string, range: NSRange(location: 0, length: content.length)) { result in
+                defer { position += 1 }
+                guard position == index, let range = result?.range else { return }
+                let checked = content.mutableString.substring(with: range).contains("- [x] ")
+                content.replaceCharacters(in: range, with: checked ? "- [ ] " : "- [x] ")
+                changed = true
+            }
+            if changed { note.save(content: content.loadAttachments(note)) }
+        case "scroll":
+            if let x = body["x"] as? Double, let y = body["y"] as? Double, x.isFinite, y.isFinite { note.contentOffsetWeb = CGPoint(x: x, y: y) }
+        default: break
+        }
+    }
+
+    private static let bridgeScript = """
+    (() => {
+        const send = body => window.webkit.messageHandlers.preview.postMessage(body);
+        for (const name of ['mouseup', 'keyup', 'contextmenu']) document.addEventListener(name, event => {
+            if (event.isTrusted) send({kind: 'selection', value: String(document.getSelection())});
+        });
+        document.addEventListener('click', event => {
+            if (!event.isTrusted) return;
+            const box = event.target.closest('input[type=checkbox]');
+            if (box) {
+                const boxes = Array.from(document.querySelectorAll('input[type=checkbox]'));
+                send({kind: 'checkbox', value: boxes.indexOf(box)});
+                return;
+            }
+            const code = event.target.closest('pre code');
+            if (code && !code.classList.contains('language-mermaid')) send({kind: 'clipboard', value: code.innerText});
+        });
+        document.querySelectorAll('li input[type=checkbox]').forEach(box => { box.disabled = false; });
+        let pending = false;
+        window.addEventListener('scroll', () => {
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(() => { send({kind:'scroll', x:window.scrollX, y:window.scrollY}); pending = false; });
+        }, {passive:true});
+    })();
+    """
     public static func getPreviewStyle(print: Bool = false, forceLightTheme: Bool = false) -> String {
         var theme: String? = nil
         var fullScreen = false
@@ -679,13 +323,13 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         var result = """
             @font-face {
                 font-family: 'Source Code Pro';
-                src: url('{WEB_PATH}fonts/SourceCodePro-Regular.ttf')
+                src: url('fonts/SourceCodePro-Regular.ttf')
                 format('truetype');
             }
 
             @font-face {
                 font-family: 'Source Code Pro';
-                src: url('{WEB_PATH}fonts/SourceCodePro-Bold.ttf');
+                src: url('fonts/SourceCodePro-Bold.ttf');
                 font-weight: bold;
             }
         
@@ -718,38 +362,6 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
         return css
     }
     
-    public static func assignBase64Images(note: Note, html: String) -> String {
-        var html = html
-
-        FSParser.imageInlineRegex.regularExpression.enumerateMatches(in: note.content.string, options: NSRegularExpression.MatchingOptions(rawValue: 0), range: NSRange(0..<note.content.length), using:
-                {(result, flags, stop) -> Void in
-
-            guard let range = result?.range(at: 3), note.content.length >= range.location else { return }
-
-            let path = note.content.attributedSubstring(from: range).string
-            guard let imagePath = path.removingPercentEncoding else { return }
-
-            if let url = note.getAttachmentFileUrl(name: imagePath) {
-                if url.isRemote() {
-                    return
-                }
-
-                if FileManager.default.fileExists(atPath: url.path), url.isImage {
-                    if let image = try? Data(contentsOf: url) {
-                        let base64 = image.base64EncodedString()
-                        html = html.replacingOccurrences(of: path, with: "data:image;base64," + base64)
-                    }
-                }
-            }
-        })
-
-        return html
-    }
-
-    public func clean() {
-        loadHTMLString("", baseURL: nil)
-    }
-    
     private static func computeDefaultLineHeight(for font: Font, lineHeightMultiple: CGFloat = 1.0) -> CGFloat {
         let asc = font.ascender
         let desc = abs(font.descender)
@@ -760,151 +372,18 @@ class MPreviewView: WKWebView, WKUIDelegate, WKNavigationDelegate {
     }
 }
 
-class HandlerSelection: NSObject, WKScriptMessageHandler {
-    public static var selectionString: String?
-
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-        let message = (message.body as! String).trimmingCharacters(in: .whitespacesAndNewlines)
-
-        HandlerSelection.selectionString = message
+private final class PreviewBridge: NSObject, WKScriptMessageHandler {
+    weak var view: MPreviewView?
+    init(view: MPreviewView) { self.view = view }
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        view?.receive(message)
     }
 }
 
-class HandlerCheckbox: NSObject, WKScriptMessageHandler {
-    private var note: Note?
-    
-    init(note: Note) {
-        self.note = note
-    }
-    
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-
-        guard let position = message.body as? String else { return }
-        guard let note = self.note else { return }
-
-        let content = note.content.unloadAttachments()
-        let string = content.string
-        let range = NSRange(0..<string.count)
-
-        var i = 0
-        NotesTextProcessor.allTodoInlineRegex.matches(string, range: range) { (result) -> Void in
-            guard let range = result?.range else { return }
-
-            if i == Int(position) {
-                let substring = content.mutableString.substring(with: range)
-
-                if substring.contains("- [x] ") {
-                    content.replaceCharacters(in: range, with: "- [ ] ")
-                } else {
-                    content.replaceCharacters(in: range, with: "- [x] ")
-                }
-
-            }
-
-            i = i + 1
-        }
-
-        note.save(content: content.loadAttachments(note))
-    }
-}
-
-class HandlerMouse: NSObject, WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-
-        guard let action = message.body as? String else { return }
-
-        if action == "enter" {
-            NSCursor.pointingHand.set()
-        } else {
-            NSCursor.arrow.set()
-        }
-    }
-}
-
-class HandlerClipboard: NSObject, WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-
-        guard let action = message.body as? String else { return }
-
-        var cleanText = action.trim()
-        if cleanText.last == "\n" {
-            cleanText.removeLast()
-        }
-
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(cleanText, forType: .string)
-    }
-}
-
-class HandlerOpen: NSObject, WKScriptMessageHandler {
-    private var note: Note?
-    
-    init(note: Note) {
-        self.note = note
-    }
-    
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-        guard let note = note else { return }
-        guard let action = message.body as? String else { return }
-        
-        var cleanText = action.trim()
-        cleanText = cleanText.removingPercentEncoding ?? cleanText
-
-        if cleanText.contains("wkPreview/index.html")
-            || cleanText.contains("MPreview.bundle/index.html")
-            || cleanText.contains("MPreview.bundle/#")
-        {
-            return
-        }
-        
-            let result = cleanText.replacingOccurrences(
-                of: "^.*?/(tmp/wkPreview|Resources/MPreview\\.bundle)/",
-                with: "",
-                options: .regularExpression
-            )
-        
-            if let url = result.createURL(for: note) {
-                NSWorkspace.shared.activateFileViewerSelecting([url])
-            }
-    }
-}
-
-class HandlerQuickLook: NSObject, WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-
-        guard let action = message.body as? String else { return }
-        let cleanText = "file://" + action.trim()
-
-        if let url = URL(string: cleanText) {
-                NSWorkspace.shared.activateFileViewerSelecting([url])
-        }
-    }
-}
-
-final class PreviewScrollHandler: NSObject, WKScriptMessageHandler {
-    private var note: Note?
-    
-    init(note: Note) {
-        self.note = note
-    }
-
-    func userContentController(
-            _ userContentController: WKUserContentController,
-            didReceive message: WKScriptMessage
-    ) {
-        guard
-            message.name == "scrollPosition",
-            let dict = message.body as? [String: Double],
-            let x = dict["x"],
-            let y = dict["y"]
-        else { return }
-
-        note?.contentOffsetWeb = CGPoint(x: x, y: y)
+private extension URL {
+    var deletingFragment: URL {
+        var components = URLComponents(url: self, resolvingAgainstBaseURL: false)
+        components?.fragment = nil
+        return components?.url ?? self
     }
 }

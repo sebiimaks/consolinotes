@@ -10,7 +10,7 @@
 
 import Foundation
 
-/// Wrap authentication to C function
+/// Wrap a Swift value for a C callback to C function
 internal class CWrapper<T> {
     
     /// Object

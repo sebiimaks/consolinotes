@@ -12,9 +12,6 @@ import Foundation
 
 import Cgit2
 
-var paths = NSMutableDictionary()
-
-
 /// Define internal object to cast and use with C hander
 class InternalDiffWrapper {
     
@@ -55,7 +52,6 @@ public class Diff {
         project?.loadCommitsCache()
         
         guard let sha = oid.sha() else { return false }
-        paths.removeAllObjects()
         
         if let project = project, let paths = project.commitsCache[sha] {
             return paths.contains(path)
@@ -65,37 +61,35 @@ public class Diff {
         let payload = InternalDiffWrapper(self)
         
         // COnvert in C pointer
-        let ptr = Unmanaged.passRetained(CWrapper(payload)).toOpaque()
+        let ptr = Unmanaged.passUnretained(payload).toOpaque()
         
         // Foreach on all diff entries
         let error = git_diff_foreach(self.pointer.pointee, DiffFile.callback, nil, nil, nil, ptr)
-        if (error != 0) {
-            print("git diff error \(git_error_message())")
+        guard error == 0 else { return false }
+
+        if let project = project {
+            project.commitsCache[sha] = Array(payload.entries.keys)
         }
-        
-        if let sha = oid.sha(), let keys = paths.allKeys as? [String], let project = project {
-            project.commitsCache[sha] = keys
-        }
-        
-        return paths[path] != nil
+
+        return payload.entries[path] != nil
     }
 }
 
 final class DiffFile{
     static let callback: git_diff_file_cb = { delta, progress, payload in 
-        if let delta = delta {
-            
+        if let delta = delta, let payload = payload {
+            let result = Unmanaged<InternalDiffWrapper>.fromOpaque(payload).takeUnretainedValue()
             // Create diff entry
             let diffEntry = DiffEntry(delta: delta)
             
             // Test old name
             if let oldName = diffEntry.oldName {
-                paths[oldName] = true
+                result.entries[oldName] = true
             }
             
             // Test new name
             if let newName = diffEntry.newName {
-                paths[newName] = true
+                result.entries[newName] = true
             }
         }
         

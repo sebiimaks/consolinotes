@@ -46,6 +46,7 @@ public class ImagesProcessor {
     }
     
     public static func writeFile(data: Data, url: URL? = nil, note: Note, ext: String? = nil) -> String? {
+        guard !note.isEncryptedAndLocked() else { return nil }
         if note.isTextBundle() {
             var ext = ext
             
@@ -65,8 +66,9 @@ public class ImagesProcessor {
             let to = destination.appendingPathComponent(fileName)
             do {
                 try data.write(to: to, options: .atomic)
+                if note.isEncrypted() { try PrivateWorkingDirectory.protectTree(note.getURL()) }
             } catch {
-                print(error)
+                return nil
             }
 
             fileName = fileName

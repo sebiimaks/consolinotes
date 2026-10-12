@@ -9,7 +9,6 @@
 import Cocoa
 import Carbon.HIToolbox
 import Foundation
-import Shout
 import UserNotifications
 import WebKit
 
@@ -47,9 +46,6 @@ class ViewController: EditorViewController,
     private var updateViews = [Note]()
 
     var tagsScannerQueue = [Note]()
-
-    @available(*, deprecated, message: "Remove after macOS 10.15 is no longer supported")
-    public var printerLegacy: PrinterLegacy?
 
     override var representedObject: Any? {
         didSet { }  // Update the view, if already loaded.
@@ -181,8 +177,6 @@ class ViewController: EditorViewController,
         fsManager = FileSystemEventManager(storage: storage, delegate: self)
         fsManager?.start()
 
-        loadBookmarks(data: UserDefaultsManagement.sftpAccessData)
-        loadBookmarks(data: UserDefaultsManagement.gitPrivateKeyData)
 
         loadMoveMenu()
         loadSortBySetting()
@@ -263,7 +257,6 @@ class ViewController: EditorViewController,
 
         // Schedule git actions
         self.scheduleSnapshots()
-        self.schedulePull()
 
         // Loads tags
         self.storage.loadNotesContent()
@@ -555,54 +548,56 @@ class ViewController: EditorViewController,
         }
     }
         
-    // Ask project password before move to encrypted
+    // Encrypt in the source location before moving into a protected folder.
     public func moveReq(notes: [Note], project: Project, completion: @escaping (Bool) -> ()) {
-        for note in notes {
-            if note.isEncrypted() && project.isEncrypted {
-                let alert = NSAlert()
-                alert.alertStyle = .critical
-                alert.informativeText = NSLocalizedString("You cannot move an already encrypted note to an encrypted directory. You must first decrypt the note and repeat the steps.", comment: "")
-                alert.messageText = NSLocalizedString("Move error", comment: "")
-                alert.runModal()
+        if project.isEncrypted && notes.contains(where: { $0.isEncrypted() && $0.project != project }) {
+            showProtectionFailure("An already encrypted note cannot be moved into an encrypted folder. Remove its encryption first so the destination password can be applied.")
+            completion(false)
+            return
+        }
+
+        func performMove(password: String?) {
+            guard project.isEncrypted else {
+                completion(self.move(notes: notes, project: project))
                 return
             }
+            guard let password = password else { completion(false); return }
+            var succeeded = true
+            for note in notes where note.project != project {
+                // A failed conversion leaves the source intact; a failed move
+                // leaves a protected ciphertext at the original location.
+                guard note.encrypt(password: password) else {
+                    note.presentSaveFailure()
+                    succeeded = false
+                    continue
+                }
+                self.reloadAllOpenedWindows(note: note)
+                guard self.move(notes: [note], project: project) else {
+                    succeeded = false
+                    continue
+                }
+                if !note.unLock(password: password) {
+                    succeeded = false
+                    self.showProtectionFailure("The note was moved as encrypted data, but could not be unlocked. Its encrypted file has been preserved.")
+                }
+            }
+            self.sidebarOutlineView.reloadTags()
+            completion(succeeded)
         }
-        
-        // Encrypted and locked
+
         if project.isEncrypted && project.isLocked() {
             getMasterPassword() { password in
                 self.sidebarOutlineView.unlock(projects: [project], password: password)
-                if project.password != nil {
-                    DispatchQueue.main.async {
-                        self.move(notes: notes, project: project)
-                        
-                        for note in notes {
-                            note.encryptAndUnlock(password: password)
-                        }
-                        
-                        completion(true)
-                    }
-                    return
-                }
-                
-                completion(false)
+                guard !project.isLocked() else { completion(false); return }
+                performMove(password: project.password)
             }
-            return
+        } else {
+            performMove(password: project.password)
         }
-        
-        self.move(notes: notes, project: project)
-        
-        // Encrypted and non locked
-        if project.isEncrypted, let password = project.password {
-            for note in notes {
-                note.encryptAndUnlock(password: password)
-            }
-        }
-        
-        completion(true)
     }
-    
-    private func move(notes: [Note], project: Project) {
+
+    private func move(notes: [Note], project: Project) -> Bool {
+        var succeeded = true
         let selectedRow = notesTableView.selectedRowIndexes.min()
         
         for note in notes {
@@ -610,15 +605,24 @@ class ViewController: EditorViewController,
                 continue
             }
 
-            if note.isEncrypted() {
-                _ = note.lock()
+            if note.isUnlocked() {
+                guard note.lock() else {
+                    note.presentSaveFailure()
+                    succeeded = false
+                    continue
+                }
+                reloadAllOpenedWindows(note: note)
             }
 
             let destination = project.url.appendingPathComponent(note.name, isDirectory: false)
 
             note.moveImages(to: project)
             
-            _ = note.move(to: destination, project: project)
+            guard note.move(to: destination, project: project) else {
+                showProtectionFailure("The note could not be moved. Its source file has been preserved. Resolve the storage problem and retry.")
+                succeeded = false
+                continue
+            }
 
             if !storage.searchQuery.isFit(note: note) {
                 notesTableView.removeRows(notes: [note])
@@ -635,7 +639,8 @@ class ViewController: EditorViewController,
             note.invalidateCache()
         }
         
-        editor.clear()
+        if succeeded { editor.clear() }
+        return succeeded
     }
 
     override func viewDidResize() {
@@ -1145,68 +1150,44 @@ class ViewController: EditorViewController,
     
     @IBAction func emptyTrash(_ sender: NSMenuItem) {
         let notes = storage.getAllTrash()
-        for note in notes {
-            _ = note.removeFile()
+        storage.removeNotes(notes: notes, completely: true) { _ in
+            let removed = notes.filter { note in !self.storage.noteList.contains { $0 === note } }
+            self.notesTableView.removeRows(notes: removed)
+            if let current = self.editor.note, removed.contains(where: { $0 === current }) { self.editor.clear() }
+            for note in removed { self.closeAllOpenedWindows(where: note) }
         }
         
         NSSound(named: "Pop")?.play()
     }
         
     @IBAction func lockAll(_ sender: Any) {
-        let projects = storage.getProjects().filter({ $0.isEncrypted && !$0.isLocked() })
-        sidebarOutlineView.lock(projects: projects)
-        
-        let editors = AppDelegate.getEditTextViews()
-        var unlockedEditors = [EditTextView]()
-        
-        for editor in editors {
-            if let note = editor.note, note.isUnlocked() {
-                unlockedEditors.append(editor)
-            }
-        }
-        
-        for editor in unlockedEditors {
-            editor.lockEncryptedView()
-        }
-    
-        let notes = storage.noteList.filter({ $0.isUnlocked() })
+        Self.cancelPasswordRequests()
+        let notes = storage.noteList.filter { $0.isUnlocked() || $0.hasPendingPlaintextCleanup }
+        var failures = 0
         for note in notes {
             if note.lock() {
-                removeTags(note: note)
+                reloadAllOpenedWindows(note: note)
                 notesTableView.reloadRow(note: note)
+            } else { failures += 1 }
+        }
+        for project in storage.getProjects() where project.isEncrypted {
+            if storage.getNotesBy(project: project).allSatisfy({ !$0.isUnlocked() }) {
+                project.password = nil
             }
         }
-        
+        sidebarOutlineView.reloadTags()
+        sidebarOutlineView.reloadData()
+        if let project = sidebarOutlineView.getSelectedProject(), project.isLocked() {
+            notesTableView.enableLockedProject()
+        }
+        if failures > 0 {
+            showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and retry before closing the app.")
+        }
         if let window = notesTableView.window, window == view.window {
             window.makeFirstResponder(notesTableView)
         }
     }
-        
-    @available(macOS 10.14, *)
-    public func sendNotification() {
-        let center = UNUserNotificationCenter.current()
-        center.delegate = self
-        center.requestAuthorization(options: [.badge,.sound,.alert]) { granted, error in
-            if error != nil {
-                print("User permission is not granted : \(granted)")
-            }
-        }
 
-        let content = UNMutableNotificationContent()
-        content.title = "Upload over SSH done"
-        content.sound = .default
-   
-        let date = Date().addingTimeInterval(1)
-        let dateComponent = Calendar.current.dateComponents([.year,.month,.day,.hour,.minute,.second], from: date)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponent, repeats: false)
-    
-    
-        let uuid = UUID().uuidString
-        let request = UNNotificationRequest(identifier: uuid, content: content, trigger: trigger)
-    
-        center.add(request) { error in }
-    }
-        
     func controlTextDidEndEditing(_ obj: Notification) {
         guard let textField = obj.object as? NSTextField, textField == titleLabel else { return }
         
@@ -1231,9 +1212,9 @@ class ViewController: EditorViewController,
         rowUpdaterTimer = Timer.scheduledTimer(timeInterval: 1.2, target: self, selector: #selector(updateTableViews), userInfo: nil, repeats: false)
     }
 
-    public func removeForever() {
+    public func removeForever(notes requestedNotes: [Note]? = nil) {
         guard let vc = ViewController.shared() else { return }
-        guard let notes = vc.notesTableView.getSelectedNotes() else { return }
+        guard let notes = requestedNotes ?? vc.notesTableView.getSelectedNotes() else { return }
         guard let window = MainWindowController.shared() else { return }
 
         vc.alert = NSAlert()
@@ -1242,17 +1223,19 @@ class ViewController: EditorViewController,
 
         alert.messageText = String(format: NSLocalizedString("Are you sure you want to irretrievably delete %d note(s)?", comment: ""), notes.count)
 
-        alert.informativeText = NSLocalizedString("This action cannot be undone.", comment: "")
+        alert.informativeText = "This action cannot be undone. Shared attachments, local history and backups are kept."
         alert.addButton(withTitle: NSLocalizedString("Remove note(s)", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
         alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
             if returnCode == NSApplication.ModalResponse.alertFirstButtonReturn {
                 let selectedRow = vc.notesTableView.selectedRowIndexes.min()
-                vc.editor.clear()
                 vc.storage.removeNotes(notes: notes, completely: true) { _ in
                     DispatchQueue.main.async {
-                        vc.notesTableView.removeRows(notes: notes)
-                        if let i = selectedRow, i > -1 {
+                        let removed = notes.filter { note in !vc.storage.noteList.contains { $0 === note } }
+                        vc.notesTableView.removeRows(notes: removed)
+                        if let current = vc.editor.note, removed.contains(where: { $0 === current }) { vc.editor.clear() }
+                        for note in removed { vc.closeAllOpenedWindows(where: note) }
+                        if !removed.isEmpty, let i = selectedRow, i > -1 {
                             vc.notesTableView.selectRow(i)
                         }
                     }
@@ -1707,28 +1690,6 @@ class ViewController: EditorViewController,
         }
     }
     
-    private func loadBookmarks(data: Data?) {
-        if let accessData = data,
-            let bookmarks = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSDictionary.self, NSURL.self, NSData.self], from: accessData) as? [URL: Data] {
-
-            for bookmark in bookmarks {
-                var isStale = false
-                
-                do {
-                    let url = try URL.init(resolvingBookmarkData: bookmark.value, options: NSURL.BookmarkResolutionOptions.withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
-                    
-                    if !url.startAccessingSecurityScopedResource() {
-                        print("RSA key not available: \(url.path)")
-                    } else {
-                        print("Access for RSA key is successfull restored \(url)")
-                    }
-                } catch {
-                    print("Error restoring sftp bookmark: \(error)")
-                }
-            }
-        }
-    }
-
     func loadSortBySetting() {
         let viewLabel = NSLocalizedString("View", comment: "Menu")
         let sortByLabel = NSLocalizedString("Sort by", comment: "View menu")
@@ -1887,21 +1848,8 @@ class ViewController: EditorViewController,
         }
     }
 
-    override func restoreUserActivityState(_ userActivity: NSUserActivity) {
-        guard let name = userActivity.userInfo?["note-file-name"] as? String,
-            let state = userActivity.userInfo?["state"] as? String,
-            let note = Storage.shared().getBy(name: name)
-        else { return }
-
-        vcEditor?.changePreviewState(state == "preview")
-        
-        note.previewState = state == "preview"
-
-        notesTableView.selectRowAndSidebarItem(note: note)
-    }
-
     /*
-     Needs update UserActivity if selection did change
+     Update local editor position when selection changes
      */
     func textViewDidChangeSelection(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
@@ -1917,7 +1865,6 @@ class ViewController: EditorViewController,
             editor.note?.setSelectedRange(range: textView.selectedRange())
         }
     
-        editor.userActivity?.needsSave = true
     }
 
     @objc func doubleClickOnNotesTable() {

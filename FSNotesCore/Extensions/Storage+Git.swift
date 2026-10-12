@@ -9,31 +9,6 @@
 import Foundation
 
 extension Storage {
-    public func pullAll(force: Bool = false) {
-        guard let projects = getGitProjects() else { return }
-        for project in projects {
-
-            var status: String?
-
-            do {
-                try project.pull()
-
-                let currentDate = Date()
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-                let dateString = dateFormatter.string(from: currentDate)
-
-                status = "Successfull auto pull – \(dateString)"
-                project.gitStatus = status
-            } catch {
-                if let error = error as? GitError {
-                    status = error.associatedValue()
-
-                }
-            }
-
-        }
-    }
 
     public func checkGitState() {
         guard let projects = getGitProjects() else { return }

@@ -206,11 +206,8 @@ class NoteCellView: NSTableCellView {
 
     func renderPin() {
         if let value = objectValue, let note = value as? Note  {
-            // Terminal glyphs instead of icons: ↗ published, ◆/◇ encrypted, ★ pinned.
-            if note.isPublished() {
-                pin.image = TUITheme.glyph("↗", color: TUITheme.cyan, size: 14)
-                pin.isHidden = false
-            } else if note.isEncrypted() {
+            // Terminal glyphs: ◆/◇ encrypted, ★ pinned.
+            if note.isEncrypted() {
                 pin.image = TUITheme.glyph(note.isUnlocked() ? "◇" : "◆", color: TUITheme.magenta, size: 14)
                 pin.isHidden = false
             } else {
@@ -228,38 +225,10 @@ class NoteCellView: NSTableCellView {
     }
 
     public func getPreviewImage(imageUrl: URL, note: Note) -> Image? {
-        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MainNotesList")
-
-        if !FileManager.default.fileExists(atPath: tempURL.path) {
-            try? FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: false, attributes: nil)
-        }
-
-        if let cacheName = imageUrl.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)?.md5 {
-
-            let file = tempURL.appendingPathComponent(cacheName)
-            if FileManager.default.fileExists(atPath: file.path) {
-                if let data = try? Data(contentsOf: file), let image = NSImage(data: data) {
-                    return image
-                }
-            }
-
-            do {
-                let data = try Data(contentsOf: imageUrl)
-                if let image = NSImage(data: data) {
-                    let size = CGSize(width: 70, height: 70)
-
-                    if let resized = image.crop(to: size) {
-                        let jpegImageData = resized.jpgData
-                        try? jpegImageData?.write(to: file, options: .atomic)
-                        return resized
-                    }
-                }
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-
-        return nil
+        guard imageUrl.isFileURL, !note.isEncryptedAndLocked() else { return nil }
+        // Sidebar previews must not leave a second plaintext attachment on disk.
+        guard let data = try? Data(contentsOf: imageUrl), let image = NSImage(data: data) else { return nil }
+        return image.crop(to: CGSize(width: 70, height: 70))
     }
 
     public func adjustPinPosition() {

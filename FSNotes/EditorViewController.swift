@@ -8,11 +8,17 @@
 
 import Foundation
 import AppKit
-import LocalAuthentication
 import WebKit
 import UserNotifications
 
 class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemValidation {
+    private static var passwordRequestGeneration: UInt64 = 0
+
+    /// A pending password prompt must not undo a later lock request.
+    public static func cancelPasswordRequests() {
+        passwordRequestGeneration &+= 1
+        FIDO2PasswordProvider.shared.cancel()
+    }
     
     public var alert: NSAlert?
     public var noteLoading: ProgressState = .none
@@ -35,7 +41,6 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     // git
     public var snapshotsTimer = Timer()
     public var lastSnapshot: Int?
-    public var pullTimer = Timer()
     
     public var encPassword: NSSecureTextField?
     public var encVerifyPassword: NSSecureTextField?
@@ -368,7 +373,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
         // Unlock encrypted
         if first.container == .encryptedTextPack {
-            getMasterPassword() { password in
+            getMasterPassword(allowHardware: true) { password in
                 guard password.count > 0 else { return }
                 
                 for note in notes {
@@ -391,7 +396,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         // Encrypt plain
         getMasterPassword(forEncrypt: true) { password in
             for note in notes {
-                if !note.isEncrypted(), note.encrypt(password: password) {
+                guard !note.isEncrypted() else { continue }
+                if note.encrypt(password: password) {
                     note.password = nil
                     
                     DispatchQueue.main.async {
@@ -399,8 +405,9 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                         
                         ViewController.shared()?.focusTable()
                         ViewController.shared()?.notesTableView.reloadRow(note: note)
+                        ViewController.shared()?.sidebarOutlineView.reloadTags()
                     }
-                }
+                } else { note.presentSaveFailure() }
             }
         }
     }
@@ -625,6 +632,24 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         pasteboard.setString(note.title, forType: NSPasteboard.PasteboardType.string)
     }
     
+    @IBAction func upgradeNoteEncryption(_ sender: Any) {
+        guard let selected = getSelectedNotes(), selected.count == 1,
+              let note = selected.first, note.usesLegacyEncryption,
+              let password = note.password else { return }
+        let alert = NSAlert()
+        alert.messageText = "Upgrade this note's encryption?"
+        alert.informativeText = "This keeps the current password and upgrades the note to stronger password derivation and authenticated encryption. FSNotes and consolinotes versions before 1.2 cannot open the upgraded file. Existing history and backup copies are unchanged."
+        alert.addButton(withTitle: "Upgrade Encryption")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        guard note.upgradeEncryption(password: password) else {
+            note.presentSaveFailure()
+            return
+        }
+        reloadAllOpenedWindows(note: note)
+        ViewController.shared()?.notesTableView.reloadRow(note: note)
+    }
+
     @IBAction func removeNoteEncryption(_ sender: Any) {
         guard var notes = getSelectedNotes(),
               let vc = ViewController.shared() else { return }
@@ -632,7 +657,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         notes = decryptUnlocked(notes: notes)
         guard notes.count > 0 else { return }
 
-        getMasterPassword() { password in
+        getMasterPassword(allowHardware: true) { password in
             for note in notes {
                 if note.container == .encryptedTextPack {
                     let success = note.unEncrypt(password: password)
@@ -878,41 +903,25 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
         let si = vc.getSidebarItem()
         if si?.isTrash() == true || forceRemove {
-            vc.removeForever()
-            
-            // Call from window, close it!
-            if let cvc = NSApplication.shared.keyWindow?.contentViewController,
-               cvc.isKind(of: NoteViewController.self) {
-                DispatchQueue.main.async {
-                    self.view.window?.close()
-                }
-            }
-            
+            vc.removeForever(notes: notes)
             return
         }
         
         let currentNote = vc.editor.note
-        let shouldClearEditor = currentNote != nil && notes.contains(where: { $0 === currentNote })
         UserDataService.instance.searchTrigger = true
-        vc.notesTableView.removeRows(notes: notes)
-        
-        // Delete tags
-        for note in notes {
-            let tags = note.tags
-            note.tags.removeAll()
-            vc.sidebarOutlineView.removeTags(tags)
-        }
-        
         vc.storage.removeNotes(notes: notes) { urlMapping in
+            let removedNotes = notes.filter { note in !vc.storage.noteList.contains { $0 === note } }
+            vc.notesTableView.removeRows(notes: removedNotes)
+            vc.sidebarOutlineView.reloadTags()
             if let md = AppDelegate.mainWindowController {
                 let undoManager = md.notesListUndoManager
-                if let ntv = vc.notesTableView {
+                if let ntv = vc.notesTableView, let urlMapping = urlMapping, !urlMapping.isEmpty {
                     // Register undo (restore)
                     undoManager.registerUndo(withTarget: ntv, selector: #selector(ntv.unDelete), object: urlMapping)
                     undoManager.setActionName(NSLocalizedString("Delete", comment: ""))
                 }
                 
-                if let rows = rows, let minRow = rows.min(), minRow > -1 {
+                if !removedNotes.isEmpty, let rows = rows, let minRow = rows.min(), minRow > -1 {
                     let qty = vc.notesTableView.countNotes()
                     if qty > minRow {
                         vc.notesTableView.selectRow(minRow)
@@ -921,21 +930,12 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
                     }
                 }
                 
-                UserDataService.instance.searchTrigger = false
             }
-            
-            if shouldClearEditor {
+            UserDataService.instance.searchTrigger = false
+            if let currentNote = currentNote, removedNotes.contains(where: { $0 === currentNote }) {
                 vc.editor.clear()
             }
-        }
-        
-        // Call from window, close it!
-        if let cvc = NSApplication.shared.keyWindow?.contentViewController,
-           cvc.isKind(of: NoteViewController.self) {
-            DispatchQueue.main.async {
-                self.view.window?.close()
-            }
-            return
+            for note in removedNotes { self.closeAllOpenedWindows(where: note) }
         }
         
         // If is main window – focus to notes list
@@ -1080,7 +1080,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
     
     public func unLock(notes: [Note]) {
-        getMasterPassword() { password in
+        getMasterPassword(allowHardware: true) { password in
             guard password.count > 0 else { return }
 
             var i = 0
@@ -1138,57 +1138,52 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         }
     }
 
-    public func getMasterPassword(forEncrypt: Bool = false, completion: @escaping (String) -> ()) {
-        if #available(OSX 10.12.2, *), UserDefaultsManagement.allowTouchID {
-            let context = LAContext()
-            context.localizedFallbackTitle = NSLocalizedString("Enter Master Password", comment: "")
-
-            var passwordExist = false
-            do {
-                let password = try KeychainConfiguration.readMasterPassword()
-                passwordExist = password.count > 0
-            } catch {/*_*/}
-            
-            guard passwordExist && context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else {
-                masterPasswordPrompt(validation: forEncrypt, completion: completion)
-                return
+    public func getMasterPassword(forEncrypt: Bool = false, allowHardware: Bool = false, completion requestCompletion: @escaping (String) -> ()) {
+        let generation = Self.passwordRequestGeneration
+        let completion: (String) -> Void = { password in
+            guard generation == Self.passwordRequestGeneration else { return }
+            requestCompletion(password)
+        }
+        if forEncrypt && !UserDefaultsManagement.suppressNewEncryptionFormatNotice {
+            let notice = NSAlert()
+            notice.alertStyle = .informational
+            notice.messageText = "Encrypt with the new note format?"
+            notice.informativeText = "New encrypted files require consolinotes 1.2 or later and cannot be opened by FSNotes. Existing history and backup copies are unchanged and may still contain plaintext. Keep the password; it is required to open these notes."
+            notice.addButton(withTitle: "Encrypt")
+            notice.addButton(withTitle: "Cancel")
+            notice.showsSuppressionButton = true
+            notice.suppressionButton?.title = "Do not ask again."
+            guard notice.runModal() == .alertFirstButtonReturn else { return }
+            if notice.suppressionButton?.state == .on {
+                UserDefaultsManagement.suppressNewEncryptionFormatNotice = true
             }
-            
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "To access secure data") { (success, evaluateError) in
-                
-                // Skip if cancelled
-                if let error = evaluateError as NSError? {
-                    if error.code == LAError.userCancel.rawValue || error.code == LAError.appCancel.rawValue {
-                        return
+        }
+        if !forEncrypt && allowHardware {
+            do {
+                if try FIDO2PasswordProvider.shared.load() != nil {
+                    let choice = NSAlert()
+                    choice.messageText = "Unlock encrypted notes"
+                    choice.informativeText = "Use your enrolled YubiKey, or enter the original note password."
+                    choice.addButton(withTitle: "Use YubiKey…")
+                    choice.addButton(withTitle: "Enter Password…")
+                    choice.addButton(withTitle: "Cancel")
+                    switch choice.runModal() {
+                    case .alertFirstButtonReturn:
+                        FIDO2UnlockUI.unlock(from: self, completion: completion, manualFallback: {
+                            self.masterPasswordPrompt(validation: false, completion: completion)
+                        }); return
+                    case .alertSecondButtonReturn: break
+                    default: return
                     }
                 }
-                
-                // Press enter password or failed TouchID
-                if !success {
-                    self.masterPasswordPrompt(validation: forEncrypt, completion: completion)
-
-                    return
-                }
-
-                do {
-                    let password = try KeychainConfiguration.readMasterPassword()
-
-                    completion(password)
-                    return
-                } catch {
-                    print("Keychain error: \(error.localizedDescription)")
-                }
-
-                // No password in keychain
-                self.masterPasswordPrompt(validation: forEncrypt, completion: completion)
+            } catch {
+                masterPasswordPrompt(validation: false, reason: "The YubiKey enrollment could not be read. Enter your original note password.", completion: completion)
+                return
             }
-        } else {
-            
-            // Bio is not available or disabled
-            masterPasswordPrompt(validation: forEncrypt, completion: completion)
         }
+        masterPasswordPrompt(validation: forEncrypt, completion: completion)
     }
-    
+
     @IBAction func onOkClick(_ sender: Any?) {
         guard
             let passwordField = encPassword,
@@ -1205,7 +1200,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             return
         }
         
-        if passwordField.stringValue != verifyPasswordField.stringValue {
+        if !passwordField.stringValue.utf8.elementsEqual(verifyPasswordField.stringValue.utf8) {
             let alert = NSAlert()
             alert.alertStyle = .critical
             alert.informativeText = NSLocalizedString("Please try again", comment: "")
@@ -1221,7 +1216,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         self.alert?.window.close()
     }
     
-    private func masterPasswordPrompt(validation: Bool = false, completion: @escaping (String) -> ()) {
+    private func masterPasswordPrompt(validation: Bool = false, reason: String? = nil, completion: @escaping (String) -> ()) {
         DispatchQueue.main.async {
             guard var window = self.view.window else { return }
             
@@ -1238,6 +1233,7 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
         
             if validation {
                 alert.messageText = NSLocalizedString("Enter an encryption password:", comment: "")
+                alert.informativeText = reason ?? "Keep this password. It cannot be recovered if you lose it."
                 
                 alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
                 alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
@@ -1306,8 +1302,8 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             
             let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 290, height: 20))
             alert.accessoryView = field
-            alert.messageText = NSLocalizedString("Master password:", comment: "")
-            alert.informativeText = NSLocalizedString("Please enter password for current note", comment: "")
+            alert.messageText = "Note password:"
+            alert.informativeText = reason ?? "Enter the password used to encrypt the current note."
             alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
             alert.beginSheetModal(for: window) { (returnCode: NSApplication.ModalResponse) -> Void in
@@ -1323,29 +1319,31 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
     }
 
     public func lockUnlocked(notes: [Note]) -> [Note] {
-        var notes = notes
-        var isFirst = true
-
-        for note in notes {
-            if note.isUnlocked() && note.isEncrypted() {
-                if note.lock() && isFirst {
-                    reloadAllOpenedWindows(note: note)
-                }
-
-                removeTags(note: note)
-                notes.removeAll { $0 === note }
-            }
-
-            isFirst = false
-            ViewController.shared()?.notesTableView.reloadRow(note: note)
+        Self.cancelPasswordRequests()
+        var remaining = notes
+        var failures = 0
+        for note in notes where note.isUnlocked() || note.hasPendingPlaintextCleanup {
+            if note.lock() {
+                remaining.removeAll { $0 === note }
+                reloadAllOpenedWindows(note: note)
+                ViewController.shared()?.notesTableView.reloadRow(note: note)
+            } else { failures += 1 }
         }
-        
-        // Focus notes list if active main window
-        if let vc = view.window?.contentViewController as? ViewController, let mainWindow = view.window {
-            mainWindow.makeFirstResponder(vc.notesTableView)
+        ViewController.shared()?.sidebarOutlineView.reloadTags()
+        if failures > 0 {
+            showProtectionFailure("Some notes could not finish locking. Unsaved notes remain available; notes already saved may be locked while temporary cleanup is retried. Resolve the storage problem and try again.")
         }
+        return remaining
+    }
 
-        return notes
+    public func showProtectionFailure(_ message: String) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = "Protection operation incomplete"
+            alert.informativeText = message
+            alert.runModal()
+        }
     }
 
     public func decryptUnlocked(notes: [Note]) -> [Note] {
@@ -1476,9 +1474,17 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
 
         let note = Note(name: name, project: project)
         note.content = NSMutableAttributedString(string: text)
-        if note.save() {
-            Storage.shared().add(note)
+        if project.isEncrypted {
+            guard let password = project.password, note.encrypt(password: password) else {
+                showProtectionFailure("The encrypted note could not be created. No plaintext note was created in the folder. Resolve the storage problem and try again.")
+                return nil
+            }
+            _ = note.unLock(password: password)
+        } else if !note.save() {
+            note.presentSaveFailure()
+            return nil
         }
+        Storage.shared().add(note)
 
         _ = note.scanContentTags()
 
@@ -1515,15 +1521,6 @@ class EditorViewController: NSViewController, NSTextViewDelegate, NSMenuItemVali
             }
         }
         
-        // Project encrypted and unlocked – encrypt by default
-        if let password = project.password {
-            if note.encrypt(password: password) {
-                if note.unLock(password: password) {
-                    note.password = password
-                }
-            }
-        }
-
         return note
     }
 }

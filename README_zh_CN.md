@@ -2,7 +2,7 @@
 
 > **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的独立分支，与 FSNotes 项目及其作者无关，也未获其认可。此分支专注于 macOS，将应用界面改为终端风格。完整说明、许可证与第三方声明请见 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文为 FSNotes 原始 macOS 功能参考。
 
-当前分支仅包含 macOS 应用。此前的 iOS 应用及分享扩展保存在[移除前的备份分支](https://github.com/sebiimaks/consolinotes/tree/pre-ios-removal)。
+当前分支仅包含 macOS 应用。此前的 iOS 应用及分享扩展保存在[移除前的备份标签](https://github.com/sebiimaks/consolinotes/tree/pre-ios-removal)。
 
 ## FSNotes
 
@@ -23,7 +23,7 @@ FSNotes 是本项目所基于的笔记管理器。
 
 - **优先支持 Markdown**。也支持任何纯文本文件。
 - **快速且轻量**。能够流畅处理 10k+ 个文件。
-- **随时随地访问**。与 iCloud Drive 或 Dropbox 同步。
+- **仅本地运行**。内置 Git 同步和 SSH／网页发布已移除。系统或第三方工具仍可能同步您选择的文件夹。
 - **多文件夹**存储。
 - **键盘为中心**。受 [nvalt](https://brettterpstra.com/projects/nvalt/) 启发的控件和快捷键。
 - **代码块内语法高亮**。支持超过 170 种编程语言。

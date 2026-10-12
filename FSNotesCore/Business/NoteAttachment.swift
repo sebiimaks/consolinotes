@@ -19,13 +19,10 @@ class NoteAttachment {
     // MARK: - Properties
 
     public let url: URL
-    public var imageCache: URL?
 
     // MARK: - Constants
 
     private enum Constants {
-        static let previewPrefix = "Preview"
-        static let thumbnailPrefix = "ThumbnailsBig"
         static let fontFamily = "Avenir Next"
         static let defaultFontSize: CGFloat = 14.0
         static let fileSizeThreshold = 10000
@@ -121,47 +118,18 @@ class NoteAttachment {
 // MARK: - Static Utility Methods (Platform-Independent)
 
 extension NoteAttachment {
-    public static func getCacheUrl(from url: URL, prefix: String = Constants.previewPrefix) -> URL? {
-        var temporary = URL(fileURLWithPath: NSTemporaryDirectory())
-        temporary.appendPathComponent(prefix)
-
-        let filename = url.absoluteString.md5 + "." + url.pathExtension
-        return temporary.appendingPathComponent(filename)
-    }
-
-    public static func savePreviewImage(url: URL, image: PlatformImage, prefix: String = Constants.previewPrefix) {
-        var temporary = URL(fileURLWithPath: NSTemporaryDirectory())
-        temporary.appendPathComponent(prefix)
-
-        createDirectoryIfNeeded(at: temporary)
-
-        guard let cacheUrl = getCacheUrl(from: url, prefix: prefix),
-              let data = image.jpgData else {
-            return
-        }
-
-        try? data.write(to: cacheUrl)
-    }
-
-    private static func createDirectoryIfNeeded(at url: URL) {
-        if !FileManager.default.fileExists(atPath: url.path) {
-            try? FileManager.default.createDirectory(
-                at: url,
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-        }
-    }
-
     public static func getImage(url: URL, size: CGSize) -> PlatformImage? {
         guard let image = loadImage(from: url, size: size) else {
             return nil
         }
 
-        return getCachedOrResizedImage(original: image, url: url, size: size)
+        // Attachment thumbnails remain in editor memory only. This also covers
+        // encrypted notes whose older attachment URLs use a shared directory.
+        return image.resized(to: size) ?? image
     }
 
     private static func loadImage(from url: URL, size: CGSize) -> PlatformImage? {
+        guard url.isFileURL else { return nil }
         if url.isVideo {
             return generateVideoThumbnail(from: url, size: size)
         }
@@ -187,31 +155,6 @@ extension NoteAttachment {
         return NSImage(cgImage: cgImage, size: size)
     }
 
-    private static func getCachedOrResizedImage(
-        original: PlatformImage,
-        url: URL,
-        size: CGSize
-    ) -> PlatformImage? {
-        let cacheURL = getCacheUrl(from: url, prefix: Constants.thumbnailPrefix)
-
-        if let cacheURL = cacheURL,
-           FileManager.default.fileExists(atPath: cacheURL.path) {
-            if let cached = NSImage(contentsOfFile: cacheURL.path) {
-                return cached
-            }
-        }
-
-        guard let resized = original.resized(to: size) else {
-            return original
-        }
-
-        savePreviewImage(url: url, image: resized, prefix: Constants.thumbnailPrefix)
-        return resized
-    }
-
-    private static func resizeImage(_ image: PlatformImage, to size: CGSize) -> PlatformImage? {
-        return image
-    }
 }
 
 // MARK: - macOS Specific Methods

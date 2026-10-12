@@ -11,7 +11,7 @@ typealias ImageView = NSImageView
 
 extension NoteCellView {
     public func loadImagesPreview(position: Int? = nil, urls: [URL]? = nil) {
-        guard let note = self.note else {
+        guard let note = self.note, !note.isEncryptedAndLocked() else {
             hideUnusedImagesPreview()
             imageKeys = []
             return
@@ -75,6 +75,11 @@ extension NoteCellView {
                 }
                 
                 guard self.note === note else {
+                    return
+                }
+                guard !note.isEncryptedAndLocked() else {
+                    self.hideUnusedImagesPreview()
+                    self.imageKeys = []
                     return
                 }
 

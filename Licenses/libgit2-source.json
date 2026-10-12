@@ -1,74 +1,29 @@
 {
-  "format": 1,
+  "format": 2,
   "archive": "Resources/libgit2-source.tar.gz",
   "archive_root": "libgit2-source",
-  "binary": {
-    "package_version": "1.2.2",
-    "url": "https://github.com/glushchenko/swift-cgit2/releases/download/1.2.0/libgit2.xcframework.zip",
-    "sha256_from_package_manifest": "cbf67a82594267aecc5cc4d021059cf0165f38566df0dcf0c52e065f1d6f1358",
-    "release_tag": "1.2.0",
-    "release_commit": "d7368c04a5cfe2c06fa1c8040d547e86aa4e02ee",
-    "release_url": "https://github.com/glushchenko/swift-cgit2/releases/tag/1.2.0",
-    "local_xcframework_files": [
-      {
-        "path": "ios-arm64/libgit2.a",
-        "sha256": "9ff4528691f1e5e533c645ba5dad788640c441387e2b86a291661480bf6012cc",
-        "matching_source_headers": 87
-      },
-      {
-        "path": "ios-arm64_x86_64-simulator/libgit2.a",
-        "sha256": "2fd05ebb9a2294bd68e0d701c42704974b2afd05c6854e3433dd8c9b4a73c722",
-        "matching_source_headers": 87
-      },
-      {
-        "path": "macos-arm64_x86_64/libgit2.a",
-        "sha256": "6f549bbf367ff4f781d60769f5c911ec2473bfb19e6b67f55dc4e24e72940937",
-        "matching_source_headers": 87
-      }
-    ]
+  "upstream": {
+    "version": "1.9.7",
+    "commit": "49e408b3208bc3093757a1c2db938d3590f3f412",
+    "repository": "https://github.com/libgit2/libgit2",
+    "archive_url": "https://github.com/libgit2/libgit2/archive/refs/tags/v1.9.7.tar.gz",
+    "archive_sha256": "1a4fbe7589e814777ae76b64734ad80f4ecad22cd33a22682a2aaea4ae5375e7"
   },
-  "components": [
-    {
-      "name": "swift-cgit2",
-      "repository": "https://github.com/glushchenko/swift-cgit2",
-      "commit": "ab1a18d82002b185c1c73b0daaa4174bb6b4f29c",
-      "path": "swift-cgit2",
-      "tree": "7c3525e1f903eee20de630ce52c82c5736eba5b1",
-      "files": 12
-    },
-    {
-      "name": "libgit2",
-      "repository": "https://github.com/libgit2/libgit2",
-      "commit": "6c78fd06e3cedec818122ecc7f90e6c81e497354",
-      "path": "swift-cgit2/libgit2",
-      "tree": "29eb3f7abb17f7869c181ac5692b17236f95b1d2",
-      "files": 11357
-    },
-    {
-      "name": "iSSH2",
-      "repository": "https://github.com/sharplet/iSSH2",
-      "commit": "f9b8f8b913614ed5d5875d7b734b8aad8a2c13d3",
-      "path": "swift-cgit2/iSSH2",
-      "tree": "7bd5e9585b3e51a0ee249238011b408c21641295",
-      "files": 8
-    }
-  ],
+  "patch": {
+    "path": "Vendor/LocalGit2/local-only.patch",
+    "sha256": "8b163db9f75efb13094babf7a16ef631596a16d107c6017f2ae374c14156b3c6",
+    "description": "Only filesystem transport compiled; all socket, HTTP, Git, SSH transports and HTTP parser excluded."
+  },
+  "binary_manifest": "Vendor/LocalGit2/build-provenance.json",
+  "binary_manifest_sha256": "bca6424fb3a264b08eb05c42cb818c6c1c0a18d94c2d5fef241a1f025ce32f7f",
+  "archive_sha256": "008598a969ed7e0cdf5890699d63bf7d9c943f97ed68bbc75bef041c9a7eb8c4",
+  "archive_bytes": 7828808,
+  "archive_entries": 11916,
   "correspondence": {
-    "status": "upstream-pinned-source; binary-build-attestation-unavailable",
-    "verified": [
-      "Package.resolved pins the stated swift-cgit2 commit",
-      "Package.swift pins the stated release ZIP and checksum",
-      "Release 1.2.0 and package 1.2.2 share the same libgit2, iSSH2 and build scripts",
-      "All 87 public headers in each of the three local binary slices match the libgit2 source"
-    ],
+    "status": "locally-built-from-reviewed-pinned-source",
     "limits": [
-      "Upstream provides no build attestation or complete release build log",
-      "The original iSSH2 build script discovers external OpenSSL and libssh2 versions dynamically",
-      "The prebuilt XCFramework has not been independently reproduced byte for byte",
-      "The historical build scripts have not been tested with current Xcode"
+      "Binary identity across different compiler/SDK versions is not promised.",
+      "Local Git history is not an encrypted vault; existing historical plaintext is not rewritten."
     ]
-  },
-  "archive_sha256": "f4002955581b29b531b6ecc26a60bdaea3229afe67f83840f775f291bad20286",
-  "archive_bytes": 5632614,
-  "archive_entries": 11381
+  }
 }

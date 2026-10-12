@@ -69,7 +69,7 @@ extension ViewController {
                     title = NSLocalizedString("Inbox", comment: "")
                 }
                 
-                menuItem.title =  String(format: NSLocalizedString("Commit & Push “%@”", comment: "Menu Library"), title)
+                menuItem.title = String(format: NSLocalizedString("Save Local Snapshot of “%@”", comment: "Menu Library"), title)
                 return true
             }
             
@@ -131,6 +131,11 @@ extension ViewController {
             }
             return greaterThanZero
             
+        case "\(menuId).upgradeEncryption":
+            menuItem.title = "Upgrade Encryption…"
+            let selected = evc.getSelectedNotes() ?? []
+            return !isFirstSidebar && selected.count == 1 && selected.first?.usesLegacyEncryption == true
+
         case "\(menuId).decrypt":
             
             // sidebar
@@ -233,19 +238,6 @@ extension ViewController {
             menuItem.title = NSLocalizedString("Copy Title", comment: "File Menu")
             return isOne && (isFirstResponder || isOpenedWindow || isFirstEditor)
             
-        case "\(menuId).uploadOverSSH":
-            if let note = notes?.first, note.uploadPath != nil {
-                menuItem.title = NSLocalizedString("Update Web Page", comment: "File Menu")
-            } else {
-                menuItem.title = NSLocalizedString("Create Web Page", comment: "File Menu")
-            }
-            return isOne && (isFirstResponder || isOpenedWindow || isFirstEditor)
-            
-        case "\(menuId).removeOverSSH":
-            menuItem.title = NSLocalizedString("Delete Web Page", comment: "File Menu")
-            if let note = notes?.first {
-                return (isFirstResponder || isOpenedWindow || isFirstEditor) && isOne && !note.isEncrypted() && note.uploadPath != nil
-            }
         default:
             return false
         }

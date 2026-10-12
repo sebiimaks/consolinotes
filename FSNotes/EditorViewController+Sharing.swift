@@ -13,29 +13,22 @@ extension EditorViewController: NSSharingServicePickerDelegate {
         var share = proposedServices
 
         if #available(macOS 11.0, *) {
-            guard let image = NSImage(systemSymbolName: "document.on.document", accessibilityDescription: nil),
-                  let webImage = NSImage(named: "web") else {
+            guard let image = NSImage(systemSymbolName: "document.on.document", accessibilityDescription: nil) else {
                 
                 return proposedServices
             }
-
-            let titleWeb = NSLocalizedString("Web", comment: "")
-            let web = NSSharingService(title: titleWeb, image: webImage, alternateImage: nil, handler: {
-                ViewController.shared()?.uploadWebNote(NSMenuItem())
-            })
-            share.insert(web, at: 0)
 
             let titlePlain = NSLocalizedString("Copy Plain Text", comment: "")
             let plainText = NSSharingService(title: titlePlain, image: image, alternateImage: image, handler: {
                 self.saveTextAtClipboard()
             })
-            share.insert(plainText, at: 1)
+            share.insert(plainText, at: 0)
 
             let titleHTML = NSLocalizedString("Copy HTML", comment: "")
             let html = NSSharingService(title: titleHTML, image: image, alternateImage: image, handler: {
                 self.saveHtmlAtClipboard()
             })
-            share.insert(html, at: 2)
+            share.insert(html, at: 1)
         }
         
         return share

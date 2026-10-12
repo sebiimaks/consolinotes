@@ -53,8 +53,6 @@ class Storage {
 
     private var relativeInlineImagePaths = [String]()
 
-    public var plainWriter = OperationQueue.init()
-    public var ciphertextWriter = OperationQueue.init()
 
     public var searchQuery: SearchQuery = SearchQuery()
 
@@ -118,13 +116,6 @@ class Storage {
 
         loadProjectRelations()
         
-        plainWriter.maxConcurrentOperationCount = 1
-        plainWriter.qualityOfService = .userInteractive
-
-        ciphertextWriter.maxConcurrentOperationCount = 1
-        ciphertextWriter.qualityOfService = .userInteractive
-
-        self.restoreUploadPaths()
     }
 
     public func insertProject(project: Project) {
@@ -189,16 +180,9 @@ class Storage {
     }
 
     public func makeTempEncryptionDirectory() -> URL? {
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("Encryption")
-            .appendingPathComponent(UUID().uuidString)
-
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-            return url
-        } catch {
-            return nil
-        }
+        // Do not clean abandoned encryption directories: they can hold edits
+        // whose ciphertext write failed before a crash or forced termination.
+        return try? PrivateWorkingDirectory.makeEncryptionDirectory()
     }
 
     public func getChildProjects(project: Project) -> [Project] {
@@ -698,19 +682,20 @@ class Storage {
             return
         }
         
+        var removed = [URL: URL]()
         for note in notes {
+            if fsRemove {
+                guard let result = note.removeFile(completely: completely) else { continue }
+                if case let .trashed(destination, original) = result {
+                    removed[destination] = original
+                }
+            } else if note.isUnlocked() || note.hasPendingPlaintextCleanup || (!note.isEncryptedAndLocked() && note.lastWriteError != nil) {
+                // A watcher event must not orphan the only unsaved working copy.
+                note.preserveAfterExternalRemoval()
+                continue
+            }
             note.removeCacheForPreviewImages()
             removeBy(note: note)
-        }
-        
-        var removed = [URL: URL]()
-        
-        if fsRemove {
-            for note in notes {
-                if let trashURLs = note.removeFile(completely: completely) {
-                    removed[trashURLs[0]] = trashURLs[1]
-                }
-            }
         }
         
         if removed.count > 0 {
@@ -1171,43 +1156,11 @@ class Storage {
         }
     }
 
-    public func saveUploadPaths() {
-        let notes = noteList.filter({ $0.uploadPath != nil })
-        
-        var bookmarks = [URL: String]()
-        for note in notes {
-            if let path = note.uploadPath, path.count > 1 {
-                bookmarks[note.url] = path
-            }
-        }
-        
-        if let data = try? NSKeyedArchiver.archivedData(withRootObject: bookmarks, requiringSecureCoding: true) {
-            UserDefaultsManagement.sftpUploadBookmarksData = data
-        }
-    }
+
     
-    public func restoreUploadPaths() {
-        guard let data = UserDefaultsManagement.sftpUploadBookmarksData,
-              let uploadBookmarks = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSDictionary.self, NSURL.self, NSString.self], from: data) as? [URL: String] else { return }
 
-        for bookmark in uploadBookmarks {
-            if let note = getBy(url: bookmark.key) {
-                note.uploadPath = bookmark.value
-            }
-        }
-    }
 
-    public func getGitKeysDir() -> URL? {
-        guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent("Keys", isDirectory: true) else { return nil }
-        
-        if !FileManager.default.fileExists(atPath: url.path) {
-            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        }
-        
-        return url
-    }
+
     
     public func getProjectBy(settingsKey: String) -> Project? {
         return
@@ -1218,20 +1171,10 @@ class Storage {
             })
     }
 
-    public func hasOrigins() -> Bool {
-        return projects.first(where: {
-            return (
-                $0.settings.gitOrigin != nil && $0.settings.gitOrigin!.count > 0
-            )
-        }) != nil
-    }
+
 
     public func getGitProjects() -> [Project]? {
-        return projects.filter({
-            return (
-                $0.settings.gitOrigin != nil && $0.settings.gitOrigin!.count > 0
-            )
-        })
+        return projects.filter { $0.hasRepository() }
     }
 
     public func loadProjectRelations() {

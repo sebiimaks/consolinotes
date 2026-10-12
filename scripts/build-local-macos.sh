@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+python3 scripts/check-fido2-libraries.py
+
 # Build for this Mac with a separate app identity and an ad-hoc signature.
 # Keep the normal sandbox entitlements; no Apple account or upstream profile is needed.
 xcodebuild -project FSNotes.xcodeproj -scheme FSNotes \
@@ -19,4 +21,6 @@ xcodebuild -project FSNotes.xcodeproj -scheme FSNotes \
 app_path="$repo_root/build/DerivedData/Build/Products/Release/consolinotes.app"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 python3 scripts/check-license-distribution.py --app "$app_path" --require-tracked
+python3 scripts/check-offline-core.py --app "$app_path"
+python3 scripts/test-local-history.py --app "$app_path"
 printf '\nLocal app: %s\n' "$app_path"

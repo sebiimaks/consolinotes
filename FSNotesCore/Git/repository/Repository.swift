@@ -38,9 +38,6 @@ public class Repository {
         Tags(repository: self)
     } ()
     
-    lazy public private(set) var remotes : Remotes = {
-        Remotes(repository: self)
-    } ()
     
     /// Constructor with repository manager and libgit2 repository
     ///
@@ -93,19 +90,18 @@ public class Repository {
     }
     
     public func add(path: String) -> Result<(), NSError> {
-        guard pointer.pointee != nil else { return .failure(NSError()) }
-        
-        var dirPointer = UnsafeMutablePointer<Int8>(mutating: (path as NSString).utf8String)
-        var paths = withUnsafeMutablePointer(to: &dirPointer) {
-            git_strarray(strings: $0, count: 1)
-        }
         return unsafeIndex().flatMap { index in
             defer { git_index_free(index) }
-            let addResult = git_index_add_all(index, &paths, 0, nil, nil)
+            let addResult = path.withCString { cPath in
+                var pathPointer: UnsafeMutablePointer<CChar>? = UnsafeMutablePointer(mutating: cPath)
+                return withUnsafeMutablePointer(to: &pathPointer) { pointer in
+                    var paths = git_strarray(strings: pointer, count: 1)
+                    return git_index_add_all(index, &paths, 0, nil, nil)
+                }
+            }
             guard addResult == GIT_OK.rawValue else {
                 return .failure(NSError(gitError: addResult, pointOfFailure: "git_index_add_all"))
             }
-            // write index to disk
             let writeResult = git_index_write(index)
             guard writeResult == GIT_OK.rawValue else {
                 return .failure(NSError(gitError: writeResult, pointOfFailure: "git_index_write"))
@@ -113,22 +109,13 @@ public class Repository {
             return .success(())
         }
     }
-    
-    public func addRemoteOrigin(path: String) {
-        let result = git_remote_set_url(self.pointer.pointee, "origin", path)
-        
-        if result != GIT_OK.rawValue {
-            print("Remote origin error")
-        }
-    }
-    
+
     public func setWorkTree(path: String) {
         var configPointer: OpaquePointer? = nil
         
-        var result = git_repository_config(&configPointer, self.pointer.pointee);
-        if result != GIT_OK.rawValue {
-            print("Config opening error")
-        }
+        var result = git_repository_config(&configPointer, self.pointer.pointee)
+        guard result == GIT_OK.rawValue else { return }
+        defer { git_config_free(configPointer) }
         
         result = git_config_set_string(configPointer, "core.worktree", path);
         if result != GIT_OK.rawValue {
@@ -137,20 +124,18 @@ public class Repository {
     }
     
     public func checkout(commit: Commit, path: String) throws {
-        var dirPointer = UnsafeMutablePointer<Int8>(mutating: (path as NSString).utf8String)
-        let paths = withUnsafeMutablePointer(to: &dirPointer) {
-            git_strarray(strings: $0, count: 1)
-        }
-        
-        var opts = git_checkout_options()
-        opts.version = 1
-        opts.paths = paths
-        opts.checkout_strategy = GIT_CHECKOUT_FORCE.rawValue
-        
-        // Checkout new tree
-        let error = git_checkout_tree(self.pointer.pointee, commit.pointer.pointee, &opts);
-        if (error != 0) {
-            throw gitUnknownError("Unable to checkout commit path", code: error)
+        try path.withCString { cPath in
+            var pathPointer: UnsafeMutablePointer<CChar>? = UnsafeMutablePointer(mutating: cPath)
+            try withUnsafeMutablePointer(to: &pathPointer) { pointer in
+                var options = git_checkout_options()
+                git_checkout_options_init(&options, UInt32(GIT_CHECKOUT_OPTIONS_VERSION))
+                options.paths = git_strarray(strings: pointer, count: 1)
+                options.checkout_strategy = GIT_CHECKOUT_FORCE.rawValue
+                let result = git_checkout_tree(self.pointer.pointee, commit.pointer.pointee, &options)
+                if result != GIT_OK.rawValue {
+                    throw gitUnknownError("Unable to checkout commit path", code: result)
+                }
+            }
         }
     }
 }

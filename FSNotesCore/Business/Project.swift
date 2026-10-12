@@ -74,10 +74,7 @@ public class Project: NSObject {
             settings.showInCommon = false
         }
         
-        // Backward compatibility
-        if settings.gitOrigin == nil, self.isDefault, let origin = UserDefaultsManagement.gitOrigin {
-            settings.setOrigin(origin)
-        }
+
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -188,11 +185,7 @@ public class Project: NSObject {
 
         var notes = storage.noteList.filter({ $0.project == self })
 
-        for note in notes {
-            if note.isEncrypted() {
-                _ = note.lock()
-            }
-        }
+        // getMeta() excludes decrypted metadata without changing live note state.
         
         // Deduplicate
         let deduplicatedNotes = notes.reduce(into: [String: Note]()) { result, object in
@@ -587,29 +580,26 @@ public class Project: NSObject {
     }
     
     public func encrypt(password: String) -> [Note] {
-        if isEncrypted {
-            return [Note]()
-        }
-        
-        let encFolder = getEncryptionStatusFilePath()
-        FileManager.default.createFile(atPath: encFolder.path, contents: nil)
-        
-        isEncrypted = true
-
+        guard !isEncrypted else { return [] }
         let notes = storage.getNotesBy(project: self)
         var encrypted = [Note]()
-        
         for note in notes {
-            if note.encrypt(password: password) {
-                encrypted.append(note)
-            }
+            if note.isEncrypted() {
+                if !note.isUnlocked() || note.lock() { encrypted.append(note) }
+            } else if note.encrypt(password: password) { encrypted.append(note) }
         }
-
-        self.password = nil
-
+        // A partial conversion must never advertise a protected folder.
+        guard encrypted.count == notes.count else { return encrypted }
+        do {
+            try Data().write(to: getEncryptionStatusFilePath(), options: .atomic)
+            isEncrypted = true
+            self.password = nil
+        } catch {
+            isEncrypted = false
+        }
         return encrypted
     }
-    
+
     public func decrypt(password: String) -> [Note] {
         if !isEncrypted {
             return [Note]()
@@ -626,12 +616,13 @@ public class Project: NSObject {
             }
         }
         
-        guard qty > 0 || notes.count == 0 else { return [Note]() }
-        
+        guard notes.allSatisfy({ !$0.isEncrypted() }) else { return decrypted }
         let encFolder = getEncryptionStatusFilePath()
-        try? FileManager.default.removeItem(at: encFolder)
-        
-        isEncrypted = false
+        do {
+            try FileManager.default.removeItem(at: encFolder)
+            isEncrypted = false
+            self.password = nil
+        } catch { return decrypted }
         
         return decrypted
     }
@@ -665,8 +656,7 @@ public class Project: NSObject {
             }
         }
 
-        password = nil
-
+        if notes.allSatisfy({ !$0.isUnlocked() }) { password = nil }
         return locked
     }
     

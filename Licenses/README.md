@@ -8,28 +8,27 @@ the actual bundled Mermaid file and its dependency versions.
 
 Run `python3 scripts/generate-license-notices.py` from the repository to produce:
 
-- `THIRD_PARTY_NOTICES.md` for the macOS applications;
-- `Resources/MPreview.bundle/THIRD_PARTY_NOTICES.md` for bundled and published web assets;
+- `THIRD_PARTY_NOTICES.md` for the macOS application;
+- `Resources/MPreview.bundle/THIRD_PARTY_NOTICES.md` for bundled local preview assets;
 - `Resources/MPreview.bundle/LICENSE`, a copy of the root FSNotes/fork MIT licence.
 
 The generator also maintains licence comments for FSNotes and the injected theme
-CSS in the preview HTML template. This preserves their notices when hosted/API
-publishing sends only a standalone HTML page. Other template edits remain intact.
+CSS in the preview HTML template. This preserves their notices in standalone local HTML exports. Other template edits remain intact.
 
 Commit both the input files and the generated copies. Do not edit a generated
 copy directly. `--check` verifies all outputs without rewriting them.
 
-Both macOS application targets carry the root licence, third-party notices,
+The macOS application target carries the root licence, third-party notices,
 `SOURCE_CODE.md` and `libgit2-source.tar.gz`. The preview bundle carries font OFLs
-as well as the aggregate notices. Published web
-pages use only the relevant web components, not the native libraries also listed
-in the aggregate document.
+as well as the aggregate notices.
 
-Custom-server setup uploads notices before copying JavaScript and CSS. Subsequent
-note uploads refresh the notices at the configured asset root,
-including on servers configured before licence delivery was added. Missing or
-failed notice transfers stop that upload. No server credentials are needed to
-generate or validate the licence files locally.
+Shout, BlueSocket and the unused swift-git/swift-system wrappers have been removed.
+Local history now uses a locally compiled libgit2 1.9.7 with only filesystem
+transport. The legacy swift-cgit2, libssh2 and OpenSSL binaries are removed.
+`Vendor/LocalGit2/build-provenance.json` records the compiler, SDK, flags and all
+output hashes; `libgit2-source.json` pins the official source and local patch.
+The bundled archive contains complete upstream source, the patch and standalone
+build recipe. See `SOURCE_CODE.md` for rebuilding and dependency updates.
 
 ## Release verification
 
