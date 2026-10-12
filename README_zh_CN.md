@@ -2,7 +2,7 @@
 
 > **consolinotes** 是 [FSNotes](https://github.com/glushchenko/fsnotes) 的独立分支，与 FSNotes 项目及其作者无关，也未获其认可。此分支专注于 macOS，将应用界面改为终端风格。完整说明、许可证与第三方声明请见 [README.md](README.md)、[LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。下文为 FSNotes 原始 macOS 功能参考。
 
-当前分支仅包含 macOS 应用。此前的 iOS 应用及分享扩展保存在[移除前的备份分支](https://github.com/sebiimaks/consolinotes/tree/codex/pre-ios-removal)。
+当前分支仅包含 macOS 应用。此前的 iOS 应用及分享扩展保存在[移除前的备份分支](https://github.com/sebiimaks/consolinotes/tree/pre-ios-removal)。
 
 ## FSNotes
 
